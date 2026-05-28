@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monopoly Custom — Multijoueur</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0d;--surface:#14141a;--surface2:#1e1e26;--surface3:#28283200;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#f0f0f2;--text2:#8a8a9a;--text3:#4a4a5a;
+  --accent:#e8d44d;--accent2:#c8b83d;
+  --r:8px;--rl:12px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow:hidden}
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10}
+.screen.hidden{display:none}
+
+/* ── CONNECT SCREEN ── */
+#connectScreen{background:radial-gradient(ellipse at 50% 0%,#1a1a2e 0%,var(--bg) 70%)}
+.connect-card{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:2.5rem 3rem;width:480px;max-width:94vw}
+.big-title{font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:.12em;color:var(--accent);text-align:center;margin-bottom:4px}
+.sub{text-align:center;color:var(--text2);font-size:14px;margin-bottom:2rem}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.field label{font-size:11px;font-weight:500;color:var(--text2);letter-spacing:.07em;text-transform:uppercase}
+.field input,.field select{font-family:'DM Sans',sans-serif;font-size:14px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);padding:9px 12px;outline:none;transition:border-color .15s;width:100%}
+.field input:focus,.field select:focus{border-color:var(--accent)}
+.pawn-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.pawn-opt{width:34px;height:34px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .12s}
+.pawn-opt:hover,.pawn-opt.sel{border-color:var(--accent);background:rgba(232,212,77,.12)}
+.divider{display:flex;align-items:center;gap:12px;margin:1.2rem 0;color:var(--text3);font-size:12px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.btn-primary{width:100%;padding:13px;background:var(--accent);color:#111;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.15em;border:none;border-radius:var(--r);cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary:hover{background:var(--accent2);transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.btn-secondary{width:100%;padding:10px;background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;border:1px solid var(--border2);border-radius:var(--r);cursor:pointer;transition:all .15s}
+.btn-secondary:hover{background:var(--surface3);border-color:rgba(255,255,255,.2)}
+.import-box{background:var(--surface2);border:1px dashed var(--border2);border-radius:var(--r);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;font-size:13px;cursor:pointer;transition:all .12s;color:var(--text2)}
+.import-box:hover{border-color:rgba(255,255,255,.25)}
+.import-box.loaded{border-color:rgba(78,202,138,.5);color:#4eca8a;border-style:solid}
+.import-row{display:flex;gap:8px}
+.server-input{display:flex;gap:6px}
+.server-input input{flex:1}
+.server-status{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 8px;border-radius:99px;background:var(--surface2);border:1px solid var(--border2);color:var(--text3)}
+.server-status.ok{border-color:rgba(78,202,138,.4);color:#4eca8a}
+.server-status.fail{border-color:rgba(232,84,84,.4);color:#e85454}
+.dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+input[type=file]{display:none}
+.code-input{font-family:'DM Mono',monospace;font-size:20px;text-align:center;letter-spacing:.2em;text-transform:uppercase}
+
+/* ── LOBBY SCREEN ── */
+#lobbyScreen{background:radial-gradient(ellipse at 50% 30%,#0d1a2e 0%,var(--bg) 70%)}
+.lobby-card{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:2rem 2.5rem;width:560px;max-width:94vw}
+.lobby-code{font-family:'Bebas Neue',sans-serif;font-size:48px;color:var(--accent);text-align:center;letter-spacing:.2em;cursor:pointer;user-select:all}
+.lobby-code-hint{text-align:center;font-size:11px;color:var(--text3);margin-bottom:1.5rem}
+.player-lobby-row{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface2);border-radius:var(--r);margin-bottom:6px;border:1px solid transparent}
+.player-lobby-row.me{border-color:rgba(232,212,77,.3)}
+.player-lobby-row.host-row::after{content:'HÔTE';font-size:10px;color:var(--accent);font-weight:600;letter-spacing:.06em;margin-left:auto}
+.plr-pawn{font-size:20px}
+.plr-name{font-size:14px;flex:1}
+.plr-conn{width:8px;height:8px;border-radius:50%;background:#4eca8a;flex-shrink:0}
+.plr-conn.off{background:#e85454}
+.ready-badge{font-size:10px;padding:2px 7px;border-radius:99px;background:rgba(78,202,138,.15);border:1px solid rgba(78,202,138,.3);color:#4eca8a}
+.lobby-actions{display:flex;gap:8px;margin-top:1.25rem}
+.config-section{background:var(--surface2);border-radius:var(--r);padding:.875rem 1rem;margin-top:1rem}
+.config-row{display:flex;align-items:center;justify-content:space-between;font-size:13px}
+.config-row label{color:var(--text2)}
+.money-inp{font-family:'DM Mono',monospace;width:100px;font-size:14px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);color:var(--accent);padding:6px 10px;outline:none;text-align:right}
+.money-inp:focus{border-color:var(--accent)}
+
+/* ── GAME SCREEN ── */
+#gameScreen{background:var(--bg);flex-direction:row;align-items:stretch;overflow:hidden}
+.board-wrap{flex:1;display:flex;align-items:center;justify-content:center;min-width:0;padding:1rem;position:relative}
+.board{display:grid;grid-template-columns:repeat(11,1fr);grid-template-rows:repeat(11,1fr);width:min(calc(100vh - 2rem),calc(100vw - 380px));height:min(calc(100vh - 2rem),calc(100vw - 380px));border:2px solid var(--border2);border-radius:6px;overflow:hidden;background:#0d1f0d}
+.cell{border:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:2px;position:relative;overflow:hidden;font-size:clamp(5px,.9vw,10px)}
+.cell:hover{border-color:rgba(255,255,255,.2);z-index:2;cursor:pointer}
+.cell-color{width:100%;height:22%;border-radius:1px;flex-shrink:0}
+.cell-name{font-size:.85em;color:rgba(255,255,255,.7);text-align:center;line-height:1.1;padding:1px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word}
+.cell-price{font-family:'DM Mono',monospace;font-size:.7em;color:var(--accent);opacity:.8}
+.cell-corner{font-size:1.6em;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px}
+.cell-corner .lbl{font-size:.6em;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+.cell-center{grid-column:2/11;grid-row:2/11;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;background:#0d1f0d}
+.center-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(14px,2.5vw,30px);letter-spacing:.15em;color:var(--accent)}
+.center-sub{font-size:clamp(7px,1vw,11px);color:var(--text3)}
+.pawns-on-cell{position:absolute;top:2px;left:2px;display:flex;flex-wrap:wrap;gap:1px;z-index:3;pointer-events:none}
+.pawn-chip{font-size:clamp(8px,1.2vw,14px);line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.8))}
+.my-pawn-chip{outline:1px solid var(--accent);border-radius:2px}
+.sidebar{width:340px;min-width:280px;display:flex;flex-direction:column;border-left:1px solid var(--border);background:var(--surface);overflow:hidden}
+.sidebar-header{padding:.75rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sidebar-title{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.1em;color:var(--accent)}
+.room-pill{font-family:'DM Mono',monospace;font-size:12px;color:var(--text2);background:var(--surface2);border:1px solid var(--border2);padding:2px 8px;border-radius:99px;cursor:pointer}
+.room-pill:hover{color:var(--accent)}
+.sidebar-scroll{flex:1;overflow-y:auto;padding:8px}
+.sidebar-scroll::-webkit-scrollbar{width:3px}
+.sidebar-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.player-card{border-radius:var(--r);border:1px solid var(--border);background:var(--surface2);padding:.7rem .9rem;margin-bottom:5px;transition:all .2s}
+.player-card.active{border-color:var(--accent);background:rgba(232,212,77,.06)}
+.player-card.me-card{border-color:rgba(232,212,77,.25)}
+.player-card.bankrupt{opacity:.35;filter:grayscale(1)}
+.player-card.disconnected{opacity:.5}
+.pc-top{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.pc-pawn{font-size:18px}
+.pc-name{font-weight:500;font-size:13px;flex:1}
+.pc-money{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--accent)}
+.pc-badges{display:flex;gap:4px;flex-wrap:wrap}
+.badge{font-size:9px;padding:1px 5px;border-radius:99px;border:1px solid;opacity:.8}
+.badge.jail{border-color:rgba(232,84,84,.4);color:#e85454;background:rgba(232,84,84,.08)}
+.badge.you{border-color:rgba(232,212,77,.4);color:var(--accent);background:rgba(232,212,77,.08)}
+.badge.turn{border-color:rgba(78,202,138,.4);color:#4eca8a;background:rgba(78,202,138,.08)}
+.badge.disc{border-color:var(--border2);color:var(--text3)}
+.pc-props{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
+.prop-pip{width:9px;height:9px;border-radius:2px}
+.action-zone{border-top:1px solid var(--border);padding:.875rem 1rem;display:flex;flex-direction:column;gap:8px;background:var(--surface)}
+.action-title{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;font-weight:500}
+.dice-row{display:flex;align-items:center;gap:8px}
+.dice{width:38px;height:38px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;user-select:none}
+.dice.rolling{animation:roll .35s ease}
+@keyframes roll{0%{transform:rotate(0deg) scale(1.2)}50%{transform:rotate(180deg) scale(.9)}100%{transform:rotate(360deg) scale(1)}}
+.dice-total{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--accent);letter-spacing:.05em;min-width:28px}
+.btn-roll{flex:1;padding:10px;background:var(--accent);color:#111;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.1em;border:none;border-radius:var(--r);cursor:pointer;transition:all .15s}
+.btn-roll:hover{background:var(--accent2)}
+.btn-roll:disabled{opacity:.3;cursor:not-allowed}
+.action-btns{display:flex;flex-wrap:wrap;gap:5px}
+.btn-sm{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;padding:5px 11px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surface2);color:var(--text);cursor:pointer;transition:all .12s}
+.btn-sm:hover{background:rgba(255,255,255,.06)}
+.btn-sm.green{border-color:rgba(78,202,138,.4);color:#4eca8a}
+.btn-sm.yellow{border-color:rgba(232,212,77,.4);color:var(--accent)}
+.btn-sm.red{border-color:rgba(232,84,84,.4);color:#e85454}
+.btn-sm:disabled{opacity:.3;cursor:not-allowed}
+.chat-area{border-top:1px solid var(--border);display:flex;flex-direction:column;max-height:140px}
+.chat-msgs{flex:1;overflow-y:auto;padding:6px 10px;display:flex;flex-direction:column;gap:2px}
+.chat-msgs::-webkit-scrollbar{width:3px}
+.chat-msgs::-webkit-scrollbar-thumb{background:var(--border2)}
+.chat-msg{font-size:11.5px;line-height:1.4;color:var(--text2)}
+.chat-msg .from{color:var(--text);font-weight:500}
+.chat-msg.system{color:var(--text3);font-style:italic}
+.chat-msg.log-gain{color:#4eca8a}
+.chat-msg.log-loss{color:#e85454}
+.chat-msg.log-move{color:#3a9de8}
+.chat-msg.log-chance{color:#e8a830}
+.chat-input-row{display:flex;border-top:1px solid var(--border);padding:6px 8px;gap:6px}
+.chat-input{flex:1;font-family:'DM Sans',sans-serif;font-size:12px;background:transparent;border:none;color:var(--text);outline:none}
+.chat-input::placeholder{color:var(--text3)}
+.chat-send{font-size:12px;padding:4px 10px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text2);cursor:pointer}
+.chat-send:hover{color:var(--text)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;z-index:50}
+.modal-overlay.hidden{display:none}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--rl);width:400px;max-width:92vw;max-height:82vh;display:flex;flex-direction:column;overflow:hidden}
+.modal-header{padding:1.1rem 1.4rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.1em}
+.modal-body{padding:1.1rem 1.4rem;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:8px}
+.modal-footer{padding:.875rem 1.4rem;border-top:1px solid var(--border);display:flex;gap:7px;justify-content:flex-end}
+.card-display{border-radius:10px;padding:1.4rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:7px}
+.card-display.chance{background:linear-gradient(135deg,#fff8e8,#fdf0cc);color:#222}
+.card-display.community{background:linear-gradient(135deg,#e8f4ff,#cce4ff);color:#1a2a3a}
+.card-display-icon{font-size:36px}
+.card-display-deck{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;opacity:.5}
+.card-display-text{font-size:14px;font-weight:500;line-height:1.4}
+.card-display-amount{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:.05em}
+.card-display-amount.pos{color:#1a7b1a}
+.card-display-amount.neg{color:#aa2222}
+.prop-detail{background:var(--surface2);border-radius:var(--r);padding:.875rem 1rem}
+.prop-table{width:100%;font-size:12px}
+.prop-table td{padding:3px 0}
+.prop-table td:last-child{text-align:right;font-family:'DM Mono',monospace;color:var(--accent)}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px}
+.info-row .lbl{color:var(--text2)}
+.info-row .val{font-family:'DM Mono',monospace}
+.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);padding:10px 20px;font-size:13px;color:var(--text);opacity:0;transition:opacity .3s;z-index:200;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+.ws-bar{position:fixed;top:0;left:0;right:0;height:3px;background:var(--accent);transform:scaleX(0);transform-origin:left;transition:transform .3s;z-index:300}
+.ws-bar.connecting{transform:scaleX(.4);background:#e8a830}
+.ws-bar.connected{transform:scaleX(1);background:#4eca8a}
+.ws-bar.error{transform:scaleX(1);background:#e85454}
+#winScreen{background:radial-gradient(ellipse at 50% 30%,#1a1a0a 0%,var(--bg) 70%)}
+.win-card{text-align:center;padding:3rem}
+.win-pawn{font-size:80px;margin-bottom:1rem}
+.win-title{font-family:'Bebas Neue',sans-serif;font-size:60px;color:var(--accent);letter-spacing:.12em}
+.win-sub{font-size:16px;color:var(--text2);margin-bottom:2rem}
+</style>
+</head>
+<body>
+<div class="ws-bar" id="wsBar"></div>
+
+<!-- CONNECT -->
+<div class="screen" id="connectScreen">
+  <div class="connect-card">
+    <div class="big-title">MONOPOLY</div>
+    <div class="sub">Partie multijoueur en réseau</div>
+
+    <div class="field">
+      <label>Adresse du serveur</label>
+      <div class="server-input">
+        <input type="text" id="serverUrl" value="ws://localhost:3000" placeholder="ws://votre-serveur:3000">
+        <span class="server-status" id="serverStatus"><span class="dot"></span>—</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Votre nom</label>
+      <input type="text" id="playerName" placeholder="Ex: Kiluan" maxlength="20">
+    </div>
+    <div class="field">
+      <label>Votre pion</label>
+      <div class="pawn-row" id="pawnRow"></div>
+    </div>
+
+    <div class="divider">ou</div>
+
+    <button class="btn-primary" id="btnCreate" onclick="createRoom()" style="margin-bottom:10px">🎲 CRÉER UNE PARTIE</button>
+
+    <div style="display:flex;gap:8px">
+      <input type="text" id="joinCode" class="code-input" placeholder="CODE" maxlength="5" style="flex:1;border:1px solid var(--border2);background:var(--surface2);border-radius:var(--r);padding:9px 12px;outline:none;color:var(--text);font-family:'DM Mono',monospace;font-size:18px;letter-spacing:.15em;text-transform:uppercase">
+      <button class="btn-primary" onclick="joinRoom()" style="width:auto;padding:10px 20px;font-size:16px">REJOINDRE</button>
+    </div>
+
+    <div class="divider" style="margin-top:1.25rem">Fichiers custom (optionnel)</div>
+    <div class="import-row">
+      <div class="import-box" id="plateauBox" onclick="document.getElementById('filePlateau').click()"><span>🗺️ plateau.json</span><span id="plateauSt" style="font-size:11px">Défaut</span></div>
+      <div class="import-box" id="cartesBox" onclick="document.getElementById('fileCartes').click()"><span>🃏 cartes.json</span><span id="cartesSt" style="font-size:11px">Défaut</span></div>
+    </div>
+    <input type="file" id="filePlateau" accept=".json">
+    <input type="file" id="fileCartes" accept=".json">
+  </div>
+</div>
+
+<!-- LOBBY -->
+<div class="screen hidden" id="lobbyScreen">
+  <div class="lobby-card">
+    <div class="big-title" style="font-size:32px;margin-bottom:0">SALON DE JEU</div>
+    <div class="lobby-code" id="lobbyCode" onclick="copyCode()" title="Cliquer pour copier">—</div>
+    <div class="lobby-code-hint">Partagez ce code à vos amis • cliquez pour copier</div>
+    <div id="lobbyPlayers"></div>
+    <div class="config-section" id="configSection" style="display:none">
+      <div class="config-row">
+        <label>Capital de départ (M$)</label>
+        <input type="number" class="money-inp" id="startMoneyLobby" value="1500" min="100" step="100" oninput="updateConfig()">
+      </div>
+    </div>
+    <div class="lobby-actions">
+      <button class="btn-secondary" onclick="toggleReady()" id="btnReady">✓ Prêt</button>
+      <button class="btn-primary" id="btnStartLobby" onclick="startGame()" style="display:none">LANCER ▶</button>
+    </div>
+    <div style="margin-top:10px;font-size:12px;color:var(--text3);text-align:center" id="lobbyHint">En attente de joueurs…</div>
+  </div>
+</div>
+
+<!-- GAME -->
+<div class="screen hidden" id="gameScreen">
+  <div class="board-wrap">
+    <div class="board" id="board"></div>
+  </div>
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-title">MONOPOLY</span>
+      <span class="room-pill" id="roomPill" onclick="copyCode()" title="Copier le code">—</span>
+      <span style="font-size:11px;color:var(--text3)">Tour <span id="turnNum">1</span></span>
+    </div>
+    <div class="sidebar-scroll" id="playerList"></div>
+    <div class="action-zone">
+      <div class="action-title" id="actionTitle">—</div>
+      <div class="dice-row">
+        <div class="dice" id="dice1">🎲</div>
+        <div class="dice" id="dice2">🎲</div>
+        <div class="dice-total" id="diceTotal">—</div>
+        <button class="btn-roll" id="btnRoll" onclick="sendAction({type:'roll'})" disabled>LANCER</button>
+      </div>
+      <div class="action-btns" id="actionBtns"></div>
+    </div>
+    <div class="chat-area">
+      <div class="chat-msgs" id="chatMsgs"></div>
+      <div class="chat-input-row">
+        <input class="chat-input" id="chatInput" placeholder="Message…" maxlength="120" onkeydown="if(event.key==='Enter')sendChat()">
+        <button class="chat-send" onclick="sendChat()">↵</button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- WIN -->
+<div class="screen hidden" id="winScreen">
+  <div class="win-card">
+    <div class="win-pawn" id="winPawn">🏆</div>
+    <div class="win-title">VICTOIRE !</div>
+    <div class="win-sub" id="winSub">Félicitations !</div>
+    <button class="btn-primary" style="width:260px;margin:0 auto" onclick="location.reload()">NOUVELLE PARTIE</button>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay hidden" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle">Info</span>
+      <button class="btn-sm" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONSTANTS ─────────────────────────────────────────────────────────────────
+const PAWNS = ['🎩','🚂','🐕','🚗','⛵','👢','🎸','🍕','🐉','🦊','🤖','🌸'];
+const DICE_F = ['⚀','⚁','⚂','⚃','⚄','⚅'];
+const COLORS = {brown:'#8B4513',lblue:'#87CEEB',pink:'#D63384',orange:'#FF6B00',red:'#CC0000',yellow:'#F7C948',green:'#1A7B1A',blue:'#0033CC',none:'#444'};
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let ws = null;
+let myId = null, myName = '', myPawn = '🎩';
+let currentRoom = null;
+let G = null; // game state from server
+let customBoard = null, customCards = null;
+let selectedPawn = '🎩';
+
+// ── PAWN PICKER ───────────────────────────────────────────────────────────────
+const pr = document.getElementById('pawnRow');
+PAWNS.forEach(p => {
+  const d = document.createElement('div');
+  d.className = 'pawn-opt' + (p === selectedPawn ? ' sel' : '');
+  d.textContent = p;
+  d.onclick = () => { selectedPawn = p; document.querySelectorAll('.pawn-opt').forEach(x => x.classList.remove('sel')); d.classList.add('sel'); };
+  pr.appendChild(d);
+});
+
+// ── FILE LOADING ──────────────────────────────────────────────────────────────
+document.getElementById('filePlateau').addEventListener('change', function(e) {
+  const f = e.target.files[0]; if (!f) return;
+  // (unused duplicate removed)
+  const r = new FileReader(); r.onload = ev => { try { const d = JSON.parse(ev.target.result); customBoard = d.board||d; document.getElementById('plateauBox').classList.add('loaded'); document.getElementById('plateauSt').textContent='✓'; toast('Plateau chargé'); } catch { toast('Erreur JSON plateau'); } }; r.readAsText(f);
+});
+document.getElementById('fileCartes').addEventListener('change', function(e) {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader(); r.onload = ev => { try { const d = JSON.parse(ev.target.result); customCards = (d.chance&&d.community)?d:{chance:(d.chance||[]),community:(d.community||[])}; document.getElementById('cartesBox').classList.add('loaded'); document.getElementById('cartesSt').textContent='✓'; toast('Cartes chargées'); } catch { toast('Erreur JSON cartes'); } }; r.readAsText(f);
+});
+
+// ── WEBSOCKET ─────────────────────────────────────────────────────────────────
+function connect(onOpen) {
+  const url = document.getElementById('serverUrl').value.trim();
+  setWsBar('connecting');
+  ws = new WebSocket(url);
+  ws.onopen = () => { setWsBar('connected'); if (onOpen) onOpen(); };
+  ws.onerror = () => { setWsBar('error'); toast('Impossible de joindre le serveur.'); setServerStatus(false); };
+  ws.onclose = () => { setWsBar('error'); };
+  ws.onmessage = e => handleMsg(JSON.parse(e.data));
+  // Test connectivity
+  setTimeout(() => { if (ws.readyState === WebSocket.OPEN) setServerStatus(true); }, 1500);
+}
+
+function send(obj) { if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj)); }
+
+function handleMsg(msg) {
+  switch (msg.type) {
+    case 'joined':
+      myId = msg.playerId; currentRoom = msg.room;
+      showLobby(msg.isHost, msg.room);
+      break;
+    case 'playerJoined': case 'lobbyUpdate':
+      currentRoom = msg.room; renderLobby();
+      break;
+    case 'playerDisconnected':
+      currentRoom = msg.room; renderLobby();
+      addChat(msg.name + ' s\'est déconnecté', '', 'system');
+      break;
+    case 'configUpdated':
+      if (msg.config.startMoney) document.getElementById('startMoneyLobby').value = msg.config.startMoney;
+      break;
+    case 'gameStarted':
+      G = msg.state; showGame(); buildBoard(); renderAll();
+      break;
+    case 'stateSync':
+      const prev = G;
+      G = msg.state;
+      if (G.diceRoll && (!prev || !prev.diceRoll || prev.diceRoll[0] !== G.diceRoll[0] || prev.diceRoll[1] !== G.diceRoll[1])) animDice();
+      renderAll();
+      if (G.pendingAction && G.pendingAction.type === 'card') showCardModal(G.pendingAction);
+      if (G.phase === 'ended' && G.winner) setTimeout(() => showWin(G.winner), 1000);
+      break;
+    case 'chat':
+      addChat(msg.from, msg.text, '', msg.pawn);
+      break;
+    case 'error':
+      toast('⚠ ' + msg.message);
+      break;
+    case 'actionError':
+      toast('✗ ' + msg.message);
+      break;
+  }
+}
+
+// ── CONNECT ACTIONS ───────────────────────────────────────────────────────────
+function createRoom() {
+  const name = document.getElementById('playerName').value.trim();
+  if (!name) { toast('Entrez votre nom.'); return; }
+  myName = name; myPawn = selectedPawn;
+  connect(() => send({ type: 'createRoom', name, pawn: myPawn, boardData: customBoard||undefined, cardData: customCards||undefined, startMoney: 1500 }));
+}
+
+function joinRoom() {
+  const name = document.getElementById('playerName').value.trim();
+  const code = document.getElementById('joinCode').value.trim().toUpperCase();
+  if (!name) { toast('Entrez votre nom.'); return; }
+  if (!code || code.length !== 5) { toast('Entrez un code à 5 caractères.'); return; }
+  myName = name; myPawn = selectedPawn;
+  connect(() => send({ type: 'joinRoom', name, pawn: myPawn, code }));
+}
+
+// ── LOBBY ─────────────────────────────────────────────────────────────────────
+function showLobby(isHost, room) {
+  document.getElementById('connectScreen').classList.add('hidden');
+  document.getElementById('lobbyScreen').classList.remove('hidden');
+  document.getElementById('lobbyCode').textContent = room.code;
+  document.getElementById('roomPill').textContent = room.code;
+  document.getElementById('btnStartLobby').style.display = isHost ? '' : 'none';
+  document.getElementById('configSection').style.display = isHost ? '' : 'none';
+  renderLobby();
+}
+
+function renderLobby() {
+  if (!currentRoom) return;
+  const isHost = currentRoom.host === myId;
+  document.getElementById('lobbyCode').textContent = currentRoom.code;
+  const container = document.getElementById('lobbyPlayers');
+  container.innerHTML = currentRoom.players.map(p => `
+    <div class="player-lobby-row${p.id === currentRoom.host ? ' host-row' : ''}${p.id === myId ? ' me' : ''}">
+      <span class="plr-pawn">${p.pawn}</span>
+      <span class="plr-name">${p.name}${p.id===myId?' (moi)':''}</span>
+      ${p.ready ? '<span class="ready-badge">PRÊT</span>' : ''}
+      <span class="plr-conn${p.connected?'':' off'}"></span>
+    </div>
+  `).join('');
+  const allReady = currentRoom.players.every(p => p.ready || p.id === currentRoom.host);
+  const hint = document.getElementById('lobbyHint');
+  hint.textContent = currentRoom.players.length < 2 ? 'En attente d\'au moins 2 joueurs…' : allReady ? 'Tout le monde est prêt !' : 'En attente que tous soient prêts…';
+  if (isHost) document.getElementById('btnStartLobby').disabled = currentRoom.players.length < 2;
+}
+
+function toggleReady() { send({ type: 'ready' }); }
+function updateConfig() { send({ type: 'updateConfig', startMoney: parseInt(document.getElementById('startMoneyLobby').value)||1500 }); }
+function startGame() { send({ type: 'startGame' }); }
+function copyCode() {
+  const code = currentRoom ? currentRoom.code : '';
+  navigator.clipboard.writeText(code).then(() => toast('Code copié : ' + code));
+}
+
+// ── BOARD ─────────────────────────────────────────────────────────────────────
+function cellGridPos(pos) {
+  if (pos >= 0 && pos <= 10) return { col: 10 - pos + 1, row: 11 };
+  if (pos >= 11 && pos <= 19) return { col: 1, row: 11 - (pos - 10) };
+  if (pos >= 20 && pos <= 30) return { col: pos - 20 + 1, row: 1 };
+  return { col: 11, row: pos - 30 + 1 };
+}
+
+function buildBoard() {
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+  G.board.forEach(c => {
+    const { col, row } = cellGridPos(c.pos);
+    const div = document.createElement('div');
+    div.className = 'cell'; div.id = 'cell-' + c.pos;
+    div.style.gridColumn = col; div.style.gridRow = row;
+    const color = COLORS[c.group] || '#444';
+    const isCorner = [0, 10, 20, 30].includes(c.pos);
+    if (isCorner) {
+      const icons = {0:'🏁',10:'⛓️',20:'🌳',30:'🚔'}, labels = {0:'DÉPART',10:'PRISON',20:'PARC',30:'PRISON!'};
+      div.innerHTML = `<div class="cell-corner">${icons[c.pos]}<div class="lbl">${labels[c.pos]}</div></div>`;
+    } else {
+      let inner = '';
+      if (['property','station','utility'].includes(c.type)) inner = `<div class="cell-color" style="background:${color}"></div>`;
+      const icon = {chance:'❓',community:'🏘️',tax:'💸',goto_jail:'🚔',free:'🌳',custom:'⭐'}[c.type] || '';
+      inner += `<div class="cell-name">${icon ? icon + ' ' : ''}${c.name}</div>`;
+      if (c.price > 0) inner += `<div class="cell-price">${c.price}</div>`;
+      div.innerHTML = inner;
+    }
+    div.onclick = () => showCellInfo(c.pos);
+    const pawnsDiv = document.createElement('div');
+    pawnsDiv.className = 'pawns-on-cell'; pawnsDiv.id = 'pawns-' + c.pos;
+    div.appendChild(pawnsDiv);
+    board.appendChild(div);
+  });
+  const center = document.createElement('div');
+  center.className = 'cell-center';
+  center.innerHTML = `<div class="center-title">MONOPOLY</div><div class="center-sub">${currentRoom ? currentRoom.code : ''}</div>`;
+  board.appendChild(center);
+}
+
+function renderPawns() {
+  document.querySelectorAll('.pawns-on-cell').forEach(el => el.innerHTML = '');
+  if (!G) return;
+  G.players.filter(p => !p.bankrupt).forEach(p => {
+    const el = document.getElementById('pawns-' + p.pos);
+    if (el) el.innerHTML += `<span class="pawn-chip${p.id === myId ? ' my-pawn-chip' : ''}">${p.pawn}</span>`;
+  });
+}
+
+// ── PLAYER LIST + ACTIONS ─────────────────────────────────────────────────────
+function renderPlayerList() {
+  if (!G) return;
+  const el = document.getElementById('playerList');
+  const cp = G.players[G.currentPlayerIdx];
+  el.innerHTML = G.players.map(p => {
+    const isActive = cp && p.id === cp.id;
+    const isMe = p.id === myId;
+    const props = p.properties.map(pos => {
+      const cell = G.board[pos]; const col = COLORS[cell ? cell.group : 'none'] || '#444';
+      return `<div class="prop-pip" style="background:${col}" title="${cell ? cell.name : ''}"></div>`;
+    }).join('');
+    const bld = Object.entries(G.propertyBuildings || {}).filter(([pos]) => p.properties.includes(parseInt(pos)));
+    const houses = bld.reduce((s, [, b]) => s + (b.houses || 0), 0);
+    const hotels = bld.reduce((s, [, b]) => s + (b.hotel || 0), 0);
+    return `<div class="player-card${isActive ? ' active' : ''}${isMe ? ' me-card' : ''}${p.bankrupt ? ' bankrupt' : ''}${!p.connected ? ' disconnected' : ''}">
+      <div class="pc-top">
+        <span class="pc-pawn">${p.pawn}</span>
+        <span class="pc-name">${p.name}</span>
+        <span class="pc-money">M$${p.money.toLocaleString()}</span>
+      </div>
+      <div class="pc-badges">
+        ${isMe ? '<span class="badge you">MOI</span>' : ''}
+        ${isActive ? '<span class="badge turn">JOUE</span>' : ''}
+        ${p.inJail ? '<span class="badge jail">⛓️ PRISON</span>' : ''}
+        ${!p.connected ? '<span class="badge disc">DÉCO</span>' : ''}
+        ${p.getOutCards > 0 ? `<span class="badge" style="border-color:rgba(232,212,77,.4);color:var(--accent)">🔑×${p.getOutCards}</span>` : ''}
+      </div>
+      ${props ? `<div class="pc-props">${props}${houses > 0 ? `<span style="font-size:10px;color:var(--text3);margin-left:3px">🏠${houses}</span>` : ''}${hotels > 0 ? `<span style="font-size:10px;color:var(--text3)">🏨${hotels}</span>` : ''}</div>` : ''}
+    </div>`;
+  }).join('');
+  document.getElementById('turnNum').textContent = G.turn;
+}
+
+function renderActions() {
+  if (!G) return;
+  const cp = G.players[G.currentPlayerIdx];
+  const isMyTurn = cp && cp.id === myId;
+  const title = document.getElementById('actionTitle');
+  const btnRoll = document.getElementById('btnRoll');
+  const btns = document.getElementById('actionBtns');
+
+  if (G.phase === 'ended') {
+    title.textContent = 'Partie terminée !'; btnRoll.disabled = true; btns.innerHTML = ''; return;
+  }
+
+  if (!isMyTurn) {
+    title.textContent = cp ? `${cp.pawn} ${cp.name} joue…` : '—';
+    btnRoll.disabled = true; btns.innerHTML = ''; return;
+  }
+
+  title.textContent = G.phase === 'roll' ? 'Votre tour — lancez !' : 'Votre tour — actions';
+  btnRoll.disabled = G.phase !== 'roll';
+
+  let html = '';
+  if (G.phase === 'action') {
+    const cell = G.board[cp.pos];
+    const owned = G.players.some(p => p.properties.includes(cp.pos));
+    if (cell && ['property','station','utility'].includes(cell.type) && !owned && cp.money >= cell.price)
+      html += `<button class="btn-sm green" onclick="sendAction({type:'buy'})">🏠 Acheter (M$${cell.price})</button>`;
+    html += `<button class="btn-sm yellow" onclick="showBuildModal()">🔨 Construire</button>`;
+    if (cp.properties.length > 0) html += `<button class="btn-sm" onclick="showMortgageModal()">🏦 Hypothèque</button>`;
+    if (cp.inJail) {
+      html += `<button class="btn-sm yellow" onclick="sendAction({type:'payJail'})">💰 Payer M$50 prison</button>`;
+      if (cp.getOutCards > 0) html += `<button class="btn-sm green" onclick="sendAction({type:'useGetOutCard'})">🔑 Carte liberté</button>`;
+    }
+    html += `<button class="btn-sm" onclick="sendAction({type:'endTurn'})">⏭ Fin de tour</button>`;
+    html += `<button class="btn-sm red" onclick="sendAction({type:'bankrupt'})">🏳️ Faillite</button>`;
+  }
+  if (G.phase === 'roll' && cp.inJail) {
+    html += `<button class="btn-sm yellow" onclick="sendAction({type:'payJail'})">💰 Payer M$50</button>`;
+    if (cp.getOutCards > 0) html += `<button class="btn-sm green" onclick="sendAction({type:'useGetOutCard'})">🔑 Carte liberté</button>`;
+  }
+  btns.innerHTML = html;
+}
+
+function renderAll() { renderPawns(); renderPlayerList(); renderActions(); if (G && G.diceRoll) { document.getElementById('dice1').textContent = DICE_F[G.diceRoll[0]-1]; document.getElementById('dice2').textContent = DICE_F[G.diceRoll[1]-1]; document.getElementById('diceTotal').textContent = G.diceRoll[0]+G.diceRoll[1]; } }
+
+function animDice() {
+  ['dice1','dice2'].forEach(id => { const el = document.getElementById(id); el.classList.add('rolling'); setTimeout(() => el.classList.remove('rolling'), 400); });
+}
+
+// ── SEND ACTION ───────────────────────────────────────────────────────────────
+function sendAction(action) { send({ type: 'action', action }); }
+
+// ── CARD MODAL ────────────────────────────────────────────────────────────────
+function showCardModal(pending) {
+  if (!pending || !pending.card) return;
+  const card = pending.card, deck = pending.deck;
+  const isMe = pending.playerId === myId;
+  const p = G.players.find(pl => pl.id === pending.playerId);
+  let amountBadge = '';
+  switch (card.effect) {
+    case 'gain': amountBadge = `<div class="card-display-amount pos">+ M$${card.amount}</div>`; break;
+    case 'lose': amountBadge = `<div class="card-display-amount neg">- M$${card.amount}</div>`; break;
+    case 'goto_jail': amountBadge = `<div style="font-size:28px">⛓️</div>`; break;
+    case 'get_out': amountBadge = `<div style="font-size:28px">🔑</div>`; break;
+    case 'repairs': amountBadge = `<div style="font-size:12px;color:#888">🏠${card.perHouse}M$/maison · 🏨${card.perHotel}M$/hôtel</div>`; break;
+    case 'birthday': case 'collect_all': amountBadge = `<div class="card-display-amount pos">+ M$${card.collectAmount||card.amount} × joueurs</div>`; break;
+    case 'pay_all': amountBadge = `<div class="card-display-amount neg">- M$${card.amount} × joueurs</div>`; break;
+    case 'move_to': amountBadge = `<div style="font-size:13px;color:#888">→ case ${card.targetPos}</div>`; break;
+    case 'move_by': amountBadge = `<div style="font-size:16px">${card.moveSteps > 0 ? '+' : ''}${card.moveSteps} cases</div>`; break;
+  }
+  document.getElementById('modalTitle').textContent = deck === 'chance' ? '🃏 Chance' : '🏘️ Communauté';
+  document.getElementById('modalBody').innerHTML = `
+    ${p ? `<div style="font-size:12px;color:var(--text2);margin-bottom:4px">${p.pawn} ${p.name} tire une carte :</div>` : ''}
+    <div class="card-display ${deck}">
+      <div class="card-display-deck">${deck === 'chance' ? 'CHANCE' : 'COMMUNAUTÉ'}</div>
+      <div class="card-display-icon">${card.icon || '🃏'}</div>
+      <div class="card-display-text">${card.text}</div>
+      ${amountBadge}
+      ${card.flavor ? `<div style="font-size:10px;opacity:.5;font-style:italic">${card.flavor}</div>` : ''}
+    </div>
+  `;
+  const isCurrentPlayer = G.players[G.currentPlayerIdx] && G.players[G.currentPlayerIdx].id === myId;
+  document.getElementById('modalFooter').innerHTML = isCurrentPlayer
+    ? `<button class="btn-roll" style="font-size:15px;padding:9px 24px" onclick="confirmCard()">OK ✓</button>`
+    : `<div style="font-size:12px;color:var(--text2)">En attente que ${p ? p.name : 'le joueur'} confirme…</div>`;
+  document.getElementById('modalOverlay').classList.remove('hidden');
+}
+
+function confirmCard() { sendAction({ type: 'confirmCard' }); closeModal(); }
+
+// ── CELL INFO ─────────────────────────────────────────────────────────────────
+function showCellInfo(pos) {
+  if (!G) return;
+  const cell = G.board[pos]; if (!cell) return;
+  const owner = G.players.find(p => p.properties.includes(pos));
+  const b = G.propertyBuildings[pos] || { houses: 0, hotel: 0 };
+  const color = COLORS[cell.group] || '#444';
+  let body = '';
+  if (['property','station','utility'].includes(cell.type)) {
+    const rentRows = cell.type === 'property'
+      ? ['Loyer nu','Monopole','1 maison','2 maisons','3 maisons','Hôtel'].map((l,i) => `<tr><td>${l}</td><td>M$${cell.rents[i]}</td></tr>`).join('')
+      : cell.type === 'station'
+      ? ['1 gare','2 gares','3 gares','4 gares'].map((l,i) => `<tr><td>${l}</td><td>M$${cell.rents[i]}</td></tr>`).join('')
+      : '<tr><td>×4 dés si 1, ×10 si 2 compagnies</td><td></td></tr>';
+    body = `<div class="prop-detail"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <div style="width:16px;height:16px;border-radius:3px;background:${color}"></div>
+      <div><div style="font-weight:500">${cell.name}</div><div style="font-size:12px;color:var(--text2)">${owner ? owner.pawn + ' ' + owner.name : 'Disponible'}</div></div>
+    </div>
+    ${b.hotel ? '<div style="color:var(--accent);font-size:12px">🏨 Hôtel</div>' : b.houses > 0 ? `<div style="font-size:12px">🏠×${b.houses}</div>` : ''}
+    ${G.mortgaged.includes(pos) ? '<div style="color:#e85454;font-size:11px">🔒 Hypothéquée</div>' : ''}
+    <table class="prop-table">${rentRows}</table>
+    ${cell.price ? `<div style="margin-top:6px;font-size:11px;color:var(--text2)">Prix M$${cell.price} · Hypothèque M$${cell.mortgage}${cell.buildCost ? ' · Construction M$' + cell.buildCost : ''}</div>` : ''}
+    </div>`;
+  } else {
+    body = `<div style="color:var(--text2);font-size:14px">${cell.desc || 'Case spéciale.'}</div>`;
+  }
+  document.getElementById('modalTitle').textContent = cell.name;
+  document.getElementById('modalBody').innerHTML = body;
+  document.getElementById('modalFooter').innerHTML = '<button class="btn-sm" onclick="closeModal()">Fermer</button>';
+  document.getElementById('modalOverlay').classList.remove('hidden');
+}
+
+// ── BUILD MODAL ───────────────────────────────────────────────────────────────
+function showBuildModal() {
+  if (!G) return;
+  const cp = G.players[G.currentPlayerIdx]; if (!cp || cp.id !== myId) return;
+  const buildable = cp.properties.filter(pos => {
+    const cell = G.board[pos]; if (!cell || cell.type !== 'property') return false;
+    const grp = G.board.filter(c => c.group === cell.group && c.type === 'property');
+    return grp.every(c => cp.properties.includes(c.pos));
+  });
+  if (buildable.length === 0) { showInfo('Construction', '<div style="color:var(--text2)">Vous avez besoin d\'un monopole complet.</div>'); return; }
+  const rows = buildable.map(pos => {
+    const cell = G.board[pos], b = G.propertyBuildings[pos] || { houses: 0, hotel: 0 };
+    const cur = b.hotel ? '🏨 Hôtel' : b.houses > 0 ? `🏠×${b.houses}` : 'Nu';
+    const canH = !b.hotel && b.houses < 4 ? `<button class="btn-sm green" onclick="sendAction({type:'buildHouse',pos:${pos}});showBuildModal()">+🏠 M$${cell.buildCost}</button>` : '';
+    const canT = b.houses >= 4 && !b.hotel ? `<button class="btn-sm yellow" onclick="sendAction({type:'buildHotel',pos:${pos}});showBuildModal()">🏨 M$${cell.buildCost}</button>` : '';
+    return `<div class="info-row"><span class="lbl">${cell.name}</span><span style="display:flex;align-items:center;gap:5px">${cur} ${canH}${canT}</span></div>`;
+  }).join('');
+  document.getElementById('modalTitle').textContent = '🔨 Construction';
+  document.getElementById('modalBody').innerHTML = rows;
+  document.getElementById('modalFooter').innerHTML = '<button class="btn-sm" onclick="closeModal()">Fermer</button>';
+  document.getElementById('modalOverlay').classList.remove('hidden');
+}
+
+function showMortgageModal() {
+  if (!G) return;
+  const cp = G.players[G.currentPlayerIdx]; if (!cp || cp.id !== myId) return;
+  const rows = cp.properties.map(pos => {
+    const cell = G.board[pos], isMort = G.mortgaged.includes(pos);
+    const btn = isMort
+      ? `<button class="btn-sm green" onclick="sendAction({type:'unmortgage',pos:${pos}});showMortgageModal()">Lever (M$${Math.round(cell.mortgage*1.1)})</button>`
+      : `<button class="btn-sm red" onclick="sendAction({type:'mortgage',pos:${pos}});showMortgageModal()">Hyp. +M$${cell.mortgage}</button>`;
+    return `<div class="info-row"><span class="lbl">${cell.name}${isMort ? ' 🔒' : ''}</span><span>${btn}</span></div>`;
+  }).join('');
+  document.getElementById('modalTitle').textContent = '🏦 Hypothèques';
+  document.getElementById('modalBody').innerHTML = rows || '<div style="color:var(--text3)">Aucune propriété.</div>';
+  document.getElementById('modalFooter').innerHTML = '<button class="btn-sm" onclick="closeModal()">Fermer</button>';
+  document.getElementById('modalOverlay').classList.remove('hidden');
+}
+
+function showInfo(title, body) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').innerHTML = body;
+  document.getElementById('modalFooter').innerHTML = '<button class="btn-sm" onclick="closeModal()">Fermer</button>';
+  document.getElementById('modalOverlay').classList.remove('hidden');
+}
+function closeModal() { document.getElementById('modalOverlay').classList.add('hidden'); }
+
+// ── CHAT ──────────────────────────────────────────────────────────────────────
+function addChat(from, text, type, pawn) {
+  const area = document.getElementById('chatMsgs');
+  const div = document.createElement('div');
+  div.className = 'chat-msg' + (type ? ' ' + type : '');
+  if (type === 'system' || !from) {
+    div.textContent = text || from;
+  } else if (type && type.startsWith('log-')) {
+    div.textContent = text || from;
+    div.className = 'chat-msg ' + type;
+  } else {
+    div.innerHTML = `<span class="from">${pawn || ''} ${from}</span> : ${text}`;
+  }
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+function sendChat() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim(); if (!text) return;
+  send({ type: 'chat', text }); input.value = '';
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function showGame() {
+  document.getElementById('lobbyScreen').classList.add('hidden');
+  document.getElementById('gameScreen').classList.remove('hidden');
+  addChat('Partie lancée !', '', 'system');
+}
+
+function showWin(winner) {
+  document.getElementById('winPawn').textContent = winner.pawn;
+  document.getElementById('winSub').textContent = `${winner.name} remporte la partie avec M$${winner.money.toLocaleString()} !`;
+  document.getElementById('gameScreen').classList.add('hidden');
+  document.getElementById('winScreen').classList.remove('hidden');
+}
+
+function setWsBar(state) {
+  const bar = document.getElementById('wsBar');
+  bar.className = 'ws-bar ' + state;
+}
+
+function setServerStatus(ok) {
+  const el = document.getElementById('serverStatus');
+  el.className = 'server-status ' + (ok ? 'ok' : 'fail');
+  el.innerHTML = `<span class="dot"></span>${ok ? 'Connecté' : 'Inaccessible'}`;
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── STATE SYNC LOG to chat ────────────────────────────────────────────────────
+let lastLogLen = 0;
+const origRenderAll = renderAll;
+window.renderAll = function() {
+  origRenderAll();
+  if (!G || !G.log) return;
+  const newEntries = G.log.slice(lastLogLen);
+  lastLogLen = G.log.length;
+  newEntries.forEach(entry => {
+    const cls = entry.type ? 'log-' + entry.type : 'system';
+    addChat(entry.msg, '', cls);
+  });
+};
+
+// Test server on load
+setTimeout(() => {
+  const url = document.getElementById('serverUrl').value.replace('ws://', 'http://').replace('wss://', 'https://');
+  fetch(url + '/api/status').then(r => r.json()).then(() => setServerStatus(true)).catch(() => setServerStatus(false));
+}, 500);
+</script>
+</body>
+</html>

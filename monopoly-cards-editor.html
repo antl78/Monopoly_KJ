@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Éditeur de cartes — Monopoly Custom</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --bg:#0e0e10;
+  --surface:#18181c;
+  --surface2:#222228;
+  --surface3:#2c2c34;
+  --border:rgba(255,255,255,0.07);
+  --border2:rgba(255,255,255,0.13);
+  --text:#f0f0f0;
+  --text2:#9a9aaa;
+  --text3:#5a5a6a;
+  --chance:#e8a830;
+  --chance2:#c4902a;
+  --community:#3a9de8;
+  --community2:#2a7ec4;
+  --r:8px;--rl:12px;
+}
+
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+
+header{padding:.85rem 2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface);position:sticky;top:0;z-index:100}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.12em}
+.logo .chance-c{color:var(--chance)}
+.logo .comm-c{color:var(--community)}
+.logo span{color:var(--text2);font-size:14px;font-family:'DM Sans',sans-serif;font-weight:400;letter-spacing:0;margin-left:10px}
+.header-actions{display:flex;gap:10px;align-items:center}
+
+.btn{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:7px 16px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surface2);color:var(--text);cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:var(--surface3);border-color:rgba(255,255,255,.2)}
+.btn.chance{background:var(--chance);color:#111;border-color:var(--chance);font-weight:600}
+.btn.chance:hover{background:var(--chance2)}
+.btn.community{background:var(--community);color:#fff;border-color:var(--community);font-weight:600}
+.btn.community:hover{background:var(--community2)}
+.btn.sm{padding:4px 10px;font-size:12px}
+.btn.icon{padding:6px 8px}
+.btn.ghost{background:transparent;border-color:var(--border2);color:var(--text2)}
+.btn.ghost:hover{color:var(--text);background:var(--surface2)}
+
+.app{display:flex;flex:1;height:calc(100vh - 57px)}
+
+/* ── SIDEBAR ─────────────────────────────────── */
+.sidebar{width:300px;min-width:260px;border-right:1px solid var(--border);background:var(--surface);display:flex;flex-direction:column;overflow:hidden}
+.tabs{display:flex;border-bottom:1px solid var(--border)}
+.tab{flex:1;padding:.75rem;text-align:center;font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2);transition:all .15s}
+.tab.active-chance{color:var(--chance);border-bottom-color:var(--chance)}
+.tab.active-community{color:var(--community);border-bottom-color:var(--community)}
+.tab:hover{color:var(--text)}
+.tab-badge{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:99px;font-size:10px;font-weight:600;margin-left:6px;background:var(--surface3);color:var(--text3)}
+.tab.active-chance .tab-badge{background:rgba(232,168,48,.2);color:var(--chance)}
+.tab.active-community .tab-badge{background:rgba(58,157,232,.2);color:var(--community)}
+
+.sidebar-actions{padding:10px;display:flex;gap:6px;border-bottom:1px solid var(--border)}
+.cards-list{flex:1;overflow-y:auto;padding:8px}
+.cards-list::-webkit-scrollbar{width:4px}
+.cards-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+.card-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r);cursor:pointer;border:1px solid transparent;transition:all .12s;margin-bottom:2px}
+.card-item:hover{background:var(--surface2)}
+.card-item.active{background:var(--surface2);border-color:var(--border2)}
+.card-num{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);min-width:18px;text-align:right}
+.card-effect-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.card-text-list{font-size:13px;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-effect-label{font-size:10px;padding:1px 6px;border-radius:99px;background:var(--surface3);color:var(--text3);flex-shrink:0}
+
+/* ── EDITOR ──────────────────────────────────── */
+.editor{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.editor-top{padding:1rem 2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;justify-content:space-between}
+.editor-top-left{display:flex;align-items:center;gap:10px}
+.editor-content{flex:1;overflow-y:auto;padding:2rem}
+.editor-content::-webkit-scrollbar{width:4px}
+.editor-content::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+.editor-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;max-width:700px}
+.field-full{grid-column:1/-1}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:11px;font-weight:500;color:var(--text2);letter-spacing:.06em;text-transform:uppercase}
+.field input,.field select,.field textarea{font-family:'DM Sans',sans-serif;font-size:14px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);padding:9px 12px;outline:none;transition:border-color .15s;width:100%}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent-active,var(--chance))}
+.field textarea{resize:vertical;min-height:90px;line-height:1.6}
+.field select option{background:var(--surface2)}
+.field input[type="number"]{font-family:'DM Mono',monospace}
+.section-sep{border:none;border-top:1px solid var(--border);margin:1.25rem 0;grid-column:1/-1}
+
+.effect-chips{display:flex;flex-wrap:wrap;gap:7px}
+.effect-chip{font-size:12px;padding:5px 12px;border-radius:99px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all .12s;display:flex;align-items:center;gap:5px}
+.effect-chip:hover{border-color:rgba(255,255,255,.2);color:var(--text)}
+.effect-chip .chip-dot{width:7px;height:7px;border-radius:50%}
+.effect-chip.active{font-weight:600}
+
+.cond-section{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--rl);padding:1rem 1.25rem;display:flex;flex-direction:column;gap:10px}
+.cond-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.hint{font-size:11px;color:var(--text3);margin-top:2px;font-style:italic}
+
+/* ── PREVIEW ─────────────────────────────────── */
+.preview{width:270px;min-width:240px;border-left:1px solid var(--border);background:var(--surface);display:flex;flex-direction:column;overflow:hidden}
+.preview-header{padding:1rem 1.25rem;border-bottom:1px solid var(--border);font-size:12px;font-weight:500;color:var(--text2);letter-spacing:.08em;text-transform:uppercase}
+.preview-content{padding:1.25rem;flex:1;overflow-y:auto;display:flex;flex-direction:column;align-items:center;gap:1.25rem}
+
+/* CARD VISUALS */
+.mono-card{width:150px;min-height:220px;border-radius:10px;display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:0 6px 28px rgba(0,0,0,.45)}
+.mono-card.chance-card{background:linear-gradient(160deg,#fff8e8 0%,#fdf0cc 100%);color:#222}
+.mono-card.community-card{background:linear-gradient(160deg,#e8f4ff 0%,#cce4ff 100%);color:#1a2a3a}
+.card-header{padding:10px 12px 6px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.card-header-label{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;opacity:.55}
+.card-icon{font-size:28px;margin:4px 0}
+.card-content{flex:1;padding:8px 12px 12px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px;text-align:center}
+.card-text{font-size:11.5px;font-weight:500;line-height:1.45;color:inherit}
+.card-flavor{font-size:10px;opacity:.55;font-style:italic;line-height:1.4}
+.card-amount-badge{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.05em;padding:2px 0}
+.card-amount-badge.positive{color:#1a7b1a}
+.card-amount-badge.negative{color:#aa2222}
+.card-footer{padding:6px 12px;font-size:9px;text-align:center;opacity:.4;border-top:1px solid rgba(0,0,0,.08)}
+
+.chance-header-bg{background:#e8a830}
+.community-header-bg{background:#3a9de8}
+
+.stats-block{width:100%}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)}
+.stat-label{font-size:12px;color:var(--text2)}
+.stat-val{font-size:12px;font-family:'DM Mono',monospace;color:var(--text)}
+
+.summary-pills{display:flex;flex-wrap:wrap;gap:6px;width:100%}
+.pill{font-size:11px;padding:3px 10px;border-radius:99px;border:1px solid var(--border2);color:var(--text2)}
+
+/* ── EXPORT MODAL ────────────────────────────── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;z-index:200}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--rl);width:680px;max-width:92vw;max-height:82vh;display:flex;flex-direction:column;overflow:hidden}
+.modal-header{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.1em}
+.modal-title .chance-c{color:var(--chance)}
+.modal-title .community-c{color:var(--community)}
+.modal-body{padding:1.25rem 1.5rem;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:1rem}
+.json-out{font-family:'DM Mono',monospace;font-size:11px;background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);padding:1rem;color:#8ddb8d;white-space:pre;overflow-x:auto;max-height:200px;overflow-y:auto}
+.modal-footer{padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+
+.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:var(--surface3);border:1px solid var(--border2);border-radius:var(--r);padding:10px 20px;font-size:13px;color:var(--text);opacity:0;transition:opacity .3s;z-index:300;pointer-events:none}
+.toast.show{opacity:1}
+.toast.ok{border-color:rgba(78,202,138,.4);color:#4eca8a}
+
+#importInput{display:none}
+
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text3);gap:8px;font-size:14px;padding:3rem}
+.empty-ico{font-size:36px}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <span class="logo"><span class="chance-c">CHANCE</span> & <span class="comm-c">COMMUNAUTÉ</span><span>Éditeur de cartes</span></span>
+  </div>
+  <div class="header-actions">
+    <input type="file" id="importInput" accept=".json">
+    <button class="btn ghost" onclick="document.getElementById('importInput').click()">⬆ Importer JSON</button>
+    <button class="btn ghost" onclick="resetCards()">↺ Réinitialiser</button>
+    <button class="btn" onclick="openExport()">⬇ Exporter JSON</button>
+  </div>
+</header>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="tabs">
+      <div class="tab active-chance" id="tab-chance" onclick="switchDeck('chance')">
+        🃏 Chance <span class="tab-badge" id="badge-chance">0</span>
+      </div>
+      <div class="tab" id="tab-community" onclick="switchDeck('community')">
+        🏘️ Communauté <span class="tab-badge" id="badge-community">0</span>
+      </div>
+    </div>
+    <div class="sidebar-actions">
+      <button class="btn chance sm" id="btn-add-chance" onclick="addCard('chance')" style="flex:1">+ Chance</button>
+      <button class="btn community sm" id="btn-add-comm" onclick="addCard('community')" style="flex:1">+ Communauté</button>
+    </div>
+    <div class="cards-list" id="cardsList"></div>
+  </aside>
+
+  <!-- EDITOR -->
+  <main class="editor">
+    <div class="editor-top">
+      <div class="editor-top-left">
+        <button class="btn icon" onclick="navCard(-1)">◀</button>
+        <button class="btn icon" onclick="navCard(1)">▶</button>
+        <span id="editorTitle" style="font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:.08em;color:var(--text2)">Sélectionne une carte</span>
+      </div>
+      <button class="btn sm ghost" id="btn-delete" onclick="deleteCard()" style="color:#e85454;border-color:rgba(232,84,84,.3)">✕ Supprimer</button>
+    </div>
+    <div class="editor-content" id="editorContent">
+      <div class="empty-state">
+        <div class="empty-ico">🃏</div>
+        <div>Crée ou sélectionne une carte pour l'éditer</div>
+        <button class="btn chance" onclick="addCard('chance')" style="margin-top:.5rem">+ Ajouter une carte Chance</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- PREVIEW -->
+  <aside class="preview">
+    <div class="preview-header">Aperçu</div>
+    <div class="preview-content" id="previewContent">
+      <div style="color:var(--text3);font-size:12px;text-align:center;margin-top:2rem">Sélectionne une carte pour voir l'aperçu</div>
+    </div>
+  </aside>
+</div>
+
+<!-- EXPORT MODAL -->
+<div class="modal-overlay" id="exportModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title"><span class="chance-c">CHANCE</span> & <span class="community-c">COMMUNAUTÉ</span> — Export JSON</span>
+      <button class="btn sm" onclick="closeExport()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;font-weight:500">Cartes Chance (<span id="exp-chance-count">0</span>)</div>
+        <pre class="json-out" id="jsonChance"></pre>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;font-weight:500">Cartes Communauté (<span id="exp-comm-count">0</span>)</div>
+        <pre class="json-out" id="jsonCommunity"></pre>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="copyJson()">📋 Copier tout</button>
+      <button class="btn chance" onclick="downloadJson('chance')">⬇ cartes-chance.json</button>
+      <button class="btn community" onclick="downloadJson('community')">⬇ cartes-communauté.json</button>
+      <button class="btn" onclick="downloadJson('all')">⬇ toutes-les-cartes.json</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── EFFECT DEFINITIONS ────────────────────────────────────────────────────
+
+const EFFECTS = [
+  { id:'gain',       label:'Recevoir',   color:'#4eca8a', desc:"Le joueur reçoit de l'argent" },
+  { id:'lose',       label:'Payer',      color:'#e85454', desc:"Le joueur paye de l'argent" },
+  { id:'move_to',    label:'Se déplacer vers',color:'#e8a830', desc:'Aller sur une case précise' },
+  { id:'move_by',    label:'Avancer/Reculer', color:'#c8a830', desc:'Avancer ou reculer de N cases' },
+  { id:'goto_jail',  label:'Prison',     color:'#888',    desc:'Aller directement en prison' },
+  { id:'get_out',    label:'Carte sortie de prison', color:'#3a9de8', desc:'Conserver pour quitter la prison gratuitement' },
+  { id:'repairs',    label:'Réparations',color:'#d4834a', desc:'Payer par maison et hôtel possédés' },
+  { id:'collect_all',label:'Collecte joueurs',color:'#9b59b6',desc:'Chaque autre joueur vous paie' },
+  { id:'pay_all',    label:'Cotisation joueurs', color:'#c0392b',desc:'Vous payez chaque autre joueur' },
+  { id:'birthday',   label:'Anniversaire',color:'#e8a830', desc:'Chaque joueur vous offre N M$' },
+  { id:'custom',     label:'Effet spécial',color:'#aaa',  desc:'Effet libre à décrire en texte' },
+];
+
+const ICONS_CHANCE = ['🃏','🚀','⚡','🎯','🎰','🏆','🎲','💰','🌟','🔑','🎪','🎭'];
+const ICONS_COMM   = ['🏘️','❤️','🏥','📬','🎓','🌍','💡','🤝','🏛️','📜','🎁','🌈'];
+
+// ─── STATE ─────────────────────────────────────────────────────────────────
+
+let decks = { chance: [], community: [] };
+let currentDeck = 'chance';
+let currentCardIdx = -1;
+let nextId = 1;
+
+function makeCard(deck) {
+  return {
+    id: nextId++,
+    deck,
+    text: '',
+    flavor: '',
+    icon: deck === 'chance' ? '🃏' : '🏘️',
+    effect: 'gain',
+    amount: 50,
+    perHouse: 0,
+    perHotel: 0,
+    targetPos: 0,
+    moveSteps: 3,
+    collectAmount: 50,
+  };
+}
+
+// ─── DEFAULT CARDS ─────────────────────────────────────────────────────────
+
+function makeDefaults() {
+  nextId = 1;
+  decks.chance = [
+    {id:nextId++,deck:'chance',icon:'🏦',text:'La banque vous verse des dividendes.',flavor:'Vos actions sont au beau fixe.',effect:'gain',amount:50,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
+    {id:nextId++,deck:'chance',icon:'🚔',text:'Allez directement en prison.',flavor:'Ne passez pas par la case Départ.',effect:'goto_jail',amount:0,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
+    {id:nextId++,deck:'chance',icon:'🎂',text:'C\'est votre anniversaire ! Chaque joueur vous offre 10 M$.',flavor:'',effect:'birthday',amount:10,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:10},
+    {id:nextId++,deck:'chance',icon:'⚡',text:'Facture d\'électricité imprévue. Payez 50 M$.',flavor:'Le compteur s\'est emballé.',effect:'lose',amount:50,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
+    {id:nextId++,deck:'chance',icon:'🚀',text:'Avancez de 3 cases.',flavor:'Le vent est dans votre dos.',effect:'move_by',amount:0,perHouse:0,perHotel:0,targetPos:0,moveSteps:3,collectAmount:0},
+    {id:nextId++,deck:'chance',icon:'🔑',text:'Carte sortie de prison gratuite. Conservez-la jusqu\'à utilisation.',flavor:'Précieuse, n\'est-ce pas ?',effect:'get_out',amount:0,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
+    {id:nextId++,deck:'chance',icon:'🏆',text:'Vous remportez un concours. Recevez 100 M$.',flavor:'',effect:'gain',amount:100,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
+    {id:nextId++,deck:'chance',icon:'🔧',text:'Réparations sur vos propriétés. Payez 25 M$ par maison, 100 M$ par hôtel.',flavor:'',effect:'repairs',amount:0,perHouse:25,perHotel:100,targetPos:0,moveSteps:0,collectAmount:0},
+  ];
+  decks.community = [
+    {id:nextId++,deck:'community',icon:'💰',text:'Remboursement d\'impôts. Recevez 200 M$.',flavor:'Le fisc est généreux aujourd\'hui.',effect:'gain',amount:200,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
+    {id:nextId++,deck:'community',icon:'🏥',text:'Frais médicaux. Payez 100 M$.',flavor:'La santé, ça a un prix.',effect:'lose',amount:100,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
+    {id:nextId++,deck:'community',icon:'📬',text:'Vous avez gagné un voyage. Rendez-vous sur la case Départ.',flavor:'',effect:'move_to',amount:0,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
+    {id:nextId++,deck:'community',icon:'🎓',text:'Bourse d\'études. Recevez 150 M$.',flavor:'Le savoir, ça rapporte.',effect:'gain',amount:150,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
+    {id:nextId++,deck:'community',icon:'🤝',text:'Collecte pour l\'association. Versez 10 M$ à chaque joueur.',flavor:'',effect:'pay_all',amount:10,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
+    {id:nextId++,deck:'community',icon:'🔑',text:'Carte sortie de prison gratuite.',flavor:'',effect:'get_out',amount:0,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
+    {id:nextId++,deck:'community',icon:'🏛️',text:'Élection au conseil municipal. Recevez 75 M$.',flavor:'Vos administrés vous apprécient.',effect:'gain',amount:75,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
+    {id:nextId++,deck:'community',icon:'🚔',text:'Infraction routière. Payez 30 M$ d\'amende.',flavor:'',effect:'lose',amount:30,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
+  ];
+}
+
+makeDefaults();
+
+// ─── RENDER LIST ────────────────────────────────────────────────────────────
+
+function renderList() {
+  const list = document.getElementById('cardsList');
+  list.innerHTML = '';
+  const cards = decks[currentDeck];
+
+  document.getElementById('badge-chance').textContent = decks.chance.length;
+  document.getElementById('badge-community').textContent = decks.community.length;
+
+  if(cards.length === 0) {
+    list.innerHTML = `<div style="color:var(--text3);font-size:12px;text-align:center;padding:2rem">Aucune carte — ajoutes-en une !</div>`;
+    return;
+  }
+
+  cards.forEach((c,i) => {
+    const eff = EFFECTS.find(e=>e.id===c.effect)||EFFECTS[0];
+    const div = document.createElement('div');
+    div.className = 'card-item' + (currentDeck===c.deck && i===currentCardIdx ? ' active' : '');
+    div.innerHTML = `
+      <span class="card-num">${i+1}</span>
+      <span style="font-size:15px">${c.icon}</span>
+      <span class="card-text-list">${c.text||'<span style="color:var(--text3)">Sans texte</span>'}</span>
+      <span class="card-effect-label" style="color:${eff.color};border-color:${eff.color}33;background:${eff.color}11">${eff.label}</span>
+    `;
+    div.onclick = () => { currentCardIdx = i; render(); };
+    list.appendChild(div);
+  });
+}
+
+// ─── RENDER EDITOR ──────────────────────────────────────────────────────────
+
+function renderEditor() {
+  if(currentCardIdx < 0 || !decks[currentDeck][currentCardIdx]) {
+    document.getElementById('editorContent').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-ico">🃏</div>
+        <div>Crée ou sélectionne une carte pour l'éditer</div>
+        <button class="btn chance" onclick="addCard('chance')" style="margin-top:.5rem">+ Carte Chance</button>
+        <button class="btn community" onclick="addCard('community')" style="margin-top:.5rem">+ Carte Communauté</button>
+      </div>`;
+    document.getElementById('editorTitle').textContent = 'Sélectionne une carte';
+    document.getElementById('btn-delete').style.display = 'none';
+    return;
+  }
+  document.getElementById('btn-delete').style.display = '';
+
+  const c = decks[currentDeck][currentCardIdx];
+  const isChance = c.deck === 'chance';
+  const accentVar = isChance ? 'var(--chance)' : 'var(--community)';
+  const iconList = isChance ? ICONS_CHANCE : ICONS_COMM;
+  const eff = c.effect;
+
+  document.getElementById('editorContent').innerHTML = `
+    <div class="editor-grid">
+
+      <div class="field field-full">
+        <label>Texte de la carte</label>
+        <textarea placeholder="Ex: Vous avez gagné le premier prix dans un concours de beauté. Recevez 100 M$." oninput="upd('text',this.value)">${esc(c.text)}</textarea>
+      </div>
+
+      <div class="field field-full">
+        <label>Texte d'ambiance (facultatif)</label>
+        <input type="text" placeholder="Ex: Votre beauté légendaire enfin reconnue." value="${esc(c.flavor)}" oninput="upd('flavor',this.value)">
+      </div>
+
+      <div class="field">
+        <label>Icône</label>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px">
+          ${iconList.map(ic=>`<div onclick="upd('icon','${ic}')" style="font-size:20px;cursor:pointer;padding:4px;border-radius:6px;border:1px solid ${c.icon===ic?accentVar:'var(--border2)'};background:${c.icon===ic?isChance?'rgba(232,168,48,.15)':'rgba(58,157,232,.15)':'transparent'};transition:all .1s">${ic}</div>`).join('')}
+        </div>
+        <input type="text" placeholder="Ou colle n'importe quel emoji…" value="${esc(c.icon)}" oninput="upd('icon',this.value)" style="margin-top:6px">
+      </div>
+
+      <div class="field">
+        <label>Paquet</label>
+        <div style="display:flex;gap:8px;margin-top:2px">
+          <div onclick="upd('deck','chance');currentDeck='chance'" style="flex:1;padding:8px;border-radius:var(--r);border:1px solid ${c.deck==='chance'?'var(--chance)':'var(--border2)'};background:${c.deck==='chance'?'rgba(232,168,48,.12)':'var(--surface2)'};cursor:pointer;text-align:center;font-size:13px;font-weight:${c.deck==='chance'?'600':'400'};color:${c.deck==='chance'?'var(--chance)':'var(--text2)'};transition:all .12s">🃏 Chance</div>
+          <div onclick="upd('deck','community');currentDeck='community'" style="flex:1;padding:8px;border-radius:var(--r);border:1px solid ${c.deck==='community'?'var(--community)':'var(--border2)'};background:${c.deck==='community'?'rgba(58,157,232,.12)':'var(--surface2)'};cursor:pointer;text-align:center;font-size:13px;font-weight:${c.deck==='community'?'600':'400'};color:${c.deck==='community'?'var(--community)':'var(--text2)'};transition:all .12s">🏘️ Communauté</div>
+        </div>
+      </div>
+
+      <hr class="section-sep">
+
+      <div class="field field-full">
+        <label>Effet de la carte</label>
+        <div class="effect-chips">
+          ${EFFECTS.map(ef=>`
+            <div class="effect-chip${c.effect===ef.id?' active':''}" onclick="upd('effect','${ef.id}')"
+              style="${c.effect===ef.id?`background:${ef.color}22;border-color:${ef.color};color:${ef.color}`:''}">
+              <span class="chip-dot" style="background:${ef.color}"></span>${ef.label}
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <!-- Dynamic effect params -->
+      <div class="field field-full" id="effect-params"></div>
+
+    </div>
+  `;
+
+  renderEffectParams(c);
+
+  document.getElementById('editorTitle').textContent =
+    `${isChance?'🃏 Chance':'🏘️ Communauté'} #${currentCardIdx+1} — ${c.text.slice(0,30)||'Sans texte'}${c.text.length>30?'…':''}`;
+}
+
+function renderEffectParams(c) {
+  const p = document.getElementById('effect-params');
+  if(!p) return;
+  let html = '';
+
+  if(c.effect==='gain'||c.effect==='lose') {
+    html = `<div class="cond-section">
+      <div class="field"><label>Montant (M$)</label><input type="number" min="0" value="${c.amount}" oninput="updN('amount',this.value)"></div>
+    </div>`;
+  } else if(c.effect==='move_to') {
+    html = `<div class="cond-section">
+      <div class="field"><label>Numéro de la case cible (0–39)</label><input type="number" min="0" max="39" value="${c.targetPos}" oninput="updN('targetPos',this.value)">
+      <span class="hint">0 = Départ, 10 = Prison/Visite, 20 = Parc gratuit, etc.</span></div>
+    </div>`;
+  } else if(c.effect==='move_by') {
+    html = `<div class="cond-section">
+      <div class="field"><label>Nombre de cases (négatif = reculer)</label><input type="number" min="-39" max="39" value="${c.moveSteps}" oninput="updN('moveSteps',this.value)"></div>
+    </div>`;
+  } else if(c.effect==='repairs') {
+    html = `<div class="cond-section">
+      <div class="cond-row">
+        <div class="field"><label>M$ par maison</label><input type="number" min="0" value="${c.perHouse}" oninput="updN('perHouse',this.value)"></div>
+        <div class="field"><label>M$ par hôtel</label><input type="number" min="0" value="${c.perHotel}" oninput="updN('perHotel',this.value)"></div>
+      </div>
+    </div>`;
+  } else if(c.effect==='collect_all'||c.effect==='birthday') {
+    html = `<div class="cond-section">
+      <div class="field"><label>M$ reçus de chaque joueur</label><input type="number" min="0" value="${c.collectAmount||c.amount}" oninput="updN('collectAmount',this.value);updN('amount',this.value)"></div>
+    </div>`;
+  } else if(c.effect==='pay_all') {
+    html = `<div class="cond-section">
+      <div class="field"><label>M$ versés à chaque joueur</label><input type="number" min="0" value="${c.amount}" oninput="updN('amount',this.value)"></div>
+    </div>`;
+  } else if(c.effect==='goto_jail'||c.effect==='get_out') {
+    html = `<div class="cond-section" style="color:var(--text2);font-size:13px;padding:.75rem 1rem;">
+      ${c.effect==='goto_jail'?"Le joueur est envoyé directement en prison sans passer par la case Départ.":"Le joueur conserve cette carte et peut l'utiliser à tout moment pour sortir de prison sans passer par la prison."}
+    </div>`;
+  } else if(c.effect==='custom') {
+    html = `<div class="cond-section">
+      <div class="field"><label>Description de l'effet (pour le moteur de jeu)</label>
+      <textarea placeholder="Décris l'effet en détail pour que le moteur sache quoi faire…" oninput="upd('customDesc',this.value)">${esc(c.customDesc||'')}</textarea></div>
+    </div>`;
+  }
+
+  p.innerHTML = html;
+}
+
+// ─── RENDER PREVIEW ─────────────────────────────────────────────────────────
+
+function renderPreview() {
+  if(currentCardIdx < 0 || !decks[currentDeck][currentCardIdx]) {
+    document.getElementById('previewContent').innerHTML = `<div style="color:var(--text3);font-size:12px;text-align:center;margin-top:2rem">Sélectionne une carte</div>`;
+    return;
+  }
+  const c = decks[currentDeck][currentCardIdx];
+  const isChance = c.deck === 'chance';
+  const eff = EFFECTS.find(e=>e.id===c.effect)||EFFECTS[0];
+
+  let amountDisplay = '';
+  if(c.effect==='gain') amountDisplay = `<div class="card-amount-badge positive">+ M$${c.amount}</div>`;
+  else if(c.effect==='lose') amountDisplay = `<div class="card-amount-badge negative">- M$${c.amount}</div>`;
+  else if(c.effect==='repairs') amountDisplay = `<div style="font-size:10px;color:#888;text-align:center">🏠 ${c.perHouse}M$ / 🏨 ${c.perHotel}M$</div>`;
+  else if(c.effect==='birthday'||c.effect==='collect_all') amountDisplay = `<div class="card-amount-badge positive">+ M$${c.collectAmount||c.amount} × joueurs</div>`;
+  else if(c.effect==='pay_all') amountDisplay = `<div class="card-amount-badge negative">- M$${c.amount} × joueurs</div>`;
+  else if(c.effect==='goto_jail') amountDisplay = `<div style="font-size:20px;text-align:center">⛓️</div>`;
+  else if(c.effect==='get_out') amountDisplay = `<div style="font-size:20px;text-align:center">🔑</div>`;
+  else if(c.effect==='move_to') amountDisplay = `<div style="font-size:11px;color:#888;text-align:center">→ case ${c.targetPos}</div>`;
+  else if(c.effect==='move_by') amountDisplay = `<div style="font-size:11px;color:#888;text-align:center">${c.moveSteps>0?'+':''}${c.moveSteps} cases</div>`;
+
+  const totalCards = decks[c.deck].length;
+
+  document.getElementById('previewContent').innerHTML = `
+    <div class="mono-card ${isChance?'chance-card':'community-card'}">
+      <div class="card-header ${isChance?'chance-header-bg':'community-header-bg'}" style="padding:8px 12px;display:flex;flex-direction:column;align-items:center;gap:2px">
+        <div class="card-header-label" style="color:rgba(255,255,255,.85)">${isChance?'CHANCE':'COMMUNAUTÉ'}</div>
+      </div>
+      <div class="card-content">
+        <div style="font-size:30px">${c.icon||'🃏'}</div>
+        <div class="card-text">${c.text||'<span style="opacity:.4;font-style:italic">Texte de la carte</span>'}</div>
+        ${amountDisplay}
+        ${c.flavor?`<div class="card-flavor">${c.flavor}</div>`:''}
+      </div>
+      <div class="card-footer">${isChance?'Chance':'Caisse de communauté'} • ${currentCardIdx+1}/${totalCards}</div>
+    </div>
+
+    <div class="stats-block">
+      <div class="stat-row"><span class="stat-label">Effet</span><span class="stat-val" style="color:${eff.color}">${eff.label}</span></div>
+      <div class="stat-row"><span class="stat-label">Paquet</span><span class="stat-val">${isChance?'Chance':'Communauté'}</span></div>
+      <div class="stat-row"><span class="stat-label">Cartes chance</span><span class="stat-val">${decks.chance.length}</span></div>
+      <div class="stat-row"><span class="stat-label">Cartes commun.</span><span class="stat-val">${decks.community.length}</span></div>
+    </div>
+
+    <div class="summary-pills">
+      ${EFFECTS.map(e=>{
+        const n = [...decks.chance,...decks.community].filter(cc=>cc.effect===e.id).length;
+        if(!n) return '';
+        return `<span class="pill" style="border-color:${e.color}44;color:${e.color}">${e.label} ×${n}</span>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+// ─── MUTATIONS ──────────────────────────────────────────────────────────────
+
+function upd(key, val) {
+  if(currentCardIdx < 0) return;
+  const c = decks[currentDeck][currentCardIdx];
+  c[key] = val;
+  if(key==='deck' && val !== currentDeck) {
+    // Move card to other deck
+    const other = val === 'chance' ? 'chance' : 'community';
+    decks[currentDeck].splice(currentCardIdx,1);
+    decks[other].push(c);
+    currentDeck = other;
+    currentCardIdx = decks[other].length - 1;
+  }
+  if(key==='effect') { renderEditor(); renderPreview(); renderList(); return; }
+  renderList();
+  renderPreview();
+  document.getElementById('editorTitle').textContent =
+    `${c.deck==='chance'?'🃏 Chance':'🏘️ Communauté'} #${currentCardIdx+1} — ${c.text.slice(0,30)||'Sans texte'}${c.text.length>30?'…':''}`;
+}
+
+function updN(key,val) {
+  if(currentCardIdx<0) return;
+  decks[currentDeck][currentCardIdx][key] = parseInt(val)||0;
+  renderPreview();
+}
+
+function switchDeck(deck) {
+  currentDeck = deck;
+  currentCardIdx = decks[deck].length > 0 ? 0 : -1;
+  document.getElementById('tab-chance').className = 'tab' + (deck==='chance'?' active-chance':'');
+  document.getElementById('tab-community').className = 'tab' + (deck==='community'?' active-community':'');
+  render();
+}
+
+function addCard(deck) {
+  const c = makeCard(deck);
+  decks[deck].push(c);
+  currentDeck = deck;
+  currentCardIdx = decks[deck].length - 1;
+  switchDeck(deck);
+  render();
+}
+
+function deleteCard() {
+  if(currentCardIdx < 0) return;
+  if(!confirm('Supprimer cette carte ?')) return;
+  decks[currentDeck].splice(currentCardIdx,1);
+  currentCardIdx = Math.min(currentCardIdx, decks[currentDeck].length-1);
+  render();
+}
+
+function navCard(dir) {
+  const len = decks[currentDeck].length;
+  if(len===0) return;
+  currentCardIdx = (currentCardIdx + dir + len) % len;
+  render();
+}
+
+// ─── EXPORT / IMPORT ────────────────────────────────────────────────────────
+
+function openExport() {
+  document.getElementById('exp-chance-count').textContent = decks.chance.length;
+  document.getElementById('exp-comm-count').textContent = decks.community.length;
+  document.getElementById('jsonChance').textContent = JSON.stringify(decks.chance, null, 2);
+  document.getElementById('jsonCommunity').textContent = JSON.stringify(decks.community, null, 2);
+  document.getElementById('exportModal').classList.add('open');
+}
+function closeExport() { document.getElementById('exportModal').classList.remove('open'); }
+
+function copyJson() {
+  const all = JSON.stringify({version:'1.0',chance:decks.chance,community:decks.community},null,2);
+  navigator.clipboard.writeText(all);
+  toast('JSON copié !','ok');
+}
+
+function downloadJson(which) {
+  let data, fname;
+  if(which==='chance')     { data=decks.chance;   fname='cartes-chance.json'; }
+  else if(which==='community'){ data=decks.community; fname='cartes-communauté.json'; }
+  else { data={version:'1.0',chance:decks.chance,community:decks.community}; fname='toutes-les-cartes.json'; }
+  const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fname; a.click();
+  toast('Fichier téléchargé !','ok');
+}
+
+document.getElementById('importInput').addEventListener('change',function(e){
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try {
+      const data=JSON.parse(ev.target.result);
+      if(data.chance && data.community) {
+        decks.chance=data.chance; decks.community=data.community;
+        currentCardIdx=0; render(); toast('Cartes importées !','ok');
+      } else if(Array.isArray(data)) {
+        const deck=data[0]?.deck;
+        if(deck==='chance'||deck==='community') { decks[deck]=data; currentDeck=deck; currentCardIdx=0; render(); toast(`Cartes ${deck} importées !`,'ok'); }
+        else toast('Format JSON non reconnu.');
+      } else toast('Format JSON non reconnu.');
+    } catch { toast('Erreur de lecture.'); }
+  };
+  reader.readAsText(file); this.value='';
+});
+
+function resetCards() {
+  if(!confirm('Réinitialiser toutes les cartes aux valeurs par défaut ?')) return;
+  makeDefaults(); currentCardIdx=0; render(); toast('Cartes réinitialisées.','ok');
+}
+
+// ─── HELPERS ────────────────────────────────────────────────────────────────
+
+function esc(s){return(s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function toast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show'+(type?' '+type:'');
+  setTimeout(()=>t.className='toast',2500);
+}
+
+// ─── MAIN RENDER ────────────────────────────────────────────────────────────
+
+function render() {
+  renderList();
+  renderEditor();
+  renderPreview();
+}
+
+render();
+</script>
+</body>
+</html>

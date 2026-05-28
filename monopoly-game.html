@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monopoly Custom — Moteur de jeu</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0d;--surface:#14141a;--surface2:#1e1e26;--surface3:#28283200;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#f0f0f2;--text2:#8a8a9a;--text3:#4a4a5a;
+  --accent:#e8d44d;--accent2:#c8b83d;
+  --r:8px;--rl:12px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow:hidden}
+
+/* ── SCREENS ─────────────────────────────────── */
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10}
+.screen.hidden{display:none}
+
+/* SETUP SCREEN */
+#setupScreen{background:radial-gradient(ellipse at 50% 0%, #1a1a2e 0%, var(--bg) 70%)}
+.setup-card{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:2.5rem 3rem;width:520px;max-width:94vw}
+.setup-title{font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:.1em;color:var(--accent);text-align:center;margin-bottom:4px}
+.setup-sub{text-align:center;color:var(--text2);font-size:14px;margin-bottom:2rem}
+.setup-section{margin-bottom:1.5rem}
+.setup-label{font-size:11px;font-weight:500;color:var(--text2);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.player-rows{display:flex;flex-direction:column;gap:8px}
+.player-row{display:flex;align-items:center;gap:8px}
+.player-row input{flex:1;font-family:'DM Sans',sans-serif;font-size:14px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);padding:8px 12px;outline:none}
+.player-row input:focus{border-color:var(--accent)}
+.pawn-pick{display:flex;gap:4px}
+.pawn-btn{width:32px;height:32px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .12s}
+.pawn-btn:hover,.pawn-btn.sel{border-color:var(--accent);background:rgba(232,212,77,.12)}
+.add-player-btn{font-size:13px;color:var(--text2);background:transparent;border:1px dashed var(--border2);border-radius:var(--r);padding:7px;cursor:pointer;transition:all .12s;width:100%}
+.add-player-btn:hover{color:var(--text);border-color:var(--border2)}
+.import-row{display:flex;gap:8px}
+.import-box{flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);padding:8px 12px;display:flex;align-items:center;justify-content:space-between;font-size:13px;cursor:pointer;transition:all .12s}
+.import-box:hover{border-color:rgba(255,255,255,.2)}
+.import-box.loaded{border-color:rgba(78,202,138,.5);color:#4eca8a}
+.import-box span{color:var(--text3);font-size:11px}
+.btn-start{width:100%;padding:14px;background:var(--accent);color:#111;font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.15em;border:none;border-radius:var(--r);cursor:pointer;margin-top:1rem;transition:all .15s}
+.btn-start:hover{background:var(--accent2);transform:translateY(-1px)}
+.btn-start:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.money-input{font-family:'DM Mono',monospace;width:110px;font-size:14px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);color:var(--accent);padding:8px 12px;outline:none}
+.money-input:focus{border-color:var(--accent)}
+input[type=file]{display:none}
+
+/* ── GAME SCREEN ─────────────────────────────── */
+#gameScreen{background:var(--bg);flex-direction:row;align-items:stretch;overflow:hidden}
+#gameScreen.hidden{display:none}
+
+/* BOARD */
+.board-wrap{flex:1;display:flex;align-items:center;justify-content:center;min-width:0;padding:1rem;position:relative}
+.board{display:grid;grid-template-columns:repeat(11,1fr);grid-template-rows:repeat(11,1fr);width:min(calc(100vh - 2rem), calc(100vw - 380px));height:min(calc(100vh - 2rem), calc(100vw - 380px));border:2px solid var(--border2);border-radius:6px;overflow:hidden;background:#0d1f0d;position:relative}
+.cell{border:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:2px;position:relative;cursor:default;overflow:hidden;font-size:clamp(5px,0.9vw,10px)}
+.cell:hover{border-color:rgba(255,255,255,.2);z-index:2}
+.cell-color{width:100%;height:22%;border-radius:1px;flex-shrink:0}
+.cell-name{font-size:.85em;color:rgba(255,255,255,.7);text-align:center;line-height:1.1;padding:1px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word}
+.cell-price{font-family:'DM Mono',monospace;font-size:.7em;color:var(--accent);opacity:.8}
+.cell-corner{font-size:1.6em;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px}
+.cell-corner .lbl{font-size:.65em;color:var(--text2);text-transform:uppercase;letter-spacing:.05em}
+.cell-icon-img{width:clamp(10px,2vw,22px);height:clamp(10px,2vw,22px);object-fit:cover;border-radius:2px;flex-shrink:0}
+.cell-icon-emoji{font-size:clamp(7px,1.1vw,13px);line-height:1;flex-shrink:0}
+.cell-center{grid-column:2/11;grid-row:2/11;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;background:#0d1f0d}
+.center-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(14px,2.5vw,32px);letter-spacing:.15em;color:var(--accent);text-align:center}
+.center-sub{font-size:clamp(8px,1vw,12px);color:var(--text3);text-align:center}
+.pawns-on-cell{position:absolute;top:2px;left:2px;display:flex;flex-wrap:wrap;gap:1px;z-index:3}
+.pawn-chip{font-size:clamp(8px,1.2vw,14px);line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.8))}
+
+/* SIDEBAR */
+.sidebar{width:340px;min-width:280px;display:flex;flex-direction:column;border-left:1px solid var(--border);background:var(--surface);overflow:hidden}
+.sidebar-header{padding:.75rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.sidebar-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.1em;color:var(--accent)}
+.turn-indicator{font-size:12px;color:var(--text2)}
+.sidebar-scroll{flex:1;overflow-y:auto;padding:8px}
+.sidebar-scroll::-webkit-scrollbar{width:3px}
+.sidebar-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* PLAYER CARDS */
+.player-card{border-radius:var(--r);border:1px solid var(--border);background:var(--surface2);padding:.75rem 1rem;margin-bottom:6px;transition:all .2s}
+.player-card.active{border-color:var(--accent);background:rgba(232,212,77,.06)}
+.player-card.bankrupt{opacity:.4;filter:grayscale(1)}
+.pc-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.pc-pawn{font-size:20px}
+.pc-name{font-weight:500;font-size:14px;flex:1}
+.pc-money{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--accent);letter-spacing:.05em}
+.pc-props{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.prop-pip{width:10px;height:10px;border-radius:2px}
+.jail-badge{font-size:10px;background:rgba(232,84,84,.15);border:1px solid rgba(232,84,84,.3);color:#e85454;padding:2px 6px;border-radius:99px}
+
+/* ACTION ZONE */
+.action-zone{border-top:1px solid var(--border);padding:1rem;display:flex;flex-direction:column;gap:8px;background:var(--surface)}
+.action-title{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;font-weight:500}
+.dice-row{display:flex;align-items:center;gap:10px}
+.dice{width:40px;height:40px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;transition:transform .15s;user-select:none;position:relative;overflow:hidden}
+.dice.rolling{animation:diceRoll .6s ease forwards}
+@keyframes diceRoll{
+  0%  {transform:rotate(0deg) scale(1);filter:blur(0px)}
+  15% {transform:rotate(-20deg) scale(1.25);filter:blur(1px)}
+  30% {transform:rotate(15deg) scale(0.9);filter:blur(2px)}
+  45% {transform:rotate(-10deg) scale(1.15);filter:blur(1px)}
+  60% {transform:rotate(8deg) scale(0.95);filter:blur(1px)}
+  75% {transform:rotate(-4deg) scale(1.05);filter:blur(0px)}
+  100%{transform:rotate(0deg) scale(1);filter:blur(0px)}
+}
+.dice-total{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--accent);letter-spacing:.05em;min-width:30px}
+.btn-roll{flex:1;padding:11px;background:var(--accent);color:#111;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.1em;border:none;border-radius:var(--r);cursor:pointer;transition:all .15s}
+.btn-roll:hover{background:var(--accent2)}
+.btn-roll:disabled{opacity:.35;cursor:not-allowed}
+.btn-sm{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;padding:6px 12px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surface2);color:var(--text);cursor:pointer;transition:all .12s}
+.btn-sm:hover{background:rgba(255,255,255,.06)}
+.btn-sm.green{border-color:rgba(78,202,138,.4);color:#4eca8a}
+.btn-sm.red{border-color:rgba(232,84,84,.4);color:#e85454}
+.btn-sm.yellow{border-color:rgba(232,212,77,.4);color:var(--accent)}
+.btn-sm:disabled{opacity:.3;cursor:not-allowed}
+.action-btns{display:flex;flex-wrap:wrap;gap:6px}
+
+/* LOG */
+.log-area{border-top:1px solid var(--border);max-height:160px;overflow-y:auto;padding:8px 10px;display:flex;flex-direction:column;gap:3px;background:var(--bg)}
+.log-area::-webkit-scrollbar{width:3px}
+.log-area::-webkit-scrollbar-thumb{background:var(--border2)}
+.log-entry{font-size:11.5px;color:var(--text2);line-height:1.4;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.03)}
+.log-entry.important{color:var(--text);font-weight:500}
+.log-entry.gain{color:#4eca8a}
+.log-entry.loss{color:#e85454}
+.log-entry.move{color:#3a9de8}
+.log-entry.chance{color:#e8a830}
+.log-entry.system{color:var(--text3);font-style:italic}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;z-index:50}
+.modal-overlay.hidden{display:none}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--rl);width:420px;max-width:92vw;max-height:85vh;display:flex;flex-direction:column;overflow:hidden}
+.modal-header{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.1em}
+.modal-body{padding:1.25rem 1.5rem;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:10px}
+.modal-footer{padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+
+/* CARD DISPLAY in modal */
+.card-display{border-radius:10px;padding:1.5rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px}
+.card-display.chance{background:linear-gradient(135deg,#fff8e8,#fdf0cc);color:#222}
+.card-display.community{background:linear-gradient(135deg,#e8f4ff,#cce4ff);color:#1a2a3a}
+.card-display-icon{font-size:40px}
+.card-display-deck{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;opacity:.5}
+.card-display-text{font-size:15px;font-weight:500;line-height:1.4}
+.card-display-amount{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:.05em}
+.card-display-amount.pos{color:#1a7b1a}
+.card-display-amount.neg{color:#aa2222}
+.card-display-flavor{font-size:11px;opacity:.5;font-style:italic}
+
+.prop-detail{background:var(--surface2);border-radius:var(--r);padding:1rem}
+.prop-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.prop-color-band{width:18px;height:18px;border-radius:3px;flex-shrink:0}
+.prop-name{font-weight:500;font-size:15px}
+.prop-owner{font-size:12px;color:var(--text2)}
+.prop-table{width:100%;font-size:12px}
+.prop-table td{padding:3px 0}
+.prop-table td:last-child{text-align:right;font-family:'DM Mono',monospace;color:var(--accent)}
+
+.info-row{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px solid var(--border)}
+.info-row .lbl{color:var(--text2)}
+.info-row .val{font-family:'DM Mono',monospace}
+
+.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);padding:10px 20px;font-size:13px;color:var(--text);opacity:0;transition:opacity .3s;z-index:200;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+
+/* win screen */
+#winScreen{background:radial-gradient(ellipse at 50% 30%, #1a1a0a 0%, var(--bg) 70%)}
+.win-card{text-align:center;padding:3rem}
+.win-pawn{font-size:80px;margin-bottom:1rem}
+.win-title{font-family:'Bebas Neue',sans-serif;font-size:64px;color:var(--accent);letter-spacing:.12em}
+.win-sub{font-size:18px;color:var(--text2);margin-bottom:2rem}
+</style>
+</head>
+<body>
+
+<!-- ══ SETUP SCREEN ════════════════════════════════════════════════════════ -->
+<div class="screen" id="setupScreen">
+  <div class="setup-card">
+    <div class="setup-title">MONOPOLY</div>
+    <div class="setup-sub">Moteur de jeu — configurez votre partie</div>
+
+    <div class="setup-section">
+      <div class="setup-label">Charger vos fichiers (optionnel)</div>
+      <div class="import-row">
+        <div class="import-box" id="plateauBox" onclick="document.getElementById('filePlateau').click()">
+          <span>🗺️ plateau.json</span><span id="plateauStatus">Défaut</span>
+        </div>
+        <div class="import-box" id="cartesBox" onclick="document.getElementById('fileCartes').click()">
+          <span>🃏 cartes.json</span><span id="cartesStatus">Défaut</span>
+        </div>
+      </div>
+      <input type="file" id="filePlateau" accept=".json">
+      <input type="file" id="fileCartes" accept=".json">
+    </div>
+
+    <div class="setup-section">
+      <div class="setup-label" style="display:flex;justify-content:space-between">
+        Joueurs
+        <span style="font-size:10px;color:var(--text3);font-style:italic">2 à 6 joueurs</span>
+      </div>
+      <div class="player-rows" id="playerRows"></div>
+      <button class="add-player-btn" id="addPlayerBtn" onclick="addPlayerRow()">+ Ajouter un joueur</button>
+    </div>
+
+    <div class="setup-section">
+      <div class="setup-label">Capital de départ (M$)</div>
+      <input class="money-input" type="number" id="startMoney" value="1500" min="100" step="100">
+    </div>
+
+    <button class="btn-start" id="btnStart" onclick="startGame()">LANCER LA PARTIE</button>
+  </div>
+</div>
+
+<!-- ══ GAME SCREEN ══════════════════════════════════════════════════════════ -->
+<div class="screen hidden" id="gameScreen">
+  <div class="board-wrap">
+    <div class="board" id="board"></div>
+  </div>
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-title">MONOPOLY</span>
+      <span class="turn-indicator">Tour <span id="turnNum">1</span></span>
+    </div>
+    <div class="sidebar-scroll" id="playerList"></div>
+    <div class="log-area" id="logArea"></div>
+    <div class="action-zone">
+      <div class="action-title" id="actionTitle">À votre tour</div>
+      <div class="dice-row">
+        <div class="dice" id="dice1">🎲</div>
+        <div class="dice" id="dice2">🎲</div>
+        <div class="dice-total" id="diceTotal">—</div>
+        <button class="btn-roll" id="btnRoll" onclick="rollDice()">LANCER</button>
+      </div>
+      <div class="action-btns" id="actionBtns"></div>
+    </div>
+  </aside>
+</div>
+
+<!-- ══ WIN SCREEN ═══════════════════════════════════════════════════════════ -->
+<div class="screen hidden" id="winScreen">
+  <div class="win-card">
+    <div class="win-pawn" id="winPawn">🏆</div>
+    <div class="win-title">VICTOIRE !</div>
+    <div class="win-sub" id="winSub">Félicitations !</div>
+    <button class="btn-start" style="width:280px" onclick="location.reload()">NOUVELLE PARTIE</button>
+  </div>
+</div>
+
+<!-- ══ MODAL ════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle">Info</span>
+      <button class="btn-sm" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+// DATA — DEFAULTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+const PAWN_EMOJIS = ['🎩','🚂','🐕','🚗','⛵','👢','🎸','🍕','🐉','🦊','🤖','🌸'];
+const DICE_FACES = ['⚀','⚁','⚂','⚃','⚄','⚅'];
+const GROUP_COLORS = {
+  brown:'#8B4513',lblue:'#87CEEB',pink:'#D63384',orange:'#FF6B00',
+  red:'#CC0000',yellow:'#F7C948',green:'#1A7B1A',blue:'#0033CC',none:'#444'
+};
+
+function defaultBoard() {
+  return [
+    {pos:0,name:'Départ',type:'go',group:'none',price:0,mortgage:0,rents:[200,0,0,0,0,0],buildCost:0,desc:'Recevez 200M$ en passant par ici'},
+    {pos:1,name:'Boulevard de Belleville',type:'property',group:'brown',price:60,mortgage:30,rents:[2,4,10,30,90,160],buildCost:50,desc:''},
+    {pos:2,name:'Caisse de communauté',type:'community',group:'none',price:0,mortgage:0,rents:[0,0,0,0,0,0],buildCost:0,desc:''},
+    {pos:3,name:'Rue Lecourbe',type:'property',group:'brown',price:60,mortgage:30,rents:[4,8,20,60,180,320],buildCost:50,desc:''},
+    {pos:4,name:'Impôts',type:'tax',group:'none',price:200,mortgage:0,rents:[0,0,0,0,0,0],buildCost:0,desc:'Payez 200M$'},
+    {pos:5,name:'Gare Nord',type:'station',group:'none',price:200,mortgage:100,rents:[25,50,100,200,0,0],buildCost:0,desc:''},
+    {pos:6,name:'Rue de Vaugirard',type:'property',group:'lblue',price:100,mortgage:50,rents:[6,12,30,90,270,400],buildCost:50,desc:''},
+    {pos:7,name:'Chance',type:'chance',group:'none',price:0,mortgage:0,rents:[0,0,0,0,0,0],buildCost:0,desc:''},
+    {pos:8,name:'Rue de Courcelles',type:'property',group:'lblue',price:100,mortgage:50,rents:[6,12,30,90,270,400],buildCost:50,desc:''},
+    {pos:9,name:'Avenue de la République',type:'property',group:'lblue',price:120,mortgage:60,rents:[8,16,40,100,300,450],buildCost:50,desc:''},
+    {pos:10,name:'Prison / Visite',type:'jail',group:'none',price:0,mortgage:0,rents:[0,0,0,0,0,0],buildCost:0,desc:''},
+    {pos:11,name:'Boulevard de la Villette',type:'property',group:'pink',price:140,mortgage:70,rents:[10,20,50,150,450,625],buildCost:100,desc:''},
+    {pos:12,name:'Compagnie Électrique',type:'utility',group:'none',price:150,mortgage:75,rents:[0,0,0,0,0,0],buildCost:0,desc:''},
+    {pos:13,name:'Avenue de Neuilly',type:'property',group:'pink',price:140,mortgage:70,rents:[10,20,50,150,450,625],buildCost:100,desc:''},
+    {pos:14,name:'Rue de Paradis',type:'property',group:'pink',price:160,mortgage:80,rents:[12,24,60,180,500,700],buildCost:100,desc:''},
+    {pos:15,name:'Gare Est',type:'station',group:'none',price:200,mortgage:100,rents:[25,50,100,200,0,0],buildCost:0,desc:''},
+    {pos:16,name:'Avenue Mozart',type:'property',group:'orange',price:180,mortgage:90,rents:[14,28,70,200,550,750],buildCost:100,desc:''},
+    {pos:17,name:'Caisse de communauté',type:'community',group:'none',price:0,mortgage:0,rents:[0,0,0,0,0,0],buildCost:0,desc:''},
+    {pos:18,name:'Boulevard Saint-Michel',type:'property',group:'orange',price:180,mortgage:90,rents:[14,28,70,200,550,750],buildCost:100,desc:''},
+    {pos:19,name:'Square Rapp',type:'property',group:'orange',price:200,mortgage:100,rents:[16,32,80,220,600,800],buildCost:100,desc:''},
+    {pos:20,name:'Parc Gratuit',type:'free',group:'none',price:0,mortgage:0,rents:[0,0,0,0,0,0],buildCost:0,desc:''},
+    {pos:21,name:'Avenue Matignon',type:'property',group:'red',price:220,mortgage:110,rents:[18,36,90,250,700,875],buildCost:150,desc:''},
+    {pos:22,name:'Chance',type:'chance',group:'none',price:0,mortgage:0,rents:[0,0,0,0,0,0],buildCost:0,desc:''},
+    {pos:23,name:'Boulevard Malesherbes',type:'property',group:'red',price:220,mortgage:110,rents:[18,36,90,250,700,875],buildCost:150,desc:''},
+    {pos:24,name:'Avenue Henri-Martin',type:'property',group:'red',price:240,mortgage:120,rents:[20,40,100,300,750,925],buildCost:150,desc:''},
+    {pos:25,name:'Gare Saint-Lazare',type:'station',group:'none',price:200,mortgage:100,rents:[25,50,100,200,0,0],buildCost:0,desc:''},
+    {pos:26,name:'Avenue de Breteuil',type:'property',group:'yellow',price:260,mortgage:130,rents:[22,44,110,330,800,975],buildCost:150,desc:''},
+    {pos:27,name:'Avenue Foch',type:'property',group:'yellow',price:260,mortgage:130,rents:[22,44,110,330,800,975],buildCost:150,desc:''},
+    {pos:28,name:'Compagnie des Eaux',type:'utility',group:'none',price:150,mortgage:75,rents:[0,0,0,0,0,0],buildCost:0,desc:''},
+    {pos:29,name:'Rue La Boétie',type:'property',group:'yellow',price:280,mortgage:140,rents:[24,48,120,360,850,1025],buildCost:150,desc:''},
+    {pos:30,name:'Allez en Prison',type:'goto_jail',group:'none',price:0,mortgage:0,rents:[0,0,0,0,0,0],buildCost:0,desc:''},
+    {pos:31,name:'Boulevard des Capucines',type:'property',group:'green',price:300,mortgage:150,rents:[26,52,130,390,900,1100],buildCost:200,desc:''},
+    {pos:32,name:'Avenue de Breteuil',type:'property',group:'green',price:300,mortgage:150,rents:[26,52,130,390,900,1100],buildCost:200,desc:''},
+    {pos:33,name:'Caisse de communauté',type:'community',group:'none',price:0,mortgage:0,rents:[0,0,0,0,0,0],buildCost:0,desc:''},
+    {pos:34,name:'Avenue de Wagram',type:'property',group:'green',price:320,mortgage:160,rents:[28,56,150,450,1000,1200],buildCost:200,desc:''},
+    {pos:35,name:'Gare de Lyon',type:'station',group:'none',price:200,mortgage:100,rents:[25,50,100,200,0,0],buildCost:0,desc:''},
+    {pos:36,name:'Chance',type:'chance',group:'none',price:0,mortgage:0,rents:[0,0,0,0,0,0],buildCost:0,desc:''},
+    {pos:37,name:'Avenue de la Paix',type:'property',group:'blue',price:350,mortgage:175,rents:[35,70,175,500,1100,1300],buildCost:200,desc:''},
+    {pos:38,name:'Taxe de Luxe',type:'tax',group:'none',price:100,mortgage:0,rents:[0,0,0,0,0,0],buildCost:0,desc:'Payez 100M$'},
+    {pos:39,name:'Rue de la Paix',type:'property',group:'blue',price:400,mortgage:200,rents:[50,100,200,600,1400,1700],buildCost:200,desc:''},
+  ];
+}
+
+function defaultCards() {
+  return {
+    chance:[
+      {id:1,deck:'chance',icon:'🏦',text:"La banque vous verse des dividendes.",flavor:'',effect:'gain',amount:50,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
+      {id:2,deck:'chance',icon:'🚔',text:"Allez directement en prison.",flavor:"Ne passez pas par la case Départ.",effect:'goto_jail',amount:0,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
+      {id:3,deck:'chance',icon:'🎂',text:"C'est votre anniversaire ! Chaque joueur vous offre 10 M$.",flavor:'',effect:'birthday',amount:10,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:10},
+      {id:4,deck:'chance',icon:'⚡',text:"Facture imprévue. Payez 50 M$.",flavor:'',effect:'lose',amount:50,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
+      {id:5,deck:'chance',icon:'🚀',text:"Avancez de 3 cases.",flavor:'',effect:'move_by',amount:0,perHouse:0,perHotel:0,targetPos:0,moveSteps:3,collectAmount:0},
+      {id:6,deck:'chance',icon:'🔑',text:"Carte sortie de prison gratuite.",flavor:'',effect:'get_out',amount:0,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
+      {id:7,deck:'chance',icon:'🏆',text:"Vous remportez un concours. Recevez 100 M$.",flavor:'',effect:'gain',amount:100,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
+      {id:8,deck:'chance',icon:'🔧',text:"Réparations : payez 25 M$ par maison, 100 M$ par hôtel.",flavor:'',effect:'repairs',amount:0,perHouse:25,perHotel:100,targetPos:0,moveSteps:0,collectAmount:0},
+    ],
+    community:[
+      {id:9,deck:'community',icon:'💰',text:"Remboursement d'impôts. Recevez 200 M$.",flavor:'',effect:'gain',amount:200,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
+      {id:10,deck:'community',icon:'🏥',text:"Frais médicaux. Payez 100 M$.",flavor:'',effect:'lose',amount:100,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
+      {id:11,deck:'community',icon:'📬',text:"Avancez jusqu'à la case Départ.",flavor:'',effect:'move_to',amount:0,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
+      {id:12,deck:'community',icon:'🎓',text:"Bourse d'études. Recevez 150 M$.",flavor:'',effect:'gain',amount:150,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
+      {id:13,deck:'community',icon:'🤝',text:"Collecte. Versez 10 M$ à chaque joueur.",flavor:'',effect:'pay_all',amount:10,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
+      {id:14,deck:'community',icon:'🔑',text:"Carte sortie de prison gratuite.",flavor:'',effect:'get_out',amount:0,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
+      {id:15,deck:'community',icon:'🏛️',text:"Élection municipale. Recevez 75 M$.",flavor:'',effect:'gain',amount:75,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
+      {id:16,deck:'community',icon:'🚔',text:"Amende routière. Payez 30 M$.",flavor:'',effect:'lose',amount:30,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
+    ]
+  };
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SETUP
+// ══════════════════════════════════════════════════════════════════════════════
+
+let boardData = defaultBoard();
+let cardData = defaultCards();
+let playerDefs = [];
+
+const PAWNS_USED = new Set();
+
+function addPlayerRow(name='', pawn='') {
+  if(playerDefs.length >= 6) return;
+  const idx = playerDefs.length;
+  const defaultPawn = PAWN_EMOJIS.find(p=>!PAWNS_USED.has(p)) || PAWN_EMOJIS[idx%12];
+  const def = {name: name||`Joueur ${idx+1}`, pawn: pawn||defaultPawn};
+  PAWNS_USED.add(def.pawn);
+  playerDefs.push(def);
+  renderSetup();
+}
+
+function removePlayerRow(idx) {
+  PAWNS_USED.delete(playerDefs[idx].pawn);
+  playerDefs.splice(idx,1);
+  renderSetup();
+}
+
+function selectPawn(playerIdx, emoji) {
+  PAWNS_USED.delete(playerDefs[playerIdx].pawn);
+  playerDefs[playerIdx].pawn = emoji;
+  PAWNS_USED.add(emoji);
+  renderSetup();
+}
+
+function renderSetup() {
+  const rows = document.getElementById('playerRows');
+  rows.innerHTML = playerDefs.map((p,i) => `
+    <div class="player-row">
+      <input type="text" value="${p.name}" placeholder="Nom du joueur" oninput="playerDefs[${i}].name=this.value">
+      <div class="pawn-pick">
+        ${PAWN_EMOJIS.map(em=>`<div class="pawn-btn${p.pawn===em?' sel':''}" onclick="selectPawn(${i},'${em}')">${em}</div>`).join('')}
+      </div>
+      ${playerDefs.length>2?`<button class="btn-sm red" onclick="removePlayerRow(${i})" style="padding:4px 8px;flex-shrink:0">✕</button>`:''}
+    </div>
+  `).join('');
+  document.getElementById('addPlayerBtn').style.display = playerDefs.length>=6?'none':'';
+  document.getElementById('btnStart').disabled = playerDefs.length < 2;
+}
+
+// File loading
+document.getElementById('filePlateau').addEventListener('change', function(e) {
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const d=JSON.parse(ev.target.result);
+      boardData = d.board||d;
+      document.getElementById('plateauBox').classList.add('loaded');
+      document.getElementById('plateauStatus').textContent='✓ Chargé';
+      toast('Plateau chargé !');
+    }catch{toast('Erreur JSON plateau');}
+  };
+  r.readAsText(f);
+});
+
+document.getElementById('fileCartes').addEventListener('change', function(e) {
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const d=JSON.parse(ev.target.result);
+      cardData = (d.chance&&d.community)?d:{chance:d.chance||[],community:d.community||[]};
+      document.getElementById('cartesBox').classList.add('loaded');
+      document.getElementById('cartesStatus').textContent='✓ Chargé';
+      toast('Cartes chargées !');
+    }catch{toast('Erreur JSON cartes');}
+  };
+  r.readAsText(f);
+});
+
+// Init 2 default players
+addPlayerRow('Joueur 1','🎩');
+addPlayerRow('Joueur 2','🚂');
+
+// ══════════════════════════════════════════════════════════════════════════════
+// GAME STATE
+// ══════════════════════════════════════════════════════════════════════════════
+
+let G = {}; // game state
+
+function startGame() {
+  const startMoney = parseInt(document.getElementById('startMoney').value)||1500;
+  G = {
+    players: playerDefs.map((p,i)=>({
+      id:i, name:p.name, pawn:p.pawn,
+      money:startMoney, pos:0,
+      inJail:false, jailTurns:0,
+      getOutCards:0,
+      properties:[], // positions owned
+      bankrupt:false,
+    })),
+    board: boardData,
+    chanceCards: shuffle([...cardData.chance]),
+    communityCards: shuffle([...cardData.community]),
+    chanceIdx:0, communityIdx:0,
+    currentPlayer:0,
+    turn:1,
+    phase:'roll', // roll | action | end
+    pendingCard:null,
+    diceRoll:null,
+    doublesCount:0,
+    propertyBuildings:{}, // pos -> {houses, hotel}
+    mortgaged:new Set(),
+  };
+  document.getElementById('setupScreen').classList.add('hidden');
+  document.getElementById('gameScreen').classList.remove('hidden');
+  buildBoard();
+  renderAll();
+  log(`Partie lancée avec ${G.players.length} joueurs !`, 'system');
+  log(`${G.players[0].pawn} ${G.players[0].name} commence.`, 'important');
+}
+
+function shuffle(arr) {
+  for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}
+  return arr;
+}
+
+// Render an icon for a cell: emoji string → span, URL/base64 → img
+function renderCellIconHtml(src, large) {
+  if(!src) return '';
+  // Detect image: starts with http, https, data:image, or common extensions
+  const isImage = /^(https?:\/\/|data:image)/i.test(src);
+  if(isImage) {
+    const size = large ? 'clamp(16px,3vw,32px)' : 'clamp(10px,2vw,22px)';
+    return `<img src="${src}" style="width:${size};height:${size};object-fit:cover;border-radius:2px;vertical-align:middle;flex-shrink:0" onerror="this.style.display='none'">`;
+  }
+  // Emoji or text
+  return `<span style="font-size:${large?'1.4em':'.9em'};line-height:1">${src}</span>`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// BOARD RENDERING
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Board layout: pos 0-9 = bottom row (right to left), 10-19 = left column (bottom to top),
+// 20-29 = top row (left to right), 30-39 = right column (top to bottom)
+function cellGridPos(pos) {
+  if(pos>=0&&pos<=10) return {col:10-pos+1,row:11};       // bottom: col 11..1, row 11
+  if(pos>=11&&pos<=19) return {col:1,row:11-(pos-10)};    // left: col 1, row 10..2
+  if(pos>=20&&pos<=30) return {col:pos-20+1,row:1};       // top: col 1..11, row 1
+  if(pos>=31&&pos<=39) return {col:11,row:pos-30+1};      // right: col 11, row 2..10
+  return {col:1,row:1};
+}
+
+function buildBoard() {
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+  const cells = {};
+
+  G.board.forEach(c => {
+    const {col,row} = cellGridPos(c.pos);
+    const div = document.createElement('div');
+    div.className='cell';
+    div.id=`cell-${c.pos}`;
+    div.style.gridColumn=col;
+    div.style.gridRow=row;
+
+    const color = GROUP_COLORS[c.group]||'#444';
+    const isCorner = [0,10,20,30].includes(c.pos);
+
+    if(isCorner) {
+      const cornerIcons = {0:'⛩',10:'🤸',20:'🍺',30:'🚔'};
+      const labels = {0:'ENTRÉE SANCTUAIRE',10:'GYMNASE',20:'POCO BAR',30:'BAN DU SERVEUR'};
+      // Support custom corner icon override via c.icon
+      const cornerIconHtml = renderCellIconHtml(c.icon || cornerIcons[c.pos], true);
+      div.innerHTML=`<div class="cell-corner">${cornerIconHtml}<div class="lbl">${labels[c.pos]}</div></div>`;
+    } else {
+      let inner = '';
+      if(c.type==='property'||c.type==='station'||c.type==='utility'){
+        inner=`<div class="cell-color" style="background:${color}"></div>`;
+      }
+      // Default type icons, overridden by c.icon if present
+      const defaultIcon = {chance:'❓',community:'🏘️',tax:'💸',goto_jail:'🚔',free:'🌳',custom:'⭐'}[c.type]||'';
+      const iconSrc = c.icon || defaultIcon;
+      const iconHtml = iconSrc ? renderCellIconHtml(iconSrc, false) + ' ' : '';
+      inner += `<div class="cell-name">${iconHtml}${c.name}</div>`;
+      if(c.price>0) inner+=`<div class="cell-price">${c.price}</div>`;
+      div.innerHTML=inner;
+    }
+    div.onclick=()=>showCellInfo(c.pos);
+    div.appendChild(Object.assign(document.createElement('div'),{className:'pawns-on-cell',id:`pawns-${c.pos}`}));
+    cells[c.pos]=div;
+    board.appendChild(div);
+  });
+
+  // Center
+  const center = document.createElement('div');
+  center.className='cell-center';
+  center.innerHTML=`<div class="center-title">MONOPOLY</div><div class="center-sub">Jeu custom</div>`;
+  board.appendChild(center);
+}
+
+function renderPawns() {
+  document.querySelectorAll('.pawns-on-cell').forEach(el=>el.innerHTML='');
+  G.players.filter(p=>!p.bankrupt).forEach(p=>{
+    const el=document.getElementById(`pawns-${p.pos}`);
+    if(el) el.innerHTML+=`<span class="pawn-chip">${p.pawn}</span>`;
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PLAYER LIST RENDER
+// ══════════════════════════════════════════════════════════════════════════════
+
+function renderPlayerList() {
+  const el=document.getElementById('playerList');
+  el.innerHTML=G.players.map(p=>{
+    const active=p.id===G.currentPlayer&&!p.bankrupt;
+    const props=p.properties.map(pos=>{
+      const cell=G.board[pos];
+      const col=GROUP_COLORS[cell?.group]||'#444';
+      return `<div class="prop-pip" style="background:${col}" title="${cell?.name||''}"></div>`;
+    }).join('');
+    return `<div class="player-card${active?' active':''}${p.bankrupt?' bankrupt':''}">
+      <div class="pc-top">
+        <span class="pc-pawn">${p.pawn}</span>
+        <span class="pc-name">${p.name}${p.inJail?` <span class="jail-badge">⛓️ prison</span>`:''}</span>
+        <span class="pc-money">M$${p.money.toLocaleString()}</span>
+      </div>
+      ${props?`<div class="pc-props">${props}</div>`:''}
+    </div>`;
+  }).join('');
+  document.getElementById('turnNum').textContent=G.turn;
+}
+
+function renderActions() {
+  const p=G.players[G.currentPlayer];
+  const title=document.getElementById('actionTitle');
+  const btnRoll=document.getElementById('btnRoll');
+  const btns=document.getElementById('actionBtns');
+
+  title.textContent=`${p.pawn} ${p.name} — ${G.phase==='roll'?'lancez les dés':'actions'}`;
+  btnRoll.disabled = G.phase!=='roll';
+
+  let html='';
+  if(G.phase==='action'||G.phase==='roll'){
+    // Buy property
+    const cell=G.board[p.pos];
+    if(G.phase==='action'&&cell&&['property','station','utility'].includes(cell.type)&&!isOwned(p.pos)&&p.money>=cell.price){
+      html+=`<button class="btn-sm green" onclick="buyProperty()">🏠 Acheter ${cell.name} (M$${cell.price})</button>`;
+    }
+    // Build house
+    if(G.phase==='action') {
+      html+=`<button class="btn-sm yellow" onclick="showBuildModal()">🔨 Construire</button>`;
+    }
+    // Mortgage
+    if(G.phase==='action'&&p.properties.length>0){
+      html+=`<button class="btn-sm" onclick="showMortgageModal()">🏦 Hypothèque</button>`;
+    }
+    // Jail options
+    if(p.inJail&&G.phase==='roll'){
+      html+=`<button class="btn-sm yellow" onclick="payJail()">💰 Payer prison (M$50)</button>`;
+      if(p.getOutCards>0) html+=`<button class="btn-sm green" onclick="useGetOutCard()">🔑 Utiliser carte</button>`;
+    }
+    // End turn
+    if(G.phase==='action'){
+      html+=`<button class="btn-sm" onclick="endTurn()">⏭ Fin de tour</button>`;
+    }
+    // Bankrupt self
+    if(G.phase==='action'){
+      html+=`<button class="btn-sm red" onclick="declareBankrupt()">🏳️ Déclarer faillite</button>`;
+    }
+  }
+  btns.innerHTML=html;
+}
+
+function renderAll(){
+  renderPawns();
+  renderPlayerList();
+  renderActions();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DICE & MOVEMENT
+// ══════════════════════════════════════════════════════════════════════════════
+
+function rollDice(){
+  if(G.phase!=='roll') return;
+  const p=G.players[G.currentPlayer];
+  const d1=Math.ceil(Math.random()*6), d2=Math.ceil(Math.random()*6);
+  const total=d1+d2;
+  const doubles=d1===d2;
+
+  // Animate: flash random faces for 600ms, then show result
+  const dice1El=document.getElementById('dice1');
+  const dice2El=document.getElementById('dice2');
+  dice1El.classList.add('rolling');
+  dice2El.classList.add('rolling');
+
+  let flashCount=0;
+  const flashInterval=setInterval(()=>{
+    dice1El.textContent=DICE_FACES[Math.floor(Math.random()*6)];
+    dice2El.textContent=DICE_FACES[Math.floor(Math.random()*6)];
+    flashCount++;
+    if(flashCount>=8){
+      clearInterval(flashInterval);
+      dice1El.textContent=DICE_FACES[d1-1];
+      dice2El.textContent=DICE_FACES[d2-1];
+      dice1El.classList.remove('rolling');
+      dice2El.classList.remove('rolling');
+    }
+  }, 75);
+
+  document.getElementById('diceTotal').textContent=total;
+
+  G.diceRoll=[d1,d2];
+  log(`${p.pawn} ${p.name} lance : ${DICE_FACES[d1-1]}+${DICE_FACES[d2-1]} = ${total}${doubles?' (doubles!)':''}`, 'move');
+
+  if(p.inJail){
+    if(doubles){p.inJail=false;p.jailTurns=0;log(`${p.pawn} Sort de prison grâce aux doubles !`,'gain');}
+    else{
+      p.jailTurns++;
+      if(p.jailTurns>=3){p.inJail=false;p.jailTurns=0;p.money-=50;log(`${p.pawn} Sort de prison après 3 tours. Paye M$50.`,'loss');}
+      else{log(`${p.pawn} En prison — tour ${p.jailTurns}/3.`);G.phase='action';renderAll();return;}
+    }
+  }
+
+  if(doubles){
+    G.doublesCount++;
+    if(G.doublesCount>=3){goToJail(p);G.phase='action';renderAll();return;}
+  } else {
+    G.doublesCount=0;
+  }
+
+  movePlayer(p, total);
+}
+
+function movePlayer(p, steps){
+  const oldPos=p.pos;
+  p.pos=(p.pos+steps)%40;
+  if(p.pos<oldPos||(steps>0&&p.pos===0)){
+    p.money+=200;
+    log(`${p.pawn} Passe par la case Départ → reçoit M$200`,'gain');
+  }
+  G.phase='action';
+  renderAll();
+  setTimeout(()=>landOn(p),200);
+}
+
+function landOn(p){
+  const cell=G.board[p.pos];
+  if(!cell) return;
+  log(`${p.pawn} arrive sur : ${cell.name}`,'move');
+
+  switch(cell.type){
+    case 'go':
+      p.money+=200;
+      log(`${p.pawn} Case Départ → reçoit M$200`,'gain');
+      break;
+    case 'tax':
+      p.money-=cell.price;
+      log(`${p.pawn} Taxe : paye M$${cell.price}`,'loss');
+      break;
+    case 'goto_jail':
+      goToJail(p);
+      break;
+    case 'jail': case 'free':
+      log(`${p.pawn} Simple visite.`);
+      break;
+    case 'chance':
+      drawCard(p,'chance');
+      break;
+    case 'community':
+      drawCard(p,'community');
+      break;
+    case 'property': case 'station': case 'utility':
+      handlePropertyLanding(p,cell);
+      break;
+  }
+  renderAll();
+}
+
+function goToJail(p){
+  p.pos=10; p.inJail=true; p.jailTurns=0;
+  log(`⛓️ ${p.pawn} ${p.name} est envoyé en prison !`,'loss');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CARDS
+// ══════════════════════════════════════════════════════════════════════════════
+
+function drawCard(p,deck){
+  const cards=deck==='chance'?G.chanceCards:G.communityCards;
+  if(!cards||cards.length===0){log('Paquet vide.');return;}
+  const idx=deck==='chance'?G.chanceIdx:G.communityIdx;
+  const card=cards[idx%cards.length];
+  if(deck==='chance') G.chanceIdx++;
+  else G.communityIdx++;
+
+  log(`${p.pawn} Tire une carte ${deck==='chance'?'Chance':'Communauté'} : "${card.text}"`, 'chance');
+  applyCard(p, card, deck);
+}
+
+function applyCard(p, card, deck){
+  const others=G.players.filter(pl=>!pl.bankrupt&&pl.id!==p.id);
+  let amountBadge='';
+  let applyFn=()=>{};
+
+  switch(card.effect){
+    case 'gain':
+      applyFn=()=>{p.money+=card.amount;log(`${p.pawn} Reçoit M$${card.amount}`,'gain');};
+      amountBadge=`<div class="card-display-amount pos">+ M$${card.amount}</div>`;
+      break;
+    case 'lose':
+      applyFn=()=>{p.money-=card.amount;log(`${p.pawn} Paie M$${card.amount}`,'loss');};
+      amountBadge=`<div class="card-display-amount neg">- M$${card.amount}</div>`;
+      break;
+    case 'goto_jail':
+      applyFn=()=>goToJail(p);
+      amountBadge=`<div style="font-size:30px">⛓️</div>`;
+      break;
+    case 'get_out':
+      applyFn=()=>{p.getOutCards++;log(`${p.pawn} Obtient une carte sortie de prison.`,'gain');};
+      amountBadge=`<div style="font-size:30px">🔑</div>`;
+      break;
+    case 'move_to':
+      applyFn=()=>{
+        const target=card.targetPos||0;
+        if(target<p.pos) {p.money+=200;log(`${p.pawn} Passe par le Départ → M$200`,'gain');}
+        p.pos=target;
+        log(`${p.pawn} Se déplace case ${target} : ${G.board[target]?.name}`,'move');
+        setTimeout(()=>{landOn(p);renderAll();},300);
+      };
+      amountBadge=`<div style="font-size:24px">→ case ${card.targetPos}</div>`;
+      break;
+    case 'move_by':
+      applyFn=()=>{
+        const steps=card.moveSteps||0;
+        movePlayer(p,steps);
+        log(`${p.pawn} Avance de ${steps} cases`,'move');
+      };
+      amountBadge=`<div style="font-size:20px">${card.moveSteps>0?'+':''}${card.moveSteps} cases</div>`;
+      break;
+    case 'repairs':
+      applyFn=()=>{
+        let total=0;
+        p.properties.forEach(pos=>{
+          const b=G.propertyBuildings[pos]||{houses:0,hotel:0};
+          total+=b.houses*card.perHouse+b.hotel*card.perHotel;
+        });
+        p.money-=total;
+        log(`${p.pawn} Réparations : paye M$${total}`,'loss');
+      };
+      amountBadge=`<div style="font-size:13px;color:#888">🏠 M$${card.perHouse}/maison<br>🏨 M$${card.perHotel}/hôtel</div>`;
+      break;
+    case 'birthday': case 'collect_all':
+      applyFn=()=>{
+        const amt=card.collectAmount||card.amount||0;
+        others.forEach(o=>{o.money-=amt;});
+        p.money+=amt*others.length;
+        log(`${p.pawn} Collecte M$${amt} de chaque joueur → total M$${amt*others.length}`,'gain');
+      };
+      amountBadge=`<div class="card-display-amount pos">+ M$${card.collectAmount||card.amount} × joueurs</div>`;
+      break;
+    case 'pay_all':
+      applyFn=()=>{
+        const amt=card.amount||0;
+        others.forEach(o=>{o.money+=amt;});
+        p.money-=amt*others.length;
+        log(`${p.pawn} Verse M$${amt} à chaque joueur`,'loss');
+      };
+      amountBadge=`<div class="card-display-amount neg">- M$${card.amount} × joueurs</div>`;
+      break;
+    default:
+      applyFn=()=>{log(`${p.pawn} Carte spéciale : ${card.text}`,'chance');};
+  }
+
+  showCardModal(card, deck, amountBadge, applyFn);
+}
+
+function showCardModal(card, deck, amountBadge, applyFn){
+  const isChance=deck==='chance';
+  document.getElementById('modalTitle').textContent=isChance?'🃏 Chance':'🏘️ Communauté';
+  document.getElementById('modalBody').innerHTML=`
+    <div class="card-display ${deck}">
+      <div class="card-display-deck">${isChance?'CHANCE':'COMMUNAUTÉ'}</div>
+      <div class="card-display-icon">${card.icon||'🃏'}</div>
+      <div class="card-display-text">${card.text}</div>
+      ${amountBadge}
+      ${card.flavor?`<div class="card-display-flavor">${card.flavor}</div>`:''}
+    </div>
+  `;
+  document.getElementById('modalFooter').innerHTML=`
+    <button class="btn-roll" style="font-size:16px;padding:10px 28px" onclick="confirmCard()">OK</button>
+  `;
+  G.pendingCard=applyFn;
+  document.getElementById('modalOverlay').classList.remove('hidden');
+}
+
+function confirmCard(){
+  if(G.pendingCard){G.pendingCard();G.pendingCard=null;}
+  closeModal();
+  renderAll();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PROPERTIES
+// ══════════════════════════════════════════════════════════════════════════════
+
+function isOwned(pos){return G.players.some(p=>p.properties.includes(pos));}
+function ownerOf(pos){return G.players.find(p=>p.properties.includes(pos));}
+
+function handlePropertyLanding(p, cell){
+  const owner=ownerOf(cell.pos);
+  if(!owner){
+    // Propose to buy
+    return; // handled in action buttons
+  }
+  if(owner.id===p.id){log(`${p.pawn} C'est votre propriété.`);return;}
+  if(G.mortgaged.has(cell.pos)){log(`${cell.name} est hypothéquée, pas de loyer.`);return;}
+
+  const rent=calcRent(cell, owner);
+  p.money-=rent;
+  owner.money+=rent;
+  log(`${p.pawn} Paye loyer M$${rent} à ${owner.pawn} ${owner.name} pour ${cell.name}`,'loss');
+  renderPlayerList();
+}
+
+function calcRent(cell, owner){
+  if(cell.type==='station'){
+    const stationsOwned=owner.properties.filter(pos=>G.board[pos]?.type==='station').length;
+    return cell.rents[Math.min(stationsOwned-1,3)]||25;
+  }
+  if(cell.type==='utility'){
+    const utilitiesOwned=owner.properties.filter(pos=>G.board[pos]?.type==='utility').length;
+    const diceTotal=G.diceRoll?G.diceRoll[0]+G.diceRoll[1]:7;
+    return utilitiesOwned>=2?diceTotal*10:diceTotal*4;
+  }
+  const b=G.propertyBuildings[cell.pos]||{houses:0,hotel:0};
+  if(b.hotel) return cell.rents[5];
+  if(b.houses>0) return cell.rents[1+b.houses];
+  // Check monopoly
+  const groupProps=G.board.filter(c=>c.group===cell.group&&c.type==='property');
+  const ownsAll=groupProps.every(c=>owner.properties.includes(c.pos));
+  return ownsAll?cell.rents[1]:cell.rents[0];
+}
+
+function buyProperty(){
+  const p=G.players[G.currentPlayer];
+  const cell=G.board[p.pos];
+  if(!cell||p.money<cell.price) return;
+  p.money-=cell.price;
+  p.properties.push(cell.pos);
+  log(`${p.pawn} ${p.name} achète ${cell.name} pour M$${cell.price}`,'gain');
+  renderAll();
+}
+
+function showBuildModal(){
+  const p=G.players[G.currentPlayer];
+  const buildable=p.properties.filter(pos=>{
+    const cell=G.board[pos];
+    if(!cell||cell.type!=='property') return false;
+    const group=G.board.filter(c=>c.group===cell.group&&c.type==='property');
+    return group.every(c=>p.properties.includes(c.pos));
+  });
+  if(buildable.length===0){
+    showInfo('Construction','Vous devez posséder un monopole complet pour construire.');
+    return;
+  }
+  const rows=buildable.map(pos=>{
+    const cell=G.board[pos];
+    const b=G.propertyBuildings[pos]||{houses:0,hotel:0};
+    const current=b.hotel?'🏨 Hôtel':b.houses>0?`🏠×${b.houses}`:'Terrain nu';
+    const canBuild=!b.hotel&&b.houses<4?`<button class="btn-sm green" onclick="buildHouse(${pos})">+ Maison (M$${cell.buildCost})</button>`:'';
+    const canHotel=b.houses>=4&&!b.hotel?`<button class="btn-sm yellow" onclick="buildHotel(${pos})">🏨 Hôtel (M$${cell.buildCost})</button>`:'';
+    return `<div class="info-row"><span class="lbl">${cell.name}</span><span style="display:flex;align-items:center;gap:6px">${current} ${canBuild}${canHotel}</span></div>`;
+  }).join('');
+  document.getElementById('modalTitle').textContent='🔨 Construction';
+  document.getElementById('modalBody').innerHTML=rows;
+  document.getElementById('modalFooter').innerHTML=`<button class="btn-sm" onclick="closeModal()">Fermer</button>`;
+  document.getElementById('modalOverlay').classList.remove('hidden');
+}
+
+function buildHouse(pos){
+  const p=G.players[G.currentPlayer];
+  const cell=G.board[pos];
+  if(p.money<cell.buildCost){toast('Fonds insuffisants.');return;}
+  if(!G.propertyBuildings[pos]) G.propertyBuildings[pos]={houses:0,hotel:0};
+  if(G.propertyBuildings[pos].houses>=4) return;
+  p.money-=cell.buildCost;
+  G.propertyBuildings[pos].houses++;
+  log(`${p.pawn} Construit une maison sur ${cell.name}`,'gain');
+  renderAll(); showBuildModal();
+}
+
+function buildHotel(pos){
+  const p=G.players[G.currentPlayer];
+  const cell=G.board[pos];
+  if(p.money<cell.buildCost){toast('Fonds insuffisants.');return;}
+  p.money-=cell.buildCost;
+  G.propertyBuildings[pos]={houses:0,hotel:1};
+  log(`${p.pawn} Construit un hôtel sur ${cell.name}`,'gain');
+  renderAll(); showBuildModal();
+}
+
+function showMortgageModal(){
+  const p=G.players[G.currentPlayer];
+  const rows=p.properties.map(pos=>{
+    const cell=G.board[pos];
+    const isMort=G.mortgaged.has(pos);
+    const btn=isMort
+      ?`<button class="btn-sm green" onclick="unmortgage(${pos})">Lever (M$${Math.round(cell.mortgage*1.1)})</button>`
+      :`<button class="btn-sm red" onclick="mortgage(${pos})">Hypothéquer (+M$${cell.mortgage})</button>`;
+    return `<div class="info-row"><span class="lbl">${cell.name}${isMort?' 🔒':''}</span><span>${btn}</span></div>`;
+  }).join('');
+  document.getElementById('modalTitle').textContent='🏦 Hypothèques';
+  document.getElementById('modalBody').innerHTML=rows||'<div style="color:var(--text3)">Aucune propriété.</div>';
+  document.getElementById('modalFooter').innerHTML=`<button class="btn-sm" onclick="closeModal()">Fermer</button>`;
+  document.getElementById('modalOverlay').classList.remove('hidden');
+}
+
+function mortgage(pos){
+  const p=G.players[G.currentPlayer];
+  G.mortgaged.add(pos);
+  p.money+=G.board[pos].mortgage;
+  log(`${p.pawn} Hypothèque ${G.board[pos].name} → reçoit M$${G.board[pos].mortgage}`,'gain');
+  renderAll(); showMortgageModal();
+}
+function unmortgage(pos){
+  const p=G.players[G.currentPlayer];
+  const cost=Math.round(G.board[pos].mortgage*1.1);
+  if(p.money<cost){toast('Fonds insuffisants.');return;}
+  G.mortgaged.delete(pos);
+  p.money-=cost;
+  log(`${p.pawn} Lève hypothèque ${G.board[pos].name} → paye M$${cost}`,'loss');
+  renderAll(); showMortgageModal();
+}
+
+function payJail(){
+  const p=G.players[G.currentPlayer];
+  if(p.money<50){toast('Fonds insuffisants.');return;}
+  p.money-=50; p.inJail=false; p.jailTurns=0;
+  log(`${p.pawn} Paye M$50 pour sortir de prison.`,'loss');
+  renderAll();
+}
+function useGetOutCard(){
+  const p=G.players[G.currentPlayer];
+  if(p.getOutCards<=0) return;
+  p.getOutCards--; p.inJail=false; p.jailTurns=0;
+  log(`${p.pawn} Utilise sa carte sortie de prison.`,'gain');
+  renderAll();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TURN MANAGEMENT
+// ══════════════════════════════════════════════════════════════════════════════
+
+function endTurn(){
+  const p=G.players[G.currentPlayer];
+  const rolledDoubles=G.diceRoll&&G.diceRoll[0]===G.diceRoll[1]&&G.doublesCount>0;
+  if(rolledDoubles&&!p.inJail){
+    log(`${p.pawn} Doubles — rejoue !`,'chance');
+    G.phase='roll';
+    G.diceRoll=null;
+    renderAll();
+    return;
+  }
+  nextPlayer();
+}
+
+function nextPlayer(){
+  G.doublesCount=0;
+  G.diceRoll=null;
+  let next=G.currentPlayer;
+  for(let i=0;i<G.players.length;i++){
+    next=(next+1)%G.players.length;
+    if(!G.players[next].bankrupt) break;
+  }
+  G.currentPlayer=next;
+  if(next<=G.currentPlayer-1) G.turn++;
+  G.phase='roll';
+  const p=G.players[next];
+  log(`--- Tour de ${p.pawn} ${p.name} ---`,'system');
+  renderAll();
+}
+
+function declareBankrupt(){
+  const p=G.players[G.currentPlayer];
+  if(!confirm(`${p.name} déclare faillite ?`)) return;
+  p.bankrupt=true;
+  p.properties.forEach(pos=>G.board[pos].owner=null);
+  p.properties=[];
+  log(`🏳️ ${p.pawn} ${p.name} est en faillite !`,'loss');
+  const alive=G.players.filter(pl=>!pl.bankrupt);
+  if(alive.length===1){
+    endGame(alive[0]);
+    return;
+  }
+  nextPlayer();
+}
+
+function endGame(winner){
+  document.getElementById('winPawn').textContent=winner.pawn;
+  document.getElementById('winSub').textContent=`${winner.name} remporte la partie avec M$${winner.money.toLocaleString()} et ${winner.properties.length} propriétés !`;
+  document.getElementById('gameScreen').classList.add('hidden');
+  document.getElementById('winScreen').classList.remove('hidden');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CELL INFO MODAL
+// ══════════════════════════════════════════════════════════════════════════════
+
+function showCellInfo(pos){
+  const cell=G.board[pos];
+  if(!cell) return;
+  const owner=ownerOf(pos);
+  const b=G.propertyBuildings[pos]||{houses:0,hotel:0};
+  const color=GROUP_COLORS[cell.group]||'#444';
+
+  let body='';
+  if(['property','station','utility'].includes(cell.type)){
+    const rentRows=cell.type==='property'?`
+      <tr><td>Loyer nu</td><td>M$${cell.rents[0]}</td></tr>
+      <tr><td>Monopole</td><td>M$${cell.rents[1]}</td></tr>
+      <tr><td>1 maison</td><td>M$${cell.rents[2]}</td></tr>
+      <tr><td>2 maisons</td><td>M$${cell.rents[3]}</td></tr>
+      <tr><td>3 maisons</td><td>M$${cell.rents[4]}</td></tr>
+      <tr><td>Hôtel</td><td>M$${cell.rents[5]}</td></tr>
+    `:cell.type==='station'?`
+      <tr><td>1 gare</td><td>M$${cell.rents[0]}</td></tr>
+      <tr><td>2 gares</td><td>M$${cell.rents[1]}</td></tr>
+      <tr><td>3 gares</td><td>M$${cell.rents[2]}</td></tr>
+      <tr><td>4 gares</td><td>M$${cell.rents[3]}</td></tr>
+    `:`<tr><td>×4 dés si 1 compagnie, ×10 si 2</td><td></td></tr>`;
+
+    body=`
+      <div class="prop-detail">
+        <div class="prop-header">
+          <div class="prop-color-band" style="background:${color}"></div>
+          <div><div class="prop-name">${cell.name}</div>
+          <div class="prop-owner">${owner?`Propriétaire : ${owner.pawn} ${owner.name}`:'Disponible'}</div></div>
+        </div>
+        ${b.hotel?'<div style="color:var(--accent);font-size:13px">🏨 Hôtel construit</div>':b.houses>0?`<div style="font-size:13px">🏠×${b.houses} maisons</div>`:''}
+        ${G.mortgaged.has(pos)?'<div style="color:#e85454;font-size:12px">🔒 Hypothéquée</div>':''}
+        <table class="prop-table">${rentRows}</table>
+        ${cell.price?`<div style="margin-top:8px;font-size:12px;color:var(--text2)">Prix M$${cell.price} · Hypothèque M$${cell.mortgage}</div>`:''}
+      </div>`;
+  } else {
+    body=`<div style="color:var(--text2);font-size:14px">${cell.desc||'Case spéciale.'}</div>`;
+  }
+
+  showInfo(cell.name, body, cell.icon);
+}
+
+function showInfo(title, bodyHtml, icon){
+  const iconHtml = icon ? renderCellIconHtml(icon, false) + ' ' : '';
+  document.getElementById('modalTitle').innerHTML = iconHtml + title;
+  document.getElementById('modalBody').innerHTML=bodyHtml;
+  document.getElementById('modalFooter').innerHTML=`<button class="btn-sm" onclick="closeModal()">Fermer</button>`;
+  document.getElementById('modalOverlay').classList.remove('hidden');
+}
+
+function closeModal(){document.getElementById('modalOverlay').classList.add('hidden');}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LOG & HELPERS
+// ══════════════════════════════════════════════════════════════════════════════
+
+function log(msg, type=''){
+  const area=document.getElementById('logArea');
+  const div=document.createElement('div');
+  div.className='log-entry'+(type?' '+type:'');
+  div.textContent=msg;
+  area.appendChild(div);
+  area.scrollTop=area.scrollHeight;
+}
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+</script>
+</body>
+</html>

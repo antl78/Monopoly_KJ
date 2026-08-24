@@ -80,7 +80,7 @@ header {
 .btn.icon { padding: 6px 8px; }
 
 /* LAYOUT */
-.app { display: flex; flex: 1; height: calc(100vh - 57px); }
+.app { display: flex; flex: 1; align-items: flex-start; }
 
 /* SIDEBAR */
 .sidebar {
@@ -90,7 +90,7 @@ header {
   background: var(--surface);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  min-height: calc(100vh - 57px);
 }
 .sidebar-header {
   padding: 1rem 1.25rem;
@@ -105,12 +105,9 @@ header {
 
 .cases-list {
   flex: 1;
-  overflow-y: auto;
   padding: 8px;
 }
-.cases-list::-webkit-scrollbar { width: 4px; }
-.cases-list::-webkit-scrollbar-track { background: transparent; }
-.cases-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
 
 .case-item {
   display: flex;
@@ -162,6 +159,9 @@ header {
   flex: 1;
   display: flex;
   flex-direction: column;
+  position: sticky;
+  top: 57px;
+  height: calc(100vh - 57px);
   overflow: hidden;
 }
 
@@ -270,6 +270,9 @@ header {
   background: var(--surface);
   display: flex;
   flex-direction: column;
+  position: sticky;
+  top: 57px;
+  height: calc(100vh - 57px);
   overflow: hidden;
 }
 .preview-header {
@@ -402,6 +405,41 @@ header {
 .board-mini {
   margin-top: 1.5rem;
 }
+
+/* IMAGE FIELD */
+.img-preview-wrap {
+  display: flex; align-items: flex-start; gap: 10px; margin-top: 4px;
+}
+.img-preview-box {
+  width: 56px; height: 56px; border-radius: var(--r);
+  border: 1px solid var(--border2); background: var(--surface3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; overflow: hidden; flex-shrink: 0;
+}
+.img-preview-box img { width: 100%; height: 100%; object-fit: cover; }
+.img-source-tabs { display: flex; gap: 4px; margin-bottom: 6px; }
+.img-source-tab {
+  font-size: 11px; padding: 3px 10px; border-radius: 99px;
+  border: 1px solid var(--border2); background: var(--surface2);
+  color: var(--text2); cursor: pointer; transition: all .12s;
+}
+.img-source-tab.active {
+  background: var(--accent); color: #111; border-color: var(--accent); font-weight: 600;
+}
+.img-drop-zone {
+  border: 1px dashed var(--border2); border-radius: var(--r);
+  padding: 12px; text-align: center; font-size: 12px; color: var(--text3);
+  cursor: pointer; transition: all .15s; background: var(--surface2);
+}
+.img-drop-zone:hover, .img-drop-zone.drag-over {
+  border-color: var(--accent); color: var(--accent); background: rgba(232,212,77,.05);
+}
+.img-clear-btn {
+  font-size: 11px; padding: 3px 8px; background: transparent;
+  border: 1px solid rgba(232,84,84,.3); border-radius: 99px;
+  color: #e85454; cursor: pointer;
+}
+.img-clear-btn:hover { background: rgba(232,84,84,.1); }
 .board-mini-title { font-size: 10px; color: var(--text3); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 8px; }
 .board-strip {
   display: flex;
@@ -693,6 +731,35 @@ function renderEditor() {
 
       <div class="field field-full">
         <hr class="section-sep">
+        <label>Icône / Image de la case</label>
+        <div class="img-source-tabs">
+          <div class="img-source-tab${!c.icon || c.icon.length <= 4 ? ' active' : ''}" onclick="switchImgTab('emoji')">Emoji</div>
+          <div class="img-source-tab${c.icon && c.icon.startsWith('http') ? ' active' : ''}" onclick="switchImgTab('url')">URL</div>
+          <div class="img-source-tab${c.icon && c.icon.startsWith('data:') ? ' active' : ''}" onclick="switchImgTab('upload')">Upload</div>
+        </div>
+        <div id="imgTabEmoji" style="display:${!c.icon || c.icon.length <= 4 ? 'flex' : 'none'};gap:8px;align-items:center">
+          <input type="text" placeholder="Ex: 🏔️ ou laisser vide" value="${esc(c.icon && c.icon.length <= 4 ? c.icon : '')}" oninput="upd('icon',this.value)" style="max-width:140px">
+          <span style="font-size:11px;color:var(--text3)">1 à 2 caractères</span>
+        </div>
+        <div id="imgTabUrl" style="display:${c.icon && c.icon.startsWith('http') ? 'block' : 'none'}">
+          <input type="text" placeholder="https://i.imgur.com/..." value="${esc(c.icon && c.icon.startsWith('http') ? c.icon : '')}" oninput="upd('icon',this.value)" style="width:100%">
+        </div>
+        <div id="imgTabUpload" style="display:${c.icon && c.icon.startsWith('data:') ? 'block' : 'none'}">
+          <div class="img-drop-zone" onclick="document.getElementById('iconFileInput').click()" id="imgDropZone">
+            📁 Cliquer pour choisir une image (PNG, JPG, GIF…)
+          </div>
+          <input type="file" id="iconFileInput" accept="image/*" style="display:none" onchange="loadIconFile(this)">
+        </div>
+        <div class="img-preview-wrap" style="margin-top:8px">
+          <div class="img-preview-box" id="iconPreviewBox">${renderIconPreviewHTML(c.icon)}</div>
+          <div style="flex:1">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Aperçu sur la case</div>
+            ${c.icon ? '<button class="img-clear-btn" onclick="clearIcon()">✕ Supprimer</button>' : '<span style="font-size:11px;color:var(--text3)">Aucune icône</span>'}
+          </div>
+        </div>
+      </div>
+
+      <div class="field field-full">
         <label>Description / Note (facultatif)</label>
         <textarea placeholder="Ex: La case la plus chère du plateau..." oninput="upd('desc',this.value)">${esc(c.desc||'')}</textarea>
       </div>
@@ -709,12 +776,13 @@ function renderPreview() {
   const isStation = c.type === 'station';
 
   let cardHtml = '';
+  const iconHtmlPreview = c.icon ? renderIconPreviewHTML(c.icon) : '';
   if(isProperty) {
     cardHtml = `
       <div class="card-preview">
         <div class="card-color-band" style="background:${grp.color};color:${textOnBg(grp.color)}">${grp.label.toUpperCase()}</div>
         <div class="card-body">
-          <div class="card-name">${c.name||'Sans nom'}</div>
+          <div class="card-name">${iconHtmlPreview ? '<span style="vertical-align:middle;margin-right:3px">' + iconHtmlPreview + '</span>' : ''}${c.name||'Sans nom'}</div>
           <div class="card-price">Prix: M$${c.price}</div>
           <hr class="card-divider">
           <div class="card-rent-row"><span>Loyer nu</span><span>M$${c.rents[0]}</span></div>
@@ -786,6 +854,13 @@ function upd(key, val) {
   renderList();
   renderPreview();
   document.getElementById('editorTitle').textContent = `Case ${currentIdx} — ${board[currentIdx].name || 'Sans nom'}`;
+  if(key === 'icon') updateIconPreview(val);
+}
+
+function clearIcon() {
+  upd('icon', '');
+  renderEditor();
+  renderPreview();
 }
 
 function updN(key, val) {
@@ -876,6 +951,82 @@ function toast(msg, type='') {
   t.className = 'toast show' + (type?' '+type:'');
   setTimeout(()=>t.className='toast',2500);
 }
+
+// ─── IMAGE HELPERS ───────────────────────────────────────────────────────────
+
+function renderIconPreviewHTML(src) {
+  if(!src) return "<span style='color:var(--text3);font-size:11px'>—</span>";
+  if(src.startsWith('http') || src.startsWith('data:')) {
+    const img = document.createElement('img');
+    img.src = src;
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover';
+    img.onerror = function(){ this.style.display='none'; };
+    return img.outerHTML;
+  }
+  return "<span>" + src + "</span>";
+}
+
+let currentImgTab = 'emoji';
+
+function switchImgTab(tab) {
+  currentImgTab = tab;
+  ['emoji','url','upload'].forEach(t => {
+    const el = document.getElementById('imgTab' + t.charAt(0).toUpperCase() + t.slice(1));
+    const tabEl = document.querySelector('.img-source-tab[onclick*="' + t + '"]');
+    if(el) el.style.display = t === tab ? (t === 'emoji' ? 'flex' : 'block') : 'none';
+    if(tabEl) tabEl.classList.toggle('active', t === tab);
+  });
+  // Clear icon when switching tabs
+  if(tab !== currentImgTab) {
+    upd('icon', '');
+    updateIconPreview('');
+  }
+}
+
+function updateIconPreview(src) {
+  const box = document.getElementById('iconPreviewBox');
+  if(box) box.innerHTML = renderIconPreviewHTML(src);
+}
+
+function loadIconFile(input) {
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const b64 = e.target.result;
+    upd('icon', b64);
+    updateIconPreview(b64);
+    const zone = document.getElementById('imgDropZone');
+    if(zone) zone.innerHTML = '✓ ' + file.name;
+    renderPreview();
+  };
+  reader.readAsDataURL(file);
+}
+
+// Drag & drop support
+document.addEventListener('dragover', function(e) {
+  const zone = document.getElementById('imgDropZone');
+  if(zone && e.target.closest('#imgDropZone')) {
+    e.preventDefault();
+    zone.classList.add('drag-over');
+  }
+});
+document.addEventListener('dragleave', function(e) {
+  const zone = document.getElementById('imgDropZone');
+  if(zone) zone.classList.remove('drag-over');
+});
+document.addEventListener('drop', function(e) {
+  const zone = document.getElementById('imgDropZone');
+  if(zone && e.target.closest('#imgDropZone')) {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if(file && file.type.startsWith('image/')) {
+      const fakeInput = { files: [file] };
+      loadIconFile(fakeInput);
+    }
+  }
+});
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
 render();

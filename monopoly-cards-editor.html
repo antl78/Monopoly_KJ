@@ -151,6 +151,9 @@ header{padding:.85rem 2rem;border-bottom:1px solid var(--border);display:flex;al
 
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text3);gap:8px;font-size:14px;padding:3rem}
 .empty-ico{font-size:36px}
+/* Currency icon (oufingouf.png), replaces the "M$" symbol everywhere. Sized
+   in em units so it always tracks the font-size of the text it sits next to. */
+.currency-icon{height:1em;width:1em;object-fit:contain;vertical-align:-0.15em;margin:0 .12em;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -242,6 +245,14 @@ header{padding:.85rem 2rem;border-bottom:1px solid var(--border);display:flex;al
 <div class="toast" id="toast"></div>
 
 <script>
+// Currency icon: oufingouf.png replaces the "M$" symbol throughout the UI.
+// Sized via the .currency-icon CSS class (1em) so it automatically matches
+// the font-size of the amount it's displayed next to.
+const MONEY_ICON = '<img src="images/oufingouf.png" alt="oufingouf" class="currency-icon">';
+// Substitutes any "M$" found in free-form card text with the currency icon.
+// Only use this on strings rendered via innerHTML — never on textContent.
+function fmtM(str) { return String(str || '').split('M$').join(MONEY_ICON); }
+
 // ─── EFFECT DEFINITIONS ────────────────────────────────────────────────────
 
 const EFFECTS = [
@@ -335,7 +346,7 @@ function renderList() {
     div.innerHTML = `
       <span class="card-num">${i+1}</span>
       <span style="font-size:15px">${c.icon}</span>
-      <span class="card-text-list">${c.text||'<span style="color:var(--text3)">Sans texte</span>'}</span>
+      <span class="card-text-list">${fmtM(c.text)||'<span style="color:var(--text3)">Sans texte</span>'}</span>
       <span class="card-effect-label" style="color:${eff.color};border-color:${eff.color}33;background:${eff.color}11">${eff.label}</span>
     `;
     div.onclick = () => { currentCardIdx = i; render(); };
@@ -427,7 +438,7 @@ function renderEffectParams(c) {
 
   if(c.effect==='gain'||c.effect==='lose') {
     html = `<div class="cond-section">
-      <div class="field"><label>Montant (M$)</label><input type="number" min="0" value="${c.amount}" oninput="updN('amount',this.value)"></div>
+      <div class="field"><label>Montant (${MONEY_ICON})</label><input type="number" min="0" value="${c.amount}" oninput="updN('amount',this.value)"></div>
     </div>`;
   } else if(c.effect==='move_to') {
     html = `<div class="cond-section">
@@ -441,17 +452,17 @@ function renderEffectParams(c) {
   } else if(c.effect==='repairs') {
     html = `<div class="cond-section">
       <div class="cond-row">
-        <div class="field"><label>M$ par maison</label><input type="number" min="0" value="${c.perHouse}" oninput="updN('perHouse',this.value)"></div>
-        <div class="field"><label>M$ par hôtel</label><input type="number" min="0" value="${c.perHotel}" oninput="updN('perHotel',this.value)"></div>
+        <div class="field"><label>${MONEY_ICON} par maison</label><input type="number" min="0" value="${c.perHouse}" oninput="updN('perHouse',this.value)"></div>
+        <div class="field"><label>${MONEY_ICON} par hôtel</label><input type="number" min="0" value="${c.perHotel}" oninput="updN('perHotel',this.value)"></div>
       </div>
     </div>`;
   } else if(c.effect==='collect_all'||c.effect==='birthday') {
     html = `<div class="cond-section">
-      <div class="field"><label>M$ reçus de chaque joueur</label><input type="number" min="0" value="${c.collectAmount||c.amount}" oninput="updN('collectAmount',this.value);updN('amount',this.value)"></div>
+      <div class="field"><label>${MONEY_ICON} reçus de chaque joueur</label><input type="number" min="0" value="${c.collectAmount||c.amount}" oninput="updN('collectAmount',this.value);updN('amount',this.value)"></div>
     </div>`;
   } else if(c.effect==='pay_all') {
     html = `<div class="cond-section">
-      <div class="field"><label>M$ versés à chaque joueur</label><input type="number" min="0" value="${c.amount}" oninput="updN('amount',this.value)"></div>
+      <div class="field"><label>${MONEY_ICON} versés à chaque joueur</label><input type="number" min="0" value="${c.amount}" oninput="updN('amount',this.value)"></div>
     </div>`;
   } else if(c.effect==='goto_jail'||c.effect==='get_out') {
     html = `<div class="cond-section" style="color:var(--text2);font-size:13px;padding:.75rem 1rem;">
@@ -479,11 +490,11 @@ function renderPreview() {
   const eff = EFFECTS.find(e=>e.id===c.effect)||EFFECTS[0];
 
   let amountDisplay = '';
-  if(c.effect==='gain') amountDisplay = `<div class="card-amount-badge positive">+ M$${c.amount}</div>`;
-  else if(c.effect==='lose') amountDisplay = `<div class="card-amount-badge negative">- M$${c.amount}</div>`;
-  else if(c.effect==='repairs') amountDisplay = `<div style="font-size:10px;color:#888;text-align:center">🏠 ${c.perHouse}M$ / 🏨 ${c.perHotel}M$</div>`;
-  else if(c.effect==='birthday'||c.effect==='collect_all') amountDisplay = `<div class="card-amount-badge positive">+ M$${c.collectAmount||c.amount} × joueurs</div>`;
-  else if(c.effect==='pay_all') amountDisplay = `<div class="card-amount-badge negative">- M$${c.amount} × joueurs</div>`;
+  if(c.effect==='gain') amountDisplay = `<div class="card-amount-badge positive">+ ${MONEY_ICON}${c.amount}</div>`;
+  else if(c.effect==='lose') amountDisplay = `<div class="card-amount-badge negative">- ${MONEY_ICON}${c.amount}</div>`;
+  else if(c.effect==='repairs') amountDisplay = `<div style="font-size:10px;color:#888;text-align:center">🏠 ${c.perHouse}${MONEY_ICON} / 🏨 ${c.perHotel}${MONEY_ICON}</div>`;
+  else if(c.effect==='birthday'||c.effect==='collect_all') amountDisplay = `<div class="card-amount-badge positive">+ ${MONEY_ICON}${c.collectAmount||c.amount} × joueurs</div>`;
+  else if(c.effect==='pay_all') amountDisplay = `<div class="card-amount-badge negative">- ${MONEY_ICON}${c.amount} × joueurs</div>`;
   else if(c.effect==='goto_jail') amountDisplay = `<div style="font-size:20px;text-align:center">⛓️</div>`;
   else if(c.effect==='get_out') amountDisplay = `<div style="font-size:20px;text-align:center">🔑</div>`;
   else if(c.effect==='move_to') amountDisplay = `<div style="font-size:11px;color:#888;text-align:center">→ case ${c.targetPos}</div>`;
@@ -498,9 +509,9 @@ function renderPreview() {
       </div>
       <div class="card-content">
         <div style="font-size:30px">${c.icon||'🃏'}</div>
-        <div class="card-text">${c.text||'<span style="opacity:.4;font-style:italic">Texte de la carte</span>'}</div>
+        <div class="card-text">${fmtM(c.text)||'<span style="opacity:.4;font-style:italic">Texte de la carte</span>'}</div>
         ${amountDisplay}
-        ${c.flavor?`<div class="card-flavor">${c.flavor}</div>`:''}
+        ${c.flavor?`<div class="card-flavor">${fmtM(c.flavor)}</div>`:''}
       </div>
       <div class="card-footer">${isChance?'Chance':'Caisse de communauté'} • ${currentCardIdx+1}/${totalCards}</div>
     </div>

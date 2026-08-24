@@ -68,6 +68,10 @@ input[type=file]{display:none}
 .cell-corner .lbl{font-size:.6em;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
 .cell-icon-img{width:clamp(16px,3.2cqw,34px);height:clamp(16px,3.2cqw,34px);object-fit:cover;border-radius:2px;flex-shrink:0}
 .cell-icon-emoji{font-size:clamp(11px,1.8cqw,20px);line-height:1;flex-shrink:0}
+/* Currency icon (oufingouf.png), replaces the "M$" symbol everywhere. Sized
+   in em units so it always tracks the font-size of whatever text/number it
+   sits next to, wherever that text appears (cell price, badges, panels...). */
+.currency-icon{height:1em;width:1em;object-fit:contain;vertical-align:-0.15em;margin:0 .12em;flex-shrink:0}
 .cell-center{grid-column:2/11;grid-row:2/11;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;background:var(--board-fill)}
 .center-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(16px,4.5cqw,34px);letter-spacing:.15em;color:var(--accent2);text-align:center}
 .center-sub{font-size:clamp(9px,1.6cqw,13px);color:var(--text2);text-align:center}
@@ -256,7 +260,7 @@ input[type=file]{display:none}
     </div>
 
     <div class="setup-section">
-      <div class="setup-label">Capital de départ (M$)</div>
+      <div class="setup-label">Capital de départ (<img src="images/oufingouf.png" alt="oufingouf" class="currency-icon">)</div>
       <input class="money-input" type="number" id="startMoney" value="1500" min="100" step="100">
     </div>
 
@@ -584,6 +588,15 @@ setInterval(()=>{
 // for older browsers that don't support cqw.
 const SUPPORTS_CQW = (typeof CSS !== 'undefined' && CSS.supports && CSS.supports('width', '1cqw'));
 
+// Currency icon: oufingouf.png replaces the "M$" symbol throughout the UI.
+// Sized via the .currency-icon CSS class (1em) so it automatically matches
+// the font-size of the amount it's displayed next to.
+const MONEY_ICON = '<img src="images/oufingouf.png" alt="oufingouf" class="currency-icon">';
+// Substitutes any "M$" found in free-form text (card/cell descriptions
+// coming from plateau.json / cartes.json) with the currency icon. Only use
+// this on strings rendered via innerHTML — never on textContent targets.
+function fmtM(str) { return String(str || '').split('M$').join(MONEY_ICON); }
+
 // Render an icon for a cell: emoji string → span, URL/base64 → img
 function renderCellIconHtml(src, large) {
   if(!src) return '';
@@ -645,7 +658,7 @@ function buildBoard() {
       const iconSrc = c.icon || defaultIcon;
       const iconHtml = iconSrc ? renderCellIconHtml(iconSrc, false) + ' ' : '';
       inner += `<div class="cell-name">${iconHtml}${c.name}</div>`;
-      if(c.price>0) inner+=`<div class="cell-price">${c.price}</div>`;
+      if(c.price>0) inner+=`<div class="cell-price">${c.price}${MONEY_ICON}</div>`;
       div.innerHTML=inner;
     }
     div.onclick=()=>showCellInfo(c.pos);
@@ -705,7 +718,7 @@ function groupPipsHtml(player){
 function renderQuickActions(p){
   let html='';
   if(p.inJail && G.phase==='roll'){
-    html+=`<button class="btn-sm warn" onclick="payJail()">⛓️ Payer la caution (M$50)</button>`;
+    html+=`<button class="btn-sm warn" onclick="payJail()">⛓️ Payer la caution (${MONEY_ICON}50)</button>`;
     if(p.getOutCards>0) html+=`<button class="btn-sm green" onclick="useGetOutCard()">🔑 Carte sortie de prison</button>`;
   }
   if(G.phase==='action'){
@@ -720,7 +733,7 @@ function opponentRowHtml(o){
     <span class="opp-pawn">${o.pawn}</span>
     <span class="opp-name">${o.name}${o.inJail?' ⛓️':''}${o.bankrupt?' (faillite)':''}</span>
     <span class="opp-props">${o.properties.length} biens</span>
-    <span class="opp-money">M$${o.money.toLocaleString()}</span>
+    <span class="opp-money">${MONEY_ICON}${o.money.toLocaleString()}</span>
   </div>`;
 }
 
@@ -733,7 +746,7 @@ function bankStatsHtml(){
   Object.values(G.propertyBuildings).forEach(b=>{houses+=b.houses||0; if(b.hotel) hotels++;});
   return `
     <div class="info-row"><span class="lbl">Propriétés disponibles</span><span class="val">${available} / ${dealCells.length}</span></div>
-    <div class="info-row"><span class="lbl">Argent en circulation</span><span class="val">M$${circulating.toLocaleString()}</span></div>
+    <div class="info-row"><span class="lbl">Argent en circulation</span><span class="val">${MONEY_ICON}${circulating.toLocaleString()}</span></div>
     <div class="info-row"><span class="lbl">Maisons construites</span><span class="val">${houses}</span></div>
     <div class="info-row"><span class="lbl">Hôtels construits</span><span class="val">${hotels}</span></div>
   `;
@@ -752,7 +765,7 @@ function renderSidebarPanels(){
       <div class="pa-top">
         <span class="pa-pawn">${p.pawn}</span>
         <span class="pa-name">${p.name}${p.inJail?' <span class="jail-badge">⛓️ prison</span>':''}</span>
-        <span class="pa-money">M$${p.money.toLocaleString()}</span>
+        <span class="pa-money">${MONEY_ICON}${p.money.toLocaleString()}</span>
       </div>
       ${groupPipsHtml(p)}
       ${renderQuickActions(p)}
@@ -931,11 +944,11 @@ function applyCard(p, card, deck){
   switch(card.effect){
     case 'gain':
       applyFn=()=>{p.money+=card.amount;log(`${p.pawn} Reçoit M$${card.amount}`,'gain');};
-      amountBadge=`<div class="card-display-amount pos">+ M$${card.amount}</div>`;
+      amountBadge=`<div class="card-display-amount pos">+ ${MONEY_ICON}${card.amount}</div>`;
       break;
     case 'lose':
       applyFn=()=>{p.money-=card.amount;log(`${p.pawn} Paie M$${card.amount}`,'loss');};
-      amountBadge=`<div class="card-display-amount neg">- M$${card.amount}</div>`;
+      amountBadge=`<div class="card-display-amount neg">- ${MONEY_ICON}${card.amount}</div>`;
       break;
     case 'goto_jail':
       applyFn=()=>goToJail(p);
@@ -973,7 +986,7 @@ function applyCard(p, card, deck){
         p.money-=total;
         log(`${p.pawn} Réparations : paye M$${total}`,'loss');
       };
-      amountBadge=`<div style="font-size:13px;color:#888">🏠 M$${card.perHouse}/maison<br>🏨 M$${card.perHotel}/hôtel</div>`;
+      amountBadge=`<div style="font-size:13px;color:#888">🏠 ${MONEY_ICON}${card.perHouse}/maison<br>🏨 ${MONEY_ICON}${card.perHotel}/hôtel</div>`;
       break;
     case 'birthday': case 'collect_all':
       applyFn=()=>{
@@ -982,7 +995,7 @@ function applyCard(p, card, deck){
         p.money+=amt*others.length;
         log(`${p.pawn} Collecte M$${amt} de chaque joueur → total M$${amt*others.length}`,'gain');
       };
-      amountBadge=`<div class="card-display-amount pos">+ M$${card.collectAmount||card.amount} × joueurs</div>`;
+      amountBadge=`<div class="card-display-amount pos">+ ${MONEY_ICON}${card.collectAmount||card.amount} × joueurs</div>`;
       break;
     case 'pay_all':
       applyFn=()=>{
@@ -991,7 +1004,7 @@ function applyCard(p, card, deck){
         p.money-=amt*others.length;
         log(`${p.pawn} Verse M$${amt} à chaque joueur`,'loss');
       };
-      amountBadge=`<div class="card-display-amount neg">- M$${card.amount} × joueurs</div>`;
+      amountBadge=`<div class="card-display-amount neg">- ${MONEY_ICON}${card.amount} × joueurs</div>`;
       break;
     default:
       applyFn=()=>{log(`${p.pawn} Carte spéciale : ${card.text}`,'chance');};
@@ -1007,9 +1020,9 @@ function showCardModal(card, deck, amountBadge, applyFn){
     <div class="card-display ${deck}">
       <div class="card-display-deck">${isChance?'CHANCE':'COMMUNAUTÉ'}</div>
       <div class="card-display-icon">${card.icon||'🃏'}</div>
-      <div class="card-display-text">${card.text}</div>
+      <div class="card-display-text">${fmtM(card.text)}</div>
       ${amountBadge}
-      ${card.flavor?`<div class="card-display-flavor">${card.flavor}</div>`:''}
+      ${card.flavor?`<div class="card-display-flavor">${fmtM(card.flavor)}</div>`:''}
     </div>
   `;
   document.getElementById('modalFooter').innerHTML=`
@@ -1069,17 +1082,17 @@ function calcRent(cell, owner){
 
 function titleDeedHtml(cell, color){
   const rentRows = cell.type==='property' ? `
-      <tr><td>Loyer nu</td><td>M$${cell.rents[0]}</td></tr>
-      <tr><td>Avec le monopole</td><td>M$${cell.rents[1]}</td></tr>
-      <tr><td>Avec 1 maison</td><td>M$${cell.rents[2]}</td></tr>
-      <tr><td>Avec 2 maisons</td><td>M$${cell.rents[3]}</td></tr>
-      <tr><td>Avec 3 maisons</td><td>M$${cell.rents[4]}</td></tr>
-      <tr><td>Avec hôtel</td><td>M$${cell.rents[5]}</td></tr>
+      <tr><td>Loyer nu</td><td>${MONEY_ICON}${cell.rents[0]}</td></tr>
+      <tr><td>Avec le monopole</td><td>${MONEY_ICON}${cell.rents[1]}</td></tr>
+      <tr><td>Avec 1 maison</td><td>${MONEY_ICON}${cell.rents[2]}</td></tr>
+      <tr><td>Avec 2 maisons</td><td>${MONEY_ICON}${cell.rents[3]}</td></tr>
+      <tr><td>Avec 3 maisons</td><td>${MONEY_ICON}${cell.rents[4]}</td></tr>
+      <tr><td>Avec hôtel</td><td>${MONEY_ICON}${cell.rents[5]}</td></tr>
     ` : cell.type==='station' ? `
-      <tr><td>1 gare</td><td>M$${cell.rents[0]}</td></tr>
-      <tr><td>2 gares</td><td>M$${cell.rents[1]}</td></tr>
-      <tr><td>3 gares</td><td>M$${cell.rents[2]}</td></tr>
-      <tr><td>4 gares</td><td>M$${cell.rents[3]}</td></tr>
+      <tr><td>1 gare</td><td>${MONEY_ICON}${cell.rents[0]}</td></tr>
+      <tr><td>2 gares</td><td>${MONEY_ICON}${cell.rents[1]}</td></tr>
+      <tr><td>3 gares</td><td>${MONEY_ICON}${cell.rents[2]}</td></tr>
+      <tr><td>4 gares</td><td>${MONEY_ICON}${cell.rents[3]}</td></tr>
     ` : `<tr><td colspan="2">Loyer = dés × 4 (1 compagnie possédée) ou × 10 (2 compagnies)</td></tr>`;
 
   return `
@@ -1089,7 +1102,7 @@ function titleDeedHtml(cell, color){
         <div class="td-kicker">Titre de propriété</div>
         <div class="td-name">${cell.name}</div>
         <table class="prop-table">${rentRows}</table>
-        ${cell.price?`<div class="td-foot">Hypothèque M$${cell.mortgage}${cell.buildCost?` · Maison M$${cell.buildCost}`:''}</div>`:''}
+        ${cell.price?`<div class="td-foot">Hypothèque ${MONEY_ICON}${cell.mortgage}${cell.buildCost?` · Maison ${MONEY_ICON}${cell.buildCost}`:''}</div>`:''}
       </div>
     </div>`;
 }
@@ -1099,7 +1112,7 @@ function showBuyModal(p, cell){
   const canAfford = p.money>=cell.price;
   document.getElementById('modalTitle').textContent='À vendre';
   document.getElementById('modalBody').innerHTML=`
-    <div class="buy-price">M$${cell.price}</div>
+    <div class="buy-price">${MONEY_ICON}${cell.price}</div>
     ${titleDeedHtml(cell, color)}
   `;
   document.getElementById('modalFooter').innerHTML=`
@@ -1135,8 +1148,8 @@ function showBuildModal(){
     const cell=G.board[pos];
     const b=G.propertyBuildings[pos]||{houses:0,hotel:0};
     const current=b.hotel?'🏨 Hôtel':b.houses>0?`🏠×${b.houses}`:'Terrain nu';
-    const canBuild=!b.hotel&&b.houses<4?`<button class="btn-sm green" onclick="buildHouse(${pos})">+ Maison (M$${cell.buildCost})</button>`:'';
-    const canHotel=b.houses>=4&&!b.hotel?`<button class="btn-sm warn" onclick="buildHotel(${pos})">🏨 Hôtel (M$${cell.buildCost})</button>`:'';
+    const canBuild=!b.hotel&&b.houses<4?`<button class="btn-sm green" onclick="buildHouse(${pos})">+ Maison (${MONEY_ICON}${cell.buildCost})</button>`:'';
+    const canHotel=b.houses>=4&&!b.hotel?`<button class="btn-sm warn" onclick="buildHotel(${pos})">🏨 Hôtel (${MONEY_ICON}${cell.buildCost})</button>`:'';
     return `<div class="info-row"><span class="lbl">${cell.name}</span><span style="display:flex;align-items:center;gap:6px">${current} ${canBuild}${canHotel}</span></div>`;
   }).join('');
   document.getElementById('modalTitle').textContent='🔨 Construction';
@@ -1179,8 +1192,8 @@ function showSellModal(){
     const b=G.propertyBuildings[pos];
     const refund=Math.round(cell.buildCost/2);
     const btn = b.hotel
-      ? `<button class="btn-sm red" onclick="sellHotel(${pos})">Vendre l'hôtel (+M$${refund})</button>`
-      : `<button class="btn-sm red" onclick="sellHouse(${pos})">Vendre 1 maison (+M$${refund})</button>`;
+      ? `<button class="btn-sm red" onclick="sellHotel(${pos})">Vendre l'hôtel (+${MONEY_ICON}${refund})</button>`
+      : `<button class="btn-sm red" onclick="sellHouse(${pos})">Vendre 1 maison (+${MONEY_ICON}${refund})</button>`;
     const state = b.hotel?'🏨 Hôtel':`🏠×${b.houses}`;
     return `<div class="info-row"><span class="lbl">${cell.name} <span style="color:var(--text3)">(${state})</span></span><span>${btn}</span></div>`;
   }).join('');
@@ -1219,8 +1232,8 @@ function showMortgageModal(mode){
   const rows=list.map(pos=>{
     const cell=G.board[pos];
     const btn = mode==='unmortgage'
-      ? `<button class="btn-sm green" onclick="unmortgage(${pos})">Lever (M$${Math.round(cell.mortgage*1.1)})</button>`
-      : `<button class="btn-sm red" onclick="mortgage(${pos})">Hypothéquer (+M$${cell.mortgage})</button>`;
+      ? `<button class="btn-sm green" onclick="unmortgage(${pos})">Lever (${MONEY_ICON}${Math.round(cell.mortgage*1.1)})</button>`
+      : `<button class="btn-sm red" onclick="mortgage(${pos})">Hypothéquer (+${MONEY_ICON}${cell.mortgage})</button>`;
     return `<div class="info-row"><span class="lbl">${cell.name}</span><span>${btn}</span></div>`;
   }).join('');
   document.getElementById('modalTitle').textContent = mode==='unmortgage' ? "🔓 Lever l'hypothèque" : '🏦 Hypothéquer';
@@ -1255,7 +1268,7 @@ function showMenuModal(){
   document.getElementById('modalBody').innerHTML=`
     <div style="font-size:13px;color:var(--text2);line-height:1.6">
       Partie en cours — ${G.players.length} joueurs, tour ${G.turn}.<br>
-      ${G.players.map(pl=>`${pl.pawn} ${pl.name} : M$${pl.money.toLocaleString()}`).join('<br>')}
+      ${G.players.map(pl=>`${pl.pawn} ${pl.name} : ${MONEY_ICON}${pl.money.toLocaleString()}`).join('<br>')}
     </div>
   `;
   document.getElementById('modalFooter').innerHTML=`
@@ -1355,7 +1368,7 @@ function showCellInfo(pos){
       ${titleDeedHtml(cell, color)}
     `;
   } else {
-    body=`<div style="color:var(--text2);font-size:14px">${cell.desc||'Case spéciale.'}</div>`;
+    body=`<div style="color:var(--text2);font-size:14px">${fmtM(cell.desc||'Case spéciale.')}</div>`;
   }
 
   showInfo(cell.name, body, cell.icon);

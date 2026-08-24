@@ -466,6 +466,9 @@ header {
   font-size: 14px;
 }
 .empty-ico { font-size: 32px; }
+/* Currency icon (oufingouf.png), replaces the "M$" symbol everywhere. Sized
+   in em units so it always tracks the font-size of the text it sits next to. */
+.currency-icon{height:1em;width:1em;object-fit:contain;vertical-align:-0.15em;margin:0 .12em;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -538,6 +541,14 @@ header {
 <div class="toast" id="toast"></div>
 
 <script>
+// Currency icon: oufingouf.png replaces the "M$" symbol throughout the UI.
+// Sized via the .currency-icon CSS class (1em) so it automatically matches
+// the font-size of the amount it's displayed next to.
+const MONEY_ICON = '<img src="images/oufingouf.png" alt="oufingouf" class="currency-icon">';
+// Substitutes any "M$" found in free-form text (cell description) with the
+// currency icon. Only use this on strings rendered via innerHTML.
+function fmtM(str) { return String(str || '').split('M$').join(MONEY_ICON); }
+
 // ─── DATA ────────────────────────────────────────────────────────────────────
 
 const GROUPS = [
@@ -683,30 +694,30 @@ function renderEditor() {
 
       ${hasPrice ? `
       <div class="field">
-        <label>Prix d'achat (M$)</label>
+        <label>Prix d'achat (${MONEY_ICON})</label>
         <input type="number" id="f_price" value="${c.price}" min="0" oninput="updN('price',this.value)">
       </div>
       <div class="field">
-        <label>Valeur hypothèque (M$)</label>
+        <label>Valeur hypothèque (${MONEY_ICON})</label>
         <input type="number" id="f_mortgage" value="${c.mortgage}" min="0" oninput="updN('mortgage',this.value)">
       </div>` : ''}
 
       ${hasTax ? `
       <div class="field">
-        <label>Montant de la taxe (M$)</label>
+        <label>Montant de la taxe (${MONEY_ICON})</label>
         <input type="number" value="${c.price}" min="0" oninput="updN('price',this.value)">
       </div>` : ''}
 
       ${hasBuild ? `
       <div class="field">
-        <label>Coût construction maison/hôtel (M$)</label>
+        <label>Coût construction maison/hôtel (${MONEY_ICON})</label>
         <input type="number" value="${c.buildCost}" min="0" oninput="updN('buildCost',this.value)">
       </div>` : ''}
 
       ${isProperty ? `
       <div class="field field-full">
         <hr class="section-sep">
-        <label style="margin-bottom:10px;display:block;">Loyers (M$)</label>
+        <label style="margin-bottom:10px;display:block;">Loyers (${MONEY_ICON})</label>
         <div class="rents-grid">
           <div class="rent-field"><label>Nu</label><input type="number" value="${c.rents[0]}" min="0" oninput="updRent(0,this.value)"></div>
           <div class="rent-field"><label>Monopole</label><input type="number" value="${c.rents[1]}" min="0" oninput="updRent(1,this.value)"></div>
@@ -720,7 +731,7 @@ function renderEditor() {
       ${isStation ? `
       <div class="field field-full">
         <hr class="section-sep">
-        <label style="margin-bottom:10px;display:block;">Loyers selon nb de gares possédées (M$)</label>
+        <label style="margin-bottom:10px;display:block;">Loyers selon nb de gares possédées (${MONEY_ICON})</label>
         <div class="rents-grid">
           <div class="rent-field"><label>1 gare</label><input type="number" value="${c.rents[0]}" min="0" oninput="updRent(0,this.value)"></div>
           <div class="rent-field"><label>2 gares</label><input type="number" value="${c.rents[1]}" min="0" oninput="updRent(1,this.value)"></div>
@@ -783,17 +794,17 @@ function renderPreview() {
         <div class="card-color-band" style="background:${grp.color};color:${textOnBg(grp.color)}">${grp.label.toUpperCase()}</div>
         <div class="card-body">
           <div class="card-name">${iconHtmlPreview ? '<span style="vertical-align:middle;margin-right:3px">' + iconHtmlPreview + '</span>' : ''}${c.name||'Sans nom'}</div>
-          <div class="card-price">Prix: M$${c.price}</div>
+          <div class="card-price">Prix: ${MONEY_ICON}${c.price}</div>
           <hr class="card-divider">
-          <div class="card-rent-row"><span>Loyer nu</span><span>M$${c.rents[0]}</span></div>
-          <div class="card-rent-row"><span>Monopole</span><span>M$${c.rents[1]}</span></div>
-          <div class="card-rent-row"><span>1 maison</span><span>M$${c.rents[2]}</span></div>
-          <div class="card-rent-row"><span>2 maisons</span><span>M$${c.rents[3]}</span></div>
-          <div class="card-rent-row"><span>3 maisons</span><span>M$${c.rents[4]}</span></div>
-          <div class="card-rent-row highlight"><span>Hôtel</span><span>M$${c.rents[5]}</span></div>
+          <div class="card-rent-row"><span>Loyer nu</span><span>${MONEY_ICON}${c.rents[0]}</span></div>
+          <div class="card-rent-row"><span>Monopole</span><span>${MONEY_ICON}${c.rents[1]}</span></div>
+          <div class="card-rent-row"><span>1 maison</span><span>${MONEY_ICON}${c.rents[2]}</span></div>
+          <div class="card-rent-row"><span>2 maisons</span><span>${MONEY_ICON}${c.rents[3]}</span></div>
+          <div class="card-rent-row"><span>3 maisons</span><span>${MONEY_ICON}${c.rents[4]}</span></div>
+          <div class="card-rent-row highlight"><span>Hôtel</span><span>${MONEY_ICON}${c.rents[5]}</span></div>
           <hr class="card-divider">
-          <div class="card-rent-row"><span>Maison/Hôtel</span><span>M$${c.buildCost}</span></div>
-          <div class="card-mortgage">Hypothèque: M$${c.mortgage}</div>
+          <div class="card-rent-row"><span>Maison/Hôtel</span><span>${MONEY_ICON}${c.buildCost}</span></div>
+          <div class="card-mortgage">Hypothèque: ${MONEY_ICON}${c.mortgage}</div>
         </div>
       </div>`;
   } else if(isStation) {
@@ -802,13 +813,13 @@ function renderPreview() {
         <div class="card-color-band" style="background:#333;color:#eee">GARE</div>
         <div class="card-body">
           <div class="card-name">${c.name||'Gare'}</div>
-          <div class="card-price">Prix: M$${c.price}</div>
+          <div class="card-price">Prix: ${MONEY_ICON}${c.price}</div>
           <hr class="card-divider">
-          <div class="card-rent-row"><span>1 gare</span><span>M$${c.rents[0]}</span></div>
-          <div class="card-rent-row"><span>2 gares</span><span>M$${c.rents[1]}</span></div>
-          <div class="card-rent-row"><span>3 gares</span><span>M$${c.rents[2]}</span></div>
-          <div class="card-rent-row highlight"><span>4 gares</span><span>M$${c.rents[3]}</span></div>
-          <div class="card-mortgage">Hypothèque: M$${c.mortgage}</div>
+          <div class="card-rent-row"><span>1 gare</span><span>${MONEY_ICON}${c.rents[0]}</span></div>
+          <div class="card-rent-row"><span>2 gares</span><span>${MONEY_ICON}${c.rents[1]}</span></div>
+          <div class="card-rent-row"><span>3 gares</span><span>${MONEY_ICON}${c.rents[2]}</span></div>
+          <div class="card-rent-row highlight"><span>4 gares</span><span>${MONEY_ICON}${c.rents[3]}</span></div>
+          <div class="card-mortgage">Hypothèque: ${MONEY_ICON}${c.mortgage}</div>
         </div>
       </div>`;
   } else {
@@ -818,7 +829,7 @@ function renderPreview() {
         <div class="card-color-band" style="background:#2a2a35;color:#aaa">${tp?tp.label.toUpperCase():'CASE'}</div>
         <div class="card-body">
           <div class="card-name">${c.name||'Sans nom'}</div>
-          ${c.desc?`<p style="font-size:11px;color:#555;text-align:center;margin-top:6px;">${c.desc}</p>`:''}
+          ${c.desc?`<p style="font-size:11px;color:#555;text-align:center;margin-top:6px;">${fmtM(c.desc)}</p>`:''}
         </div>
       </div>`;
   }
@@ -838,7 +849,7 @@ function renderPreview() {
     <div class="preview-stats">
       <div class="stat-row"><span class="stat-label">Position</span><span class="stat-val">${currentIdx}/39</span></div>
       <div class="stat-row"><span class="stat-label">Type</span><span class="stat-val">${TYPES.find(t=>t.id===c.type)?.label||'?'}</span></div>
-      ${c.price>0?`<div class="stat-row"><span class="stat-label">Prix</span><span class="stat-val">M$${c.price}</span></div>`:''}
+      ${c.price>0?`<div class="stat-row"><span class="stat-label">Prix</span><span class="stat-val">${MONEY_ICON}${c.price}</span></div>`:''}
     </div>
     <div class="board-mini">
       <div class="board-mini-title">Mini-plateau (40 cases)</div>

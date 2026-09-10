@@ -120,8 +120,14 @@ input[type=file]{display:none}
 .cell-center{grid-column:2/11;grid-row:2/11;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;background:var(--board-fill)}
 .center-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(16px,4.5cqw,34px);letter-spacing:.15em;color:var(--accent2);text-align:center}
 .center-sub{font-size:clamp(9px,1.6cqw,13px);color:var(--text2);text-align:center}
-.pawns-on-cell{position:absolute;top:2px;left:2px;display:flex;flex-wrap:wrap;gap:1px;z-index:3}
-.pawn-chip{font-size:clamp(12px,2cqw,22px);line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
+/* Pawns live in one floating layer above the whole board rather than inside
+   each cell: that's what lets a pawn glide/hop smoothly from cell to cell
+   (see walkPawn()/positionAllPawnTokens() in JS) instead of jumping straight
+   from its old square to its new one. Each token is positioned with
+   transform:translate() to a pixel point read off the real DOM cell via
+   getBoundingClientRect(), so it stays correct at any board size. */
+#pawnLayer{position:absolute;inset:0;pointer-events:none;z-index:4}
+.pawn-token{position:absolute;top:0;left:0;font-size:clamp(22px,4.4cqw,46px);line-height:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45));transition:transform .32s ease;will-change:transform}
 
 /* Fallback for browsers without container query units (cqw): approximate
    with viewport-width based clamps so old browsers still get scaling. */
@@ -131,7 +137,7 @@ input[type=file]{display:none}
   .cell-icon-emoji{font-size:clamp(10px,1.9vw,20px)}
   .center-title{font-size:clamp(14px,2.5vw,32px)}
   .center-sub{font-size:clamp(8px,1vw,12px)}
-  .pawn-chip{font-size:clamp(11px,1.8vw,20px)}
+  .pawn-token{font-size:clamp(20px,3.8vw,40px)}
 }
 
 /* SIDEBAR */
@@ -212,6 +218,25 @@ input[type=file]{display:none}
 .btn-roll{padding:11px 18px;background:var(--accent);color:#fff;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.1em;border:none;border-radius:var(--r);cursor:pointer;transition:all .15s}
 .btn-roll:hover:not(:disabled){background:#0a4a42}
 .btn-roll:disabled{opacity:.4;cursor:not-allowed}
+
+/* Big centered dice, shown over the whole screen for the dramatic part of
+   each roll (the small console dice next to "Lancer" keep showing the same
+   result afterward as a persistent readout). Fixed + centered on the
+   viewport rather than the board, so it reads as "the game rolling", not
+   tied to board position. */
+.dice-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:120;pointer-events:none;opacity:0;transition:opacity .22s ease}
+.dice-overlay.show{opacity:1}
+.dice-overlay-panel{background:rgba(8,28,24,.85);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:28px 36px;display:flex;align-items:center;gap:20px;box-shadow:0 16px 44px rgba(0,0,0,.4)}
+.big-dice{width:min(84px,18vw);height:min(84px,18vw);background:#fff;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:min(60px,13vw);color:#0d3b32;box-shadow:0 6px 18px rgba(0,0,0,.35);line-height:1}
+.big-dice.rolling{animation:bigDiceRoll .5s cubic-bezier(.34,1.4,.64,1) infinite}
+@keyframes bigDiceRoll{
+  0%  {transform:rotate(0deg) scale(1)}
+  25% {transform:rotate(-24deg) scale(1.12)}
+  50% {transform:rotate(18deg) scale(.9)}
+  75% {transform:rotate(-10deg) scale(1.08)}
+  100%{transform:rotate(0deg) scale(1)}
+}
+.big-dice-total{font-family:'Bebas Neue',sans-serif;font-size:min(40px,8vw);color:#fff;letter-spacing:.06em;min-width:52px;text-align:center}
 
 .btn-sm{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;padding:6px 12px;border-radius:var(--r);border:1px solid var(--border2);background:var(--surface2);color:var(--text);cursor:pointer;transition:all .12s}
 .btn-sm:hover{background:#e6f1e8}
@@ -315,6 +340,14 @@ input[type=file]{display:none}
 
 <!-- ══ GAME SCREEN ══════════════════════════════════════════════════════════ -->
 <div class="screen hidden" id="gameScreen">
+  <!-- Big dice shown center-screen for each roll — see animateDiceRoll(). -->
+  <div class="dice-overlay" id="diceOverlay">
+    <div class="dice-overlay-panel">
+      <div class="big-dice" id="bigDice1">🎲</div>
+      <div class="big-dice-total" id="bigDiceTotal">—</div>
+      <div class="big-dice" id="bigDice2">🎲</div>
+    </div>
+  </div>
   <div class="game-main">
     <div class="board-wrap">
       <div class="board" id="board"></div>
@@ -604,6 +637,8 @@ function startGame() {
     mortgaged:new Set(),
     ui:{opponentsOpen:false, bankOpen:false},
     startedAt: performance.now(),
+    pawnEls:{}, // player.id -> floating pawn-token DOM element (see buildBoard)
+    animating:false, // true while a roll/move animation is in flight (blocks re-rolling)
   };
   document.getElementById('setupScreen').classList.add('hidden');
   document.getElementById('gameScreen').classList.remove('hidden');
@@ -617,6 +652,15 @@ function shuffle(arr) {
   for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}
   return arr;
 }
+
+function delay(ms){ return new Promise(resolve=>setTimeout(resolve, ms)); }
+
+// Keep the floating pawn tokens aligned with their cells when the board is
+// resized (the board's own size is fluid — see .board's width/height in
+// CSS — so a pawn's last computed pixel position goes stale on resize).
+window.addEventListener('resize', ()=>{
+  if(document.getElementById('board') && G.pawnEls) positionAllPawnTokens();
+});
 
 // Session timer shown in the history panel header (mm:ss / hh:mm:ss).
 setInterval(()=>{
@@ -727,7 +771,6 @@ function buildBoard() {
       div.innerHTML=`<div class="cell-content">${inner}</div>`;
     }
     div.onclick=()=>showCellInfo(c.pos);
-    div.appendChild(Object.assign(document.createElement('div'),{className:'pawns-on-cell',id:`pawns-${c.pos}`}));
     cells[c.pos]=div;
     board.appendChild(div);
   });
@@ -737,13 +780,114 @@ function buildBoard() {
   center.className='cell-center';
   center.innerHTML=`<div class="center-title">MONOPOLY</div><div class="center-sub">Jeu custom</div>`;
   board.appendChild(center);
+
+  // Floating layer pawns live in (see #pawnLayer / .pawn-token in CSS and
+  // ensurePawnTokens()/walkPawn() below) — appended last so it's on top of
+  // every cell.
+  const pawnLayer=document.createElement('div');
+  pawnLayer.id='pawnLayer';
+  board.appendChild(pawnLayer);
+  G.pawnEls={};
 }
 
+// Pawns are floating tokens (see #pawnLayer / .pawn-token in CSS) positioned
+// with transform:translate() to a pixel point read off the real DOM cell —
+// see positionAllPawnTokens()/cellCenterPx() and the animated walkPawn()
+// used for dice-driven moves further below.
 function renderPawns() {
-  document.querySelectorAll('.pawns-on-cell').forEach(el=>el.innerHTML='');
+  const live=G.players.filter(p=>!p.bankrupt);
+  const haveIds=Object.keys(G.pawnEls||{});
+  const mismatched = haveIds.length!==live.length || live.some(p=>!G.pawnEls[p.id]);
+  if(mismatched) ensurePawnTokens();
+  else positionAllPawnTokens();
+}
+
+function ensurePawnTokens(){
+  const layer=document.getElementById('pawnLayer');
+  if(!layer) return;
+  layer.innerHTML='';
+  G.pawnEls={};
   G.players.filter(p=>!p.bankrupt).forEach(p=>{
-    const el=document.getElementById(`pawns-${p.pos}`);
-    if(el) el.innerHTML+=`<span class="pawn-chip">${p.pawn}</span>`;
+    const el=document.createElement('div');
+    el.className='pawn-token';
+    el.textContent=p.pawn;
+    layer.appendChild(el);
+    G.pawnEls[p.id]=el;
+  });
+  positionAllPawnTokens();
+}
+
+// Snap every pawn token to its player's current .pos (no animation — used
+// after a state change that isn't a dice-driven move, and to re-align on
+// resize). Players sharing a cell are fanned out slightly so they don't
+// stack exactly on top of each other.
+function positionAllPawnTokens(){
+  const board=document.getElementById('board');
+  if(!board) return;
+  const boardRect=board.getBoundingClientRect();
+  const groups={};
+  G.players.forEach(p=>{ if(!p.bankrupt) (groups[p.pos]=groups[p.pos]||[]).push(p); });
+  Object.values(groups).forEach(list=>{
+    list.forEach((p,i)=>{
+      const el=G.pawnEls[p.id];
+      if(!el) return;
+      const {x,y}=cellCenterPx(p.pos, boardRect, list.length, i);
+      el.style.transition='none';
+      el.style.transform=`translate(calc(${x}px - 50%), calc(${y}px - 50%))`;
+      el.offsetHeight; // flush the style change before transitions are re-enabled
+      el.style.transition='';
+    });
+  });
+}
+
+// Pixel center of cell `pos` relative to the board's own box. `count`/`index`
+// fan multiple co-located pawns out around that center instead of stacking.
+function cellCenterPx(pos, boardRect, count, index){
+  const cellEl=document.getElementById(`cell-${pos}`);
+  if(!cellEl) return {x:boardRect.width/2, y:boardRect.height/2};
+  const r=cellEl.getBoundingClientRect();
+  const cx=r.left-boardRect.left+r.width/2;
+  const cy=r.top-boardRect.top+r.height/2;
+  if(count<=1) return {x:cx, y:cy};
+  const angle=(index/count)*Math.PI*2 - Math.PI/2;
+  const spread=Math.min(r.width, r.height)*0.26;
+  return {x:cx+Math.cos(angle)*spread, y:cy+Math.sin(angle)*spread};
+}
+
+// Build the ordered list of cells a pawn passes through to go `steps`
+// forward (positive) or backward (negative) from `fromPos`, wrapping
+// correctly around the 40-cell track in either direction.
+function pathForSteps(fromPos, steps){
+  const dir = steps>=0 ? 1 : -1;
+  const n = Math.abs(steps);
+  const path=[];
+  let cur=fromPos;
+  for(let i=0;i<n;i++){ cur=((cur+dir)%40+40)%40; path.push(cur); }
+  return path;
+}
+
+// Animate a pawn hopping through each cell in `path` in turn (purely
+// visual — doesn't touch p.pos). Resolves once the last hop's transition
+// finishes. The whole walk is capped at PAWN_HOP_MAX_TOTAL_MS so a long
+// forced move (e.g. a card sending someone most of the way around the
+// board) doesn't take forever — each hop just gets shorter.
+function walkPawn(p, path){
+  return new Promise(resolve=>{
+    const el=G.pawnEls&&G.pawnEls[p.id];
+    if(!el || !path.length){ resolve(); return; }
+    const board=document.getElementById('board');
+    const stepMs=Math.max(55, Math.min(PAWN_HOP_MS, PAWN_HOP_MAX_TOTAL_MS/path.length));
+    el.style.transition=`transform ${stepMs}ms linear`;
+    el.style.zIndex=10;
+    let i=0;
+    (function hop(){
+      const boardRect=board.getBoundingClientRect();
+      const {x,y}=cellCenterPx(path[i], boardRect, 1, 0);
+      el.style.transform=`translate(calc(${x}px - 50%), calc(${y}px - 50%))`;
+      i++;
+      if(i<path.length){ setTimeout(hop, stepMs); }
+      else { setTimeout(()=>{ el.style.zIndex=''; el.style.transition=''; resolve(); }, stepMs); }
+    })();
   });
 }
 
@@ -884,34 +1028,61 @@ function renderAll(){
 // DICE & MOVEMENT
 // ══════════════════════════════════════════════════════════════════════════════
 
-function rollDice(){
-  if(G.phase!=='roll') return;
+const PAWN_HOP_MS = 140;            // duration of one cell-to-cell hop
+const PAWN_HOP_MAX_TOTAL_MS = 1400; // cap on a whole walk's duration, however many hops
+
+// Flash both the small console dice and the big center-screen dice through
+// random faces, then settle on d1/d2 and hold briefly before fading the
+// center overlay out. Returns a promise so rollDice() can wait for the
+// "drama" to finish before the pawn actually starts moving.
+function animateDiceRoll(d1, d2){
+  return new Promise(resolve=>{
+    const dice1El=document.getElementById('dice1');
+    const dice2El=document.getElementById('dice2');
+    const overlay=document.getElementById('diceOverlay');
+    const big1=document.getElementById('bigDice1');
+    const big2=document.getElementById('bigDice2');
+    const bigTotal=document.getElementById('bigDiceTotal');
+
+    [dice1El,dice2El,big1,big2].forEach(el=>el.classList.add('rolling'));
+    bigTotal.textContent='';
+    overlay.classList.add('show');
+
+    let flashCount=0;
+    const flashInterval=setInterval(()=>{
+      const f1=DICE_FACES[Math.floor(Math.random()*6)];
+      const f2=DICE_FACES[Math.floor(Math.random()*6)];
+      dice1El.textContent=f1; dice2El.textContent=f2;
+      big1.textContent=f1; big2.textContent=f2;
+      flashCount++;
+      if(flashCount>=8){
+        clearInterval(flashInterval);
+        const face1=DICE_FACES[d1-1], face2=DICE_FACES[d2-1];
+        dice1El.textContent=face1; dice2El.textContent=face2;
+        big1.textContent=face1; big2.textContent=face2;
+        [dice1El,dice2El,big1,big2].forEach(el=>el.classList.remove('rolling'));
+        document.getElementById('diceTotal').textContent=d1+d2;
+        bigTotal.textContent=d1+d2;
+        setTimeout(()=>{
+          overlay.classList.remove('show');
+          setTimeout(resolve, 220); // matches .dice-overlay's opacity transition
+        }, 450); // hold the final faces on screen before fading out
+      }
+    }, 70);
+  });
+}
+
+async function rollDice(){
+  if(G.phase!=='roll' || G.animating) return;
+  G.animating=true;
+  document.getElementById('btnRoll').disabled=true;
+
   const p=G.players[G.currentPlayer];
   const d1=Math.ceil(Math.random()*6), d2=Math.ceil(Math.random()*6);
   const total=d1+d2;
   const doubles=d1===d2;
 
-  // Animate: flash random faces for 600ms, then show result
-  const dice1El=document.getElementById('dice1');
-  const dice2El=document.getElementById('dice2');
-  dice1El.classList.add('rolling');
-  dice2El.classList.add('rolling');
-
-  let flashCount=0;
-  const flashInterval=setInterval(()=>{
-    dice1El.textContent=DICE_FACES[Math.floor(Math.random()*6)];
-    dice2El.textContent=DICE_FACES[Math.floor(Math.random()*6)];
-    flashCount++;
-    if(flashCount>=8){
-      clearInterval(flashInterval);
-      dice1El.textContent=DICE_FACES[d1-1];
-      dice2El.textContent=DICE_FACES[d2-1];
-      dice1El.classList.remove('rolling');
-      dice2El.classList.remove('rolling');
-    }
-  }, 75);
-
-  document.getElementById('diceTotal').textContent=total;
+  await animateDiceRoll(d1,d2);
 
   G.diceRoll=[d1,d2];
   log(`${p.pawn} ${p.name} lance : ${DICE_FACES[d1-1]}+${DICE_FACES[d2-1]} = ${total}${doubles?' (doubles!)':''}`, 'move');
@@ -921,30 +1092,53 @@ function rollDice(){
     else{
       p.jailTurns++;
       if(p.jailTurns>=3){p.inJail=false;p.jailTurns=0;p.money-=50;log(`${p.pawn} Sort de prison après 3 tours. Paye M$50.`,'loss');}
-      else{log(`${p.pawn} En prison — tour ${p.jailTurns}/3.`);G.phase='action';renderAll();return;}
+      else{
+        log(`${p.pawn} En prison — tour ${p.jailTurns}/3.`);
+        G.phase='action';
+        G.animating=false;
+        renderAll();
+        return;
+      }
     }
   }
 
   if(doubles){
     G.doublesCount++;
-    if(G.doublesCount>=3){goToJail(p);G.phase='action';renderAll();return;}
+    if(G.doublesCount>=3){
+      goToJail(p);
+      G.phase='action';
+      G.animating=false;
+      renderAll();
+      return;
+    }
   } else {
     G.doublesCount=0;
   }
 
-  movePlayer(p, total);
+  await movePlayer(p, total);
+  G.animating=false;
 }
 
-function movePlayer(p, steps){
+// Walks the pawn cell-by-cell to its new position (see walkPawn()), then
+// applies the "passed Go" bonus and hands off to landOn(). Awaited by
+// rollDice() for a normal roll, but also called fire-and-forget by card
+// effects (move_to/move_by) — either way the animation still plays.
+async function movePlayer(p, steps){
   const oldPos=p.pos;
-  p.pos=(p.pos+steps)%40;
-  if(p.pos<oldPos||(steps>0&&p.pos===0)){
+  const path=pathForSteps(oldPos, steps);
+  const newPos=path.length?path[path.length-1]:oldPos;
+  G.phase='action';
+  renderSidebarPanels();
+  renderConsoleBar();
+  await walkPawn(p, path);
+  p.pos=newPos;
+  if(steps>0 && path.includes(0)){
     p.money+=200;
     log(`${p.pawn} Passe par la case Départ → reçoit M$200`,'gain');
   }
-  G.phase='action';
   renderAll();
-  setTimeout(()=>landOn(p),200);
+  await delay(150);
+  landOn(p);
 }
 
 function landOn(p){
@@ -1026,10 +1220,12 @@ function applyCard(p, card, deck){
     case 'move_to':
       applyFn=()=>{
         const target=card.targetPos||0;
-        if(target<p.pos) {p.money+=200;log(`${p.pawn} Passe par le Départ → M$200`,'gain');}
-        p.pos=target;
+        // "Advance to X" always moves forward (wrapping past Go awards the
+        // usual M$200) — movePlayer() walks the pawn there and calls
+        // landOn() itself once it arrives, animation included.
+        const steps=(target-p.pos+40)%40;
         log(`${p.pawn} Se déplace case ${target} : ${G.board[target]?.name}`,'move');
-        setTimeout(()=>{landOn(p);renderAll();},300);
+        movePlayer(p,steps);
       };
       amountBadge=`<div style="font-size:24px">→ case ${card.targetPos}</div>`;
       break;

@@ -58,16 +58,61 @@ input[type=file]{display:none}
 
 /* BOARD */
 .board-wrap{flex:1;display:flex;align-items:center;justify-content:center;min-width:0;min-height:0;padding:1rem;position:relative}
-.board{container-type:inline-size;container-name:board;display:grid;grid-template-columns:repeat(11,1fr);grid-template-rows:repeat(11,1fr);width:min(calc(100vh - 108px), calc(100vw - 400px));height:min(calc(100vh - 108px), calc(100vw - 400px));border:2px solid var(--accent2);border-radius:8px;overflow:hidden;background:var(--board-fill);position:relative;box-shadow:var(--shadow)}
-.cell{background:var(--board-fill);border:1px solid rgba(15,60,50,.12);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:2px;position:relative;cursor:default;overflow:hidden;font-size:clamp(8px,1.5cqw,16px)}
+/* Track sizing mimics a real Monopoly board: the 4 corner/depth tracks are
+   wider (1.8fr) than the 9 along-edge tracks (1fr each). That shrinks the
+   blank center (it spans the same 9 along-edge tracks on both axes) and
+   grows every playable cell at the same time — corners because their own
+   track got wider, and top/bottom/left/right cells because their "depth"
+   dimension (the row for top/bottom, the column for left/right) now uses
+   the wide 1.8fr track instead of an equal 1fr one. */
+.board{container-type:inline-size;container-name:board;display:grid;grid-template-columns:1.8fr repeat(9,1fr) 1.8fr;grid-template-rows:1.8fr repeat(9,1fr) 1.8fr;width:min(calc(100vh - 108px), calc(100vw - 400px));height:min(calc(100vh - 108px), calc(100vw - 400px));border:2px solid var(--accent2);border-radius:8px;overflow:hidden;background:var(--board-fill);position:relative;box-shadow:var(--shadow)}
+.cell{background:var(--board-fill);border:1px solid rgba(15,60,50,.12);position:relative;cursor:default;overflow:hidden}
 .cell:hover{border-color:var(--accent);z-index:2}
-.cell-color{width:100%;height:22%;border-radius:1px;flex-shrink:0}
-.cell-name{font-size:.95em;color:var(--text2);text-align:center;line-height:1.1;padding:1px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word}
-.cell-price{font-family:'DM Mono',monospace;font-size:.85em;color:var(--accent);opacity:.9}
-.cell-corner{font-size:2em;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;color:var(--accent)}
-.cell-corner .lbl{font-size:.6em;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
-.cell-icon-img{width:clamp(16px,3.2cqw,34px);height:clamp(16px,3.2cqw,34px);object-fit:cover;border-radius:2px;flex-shrink:0}
-.cell-icon-emoji{font-size:clamp(11px,1.8cqw,20px);line-height:1;flex-shrink:0}
+/* .cell-content is a layer separate from .cell so it can be resized/rotated
+   independently of the actual grid box. Top/bottom cells are naturally
+   PORTRAIT (narrow × tall) with this track sizing, so their content just
+   needs a 180° flip for the top row (readable from "outside" the board).
+   Left/right cells are naturally LANDSCAPE (wide × short) — their content
+   is instead pre-sized to the swapped, portrait dimensions (55.56% × 180%,
+   the exact inverse of the 1.8 corner/edge ratio) and rotated ±90°, so it
+   ends up filling the landscape box exactly with no overflow or clipping. */
+.cell-content{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:3px;gap:2px;font-size:clamp(9px,1.75cqw,19px)}
+/* When a cell has a color band, split the box in two: the band glues to
+   the pre-transform "top" (which every side rule below maps to the board's
+   inner edge) and the name/price block glues to the pre-transform "bottom"
+   (mapped to the board's outer edge) — see .cell-text below. Cells with no
+   color band (chance, tax, community...) keep the default flex-end so their
+   text still sits toward the outer edge. */
+.cell-content:has(.cell-color){justify-content:space-between}
+.cell-text{width:100%;display:flex;flex-direction:column;align-items:center;gap:2px}
+/* Top row: no rotation and no reversal needed here — the default (untouched)
+   flex-direction:column already reads right-side up, with .cell-color glued
+   to the physical top of the box (the board's outer edge) and .cell-text
+   glued to the physical bottom (the board's inner edge, toward the center).
+   That's a deliberate exception to the "text sits on the outer edge" rule
+   above: cramming the name/price against the board's outer border looked
+   worse than having the color band frame that edge instead, so on this one
+   side the roles are swapped — the color band plays the "outer edge" role
+   and the text sits closer to the center. (A 180° rotation, which is how a
+   real cardboard board prints its far edge so it reads right-side up for a
+   player sitting across the table, isn't needed either: everyone here looks
+   at the same screen from the same fixed angle.) */
+.cell-side-left .cell-content,.cell-side-right .cell-content{top:50%;left:50%;width:55.56%;height:180%}
+/* Left/right columns: pre-rotation "top" (the color band) must land on the
+   side facing the board's center (inner edge), not the screen edge. The
+   left column's inner edge is to its right, so its content is rotated
+   clockwise (+90deg); the right column's inner edge is to its left, so its
+   content is rotated counter-clockwise (-90deg) — the reverse of what was
+   here before, which pointed each side's content outward instead of inward. */
+.cell-side-left .cell-content{transform:translate(-50%,-50%) rotate(90deg)}
+.cell-side-right .cell-content{transform:translate(-50%,-50%) rotate(-90deg)}
+.cell-color{width:100%;height:20%;border-radius:1px;flex-shrink:0}
+.cell-name{width:100%;font-size:.95em;font-weight:700;color:#000;text-align:center;line-height:1.15;padding:1px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;word-break:break-word}
+.cell-price{width:100%;font-family:'DM Mono',monospace;font-size:.88em;font-weight:700;color:#000;text-align:center}
+.cell-corner{width:100%;font-size:2.1em;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1px;color:var(--accent)}
+.cell-corner .lbl{width:100%;font-size:.5em;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.02em;word-break:break-word;line-height:1.05}
+.cell-icon-img{width:clamp(18px,3.6cqw,40px);height:clamp(18px,3.6cqw,40px);object-fit:cover;border-radius:2px;flex-shrink:0}
+.cell-icon-emoji{font-size:clamp(12px,2.1cqw,23px);line-height:1;flex-shrink:0}
 /* Currency icon (oufingouf.png), replaces the "M$" symbol everywhere. Sized
    in em units so it always tracks the font-size of whatever text/number it
    sits next to, wherever that text appears (cell price, badges, panels...). */
@@ -81,9 +126,9 @@ input[type=file]{display:none}
 /* Fallback for browsers without container query units (cqw): approximate
    with viewport-width based clamps so old browsers still get scaling. */
 @supports not (width: 1cqw) {
-  .cell{font-size:clamp(7px,1.3vw,14px)}
-  .cell-icon-img{width:clamp(14px,2.8vw,30px);height:clamp(14px,2.8vw,30px)}
-  .cell-icon-emoji{font-size:clamp(10px,1.6vw,18px)}
+  .cell-content{font-size:clamp(7px,1.5vw,16px)}
+  .cell-icon-img{width:clamp(14px,3.1vw,34px);height:clamp(14px,3.1vw,34px)}
+  .cell-icon-emoji{font-size:clamp(10px,1.9vw,20px)}
   .center-title{font-size:clamp(14px,2.5vw,32px)}
   .center-sub{font-size:clamp(8px,1vw,12px)}
   .pawn-chip{font-size:clamp(11px,1.8vw,20px)}
@@ -603,9 +648,13 @@ function renderCellIconHtml(src, large) {
   // Detect image: starts with http, https, data:image, or common extensions
   const isImage = /^(https?:\/\/|data:image)/i.test(src);
   if(isImage) {
+    // Corner cells are ~1.8x the size of a regular cell, so their icon
+    // (large=true) is sized as a much bigger share of the board's own
+    // width (cqw) — it now scales up on big screens and down on small ones
+    // instead of hitting a low fixed cap, filling more of the corner.
     const size = SUPPORTS_CQW
-      ? (large ? 'clamp(24px,4.6cqw,48px)' : 'clamp(16px,3.2cqw,34px)')
-      : (large ? 'clamp(22px,4.2vw,44px)' : 'clamp(14px,2.8vw,30px)');
+      ? (large ? 'clamp(34px,9.5cqw,100px)' : 'clamp(16px,3.2cqw,34px)')
+      : (large ? 'clamp(30px,9vw,90px)' : 'clamp(14px,2.8vw,30px)');
     return `<img src="${src}" style="width:${size};height:${size};object-fit:cover;border-radius:2px;vertical-align:middle;flex-shrink:0" onerror="this.style.display='none'">`;
   }
   // Emoji or text
@@ -631,23 +680,34 @@ function buildBoard() {
   board.innerHTML = '';
   const cells = {};
 
+  // Which edge a (non-corner) cell sits on, so its content can be rotated to
+  // face outward: top row upside down, left/right columns rotated ±90°,
+  // bottom row left as-is (see cellGridPos for the pos ranges per edge).
+  function cellSide(pos) {
+    if(pos>=1&&pos<=9) return 'bottom';
+    if(pos>=11&&pos<=19) return 'left';
+    if(pos>=21&&pos<=29) return 'top';
+    if(pos>=31&&pos<=39) return 'right';
+    return '';
+  }
+
   G.board.forEach(c => {
     const {col,row} = cellGridPos(c.pos);
     const div = document.createElement('div');
-    div.className='cell';
+    const isCorner = [0,10,20,30].includes(c.pos);
+    div.className='cell'+(isCorner?'':' cell-side-'+cellSide(c.pos));
     div.id=`cell-${c.pos}`;
     div.style.gridColumn=col;
     div.style.gridRow=row;
 
     const color = GROUP_COLORS[c.group]||'#444';
-    const isCorner = [0,10,20,30].includes(c.pos);
 
     if(isCorner) {
       const cornerIcons = {0:'⛩',10:'🤸',20:'🍺',30:'🚔'};
       const labels = {0:'ENTRÉE SANCTUAIRE',10:'GYMNASE',20:'POCO BAR',30:'BAN DU SERVEUR'};
       // Support custom corner icon override via c.icon
       const cornerIconHtml = renderCellIconHtml(c.icon || cornerIcons[c.pos], true);
-      div.innerHTML=`<div class="cell-corner">${cornerIconHtml}<div class="lbl">${labels[c.pos]}</div></div>`;
+      div.innerHTML=`<div class="cell-content"><div class="cell-corner">${cornerIconHtml}<div class="lbl">${labels[c.pos]}</div></div></div>`;
     } else {
       let inner = '';
       if(c.type==='property'||c.type==='station'||c.type==='utility'){
@@ -657,9 +717,14 @@ function buildBoard() {
       const defaultIcon = {chance:'❓',community:'🏘️',tax:'💸',goto_jail:'🚔',free:'🌳',custom:'⭐'}[c.type]||'';
       const iconSrc = c.icon || defaultIcon;
       const iconHtml = iconSrc ? renderCellIconHtml(iconSrc, false) + ' ' : '';
-      inner += `<div class="cell-name">${iconHtml}${c.name}</div>`;
-      if(c.price>0) inner+=`<div class="cell-price">${c.price}${MONEY_ICON}</div>`;
-      div.innerHTML=inner;
+      // Name + price are grouped into one .cell-text block so they move
+      // together as a unit, glued to the board's outer edge, while the
+      // color band (if any) is glued to the inner edge — see the
+      // .cell-content:has(.cell-color) CSS rule.
+      let text = `<div class="cell-name">${iconHtml}${c.name}</div>`;
+      if(c.price>0) text += `<div class="cell-price">${c.price}${MONEY_ICON}</div>`;
+      inner += `<div class="cell-text">${text}</div>`;
+      div.innerHTML=`<div class="cell-content">${inner}</div>`;
     }
     div.onclick=()=>showCellInfo(c.pos);
     div.appendChild(Object.assign(document.createElement('div'),{className:'pawns-on-cell',id:`pawns-${c.pos}`}));

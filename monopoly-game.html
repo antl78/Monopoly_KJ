@@ -34,9 +34,20 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .player-row{display:flex;align-items:center;gap:8px}
 .player-row input{flex:1;font-family:'DM Sans',sans-serif;font-size:14px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);padding:8px 12px;outline:none}
 .player-row input:focus{border-color:var(--accent)}
-.pawn-pick{display:flex;gap:4px}
-.pawn-btn{width:32px;height:32px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .12s}
+.pawn-pick{display:flex;gap:4px;flex-wrap:wrap}
+.pawn-btn{width:32px;height:32px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .12s;flex-shrink:0}
 .pawn-btn:hover,.pawn-btn.sel{border-color:var(--accent);background:rgba(15,110,99,.1)}
+/* Upload-your-own-image pawn button: same 32×32 slot as the emoji choices,
+   but shows a small camera glyph, or a thumbnail of the image once one has
+   been chosen (see handlePawnFile()). */
+.pawn-btn-upload{overflow:hidden;padding:0;font-size:15px}
+.pawn-btn-thumb{width:100%;height:100%;object-fit:cover;border-radius:5px}
+/* An uploaded pawn image, wherever a pawn is shown (sidebar avatar, board
+   token, victory screen...) — see pawnIconHtml(). Sized in `em` so it
+   always matches the font-size of whatever pawn slot it's dropped into,
+   circular-cropped with a light ring so it reads as a token on any board
+   color. */
+.pawn-img-icon{width:1em;height:1em;object-fit:cover;border-radius:50%;vertical-align:-0.15em;box-shadow:0 0 0 2px rgba(255,255,255,.85)}
 .add-player-btn{font-size:13px;color:var(--text2);background:transparent;border:1px dashed var(--border2);border-radius:var(--r);padding:7px;cursor:pointer;transition:all .12s;width:100%}
 .add-player-btn:hover{color:var(--text);border-color:var(--accent)}
 .import-row{display:flex;gap:8px}
@@ -517,11 +528,52 @@ function removePlayerRow(idx) {
   renderSetup();
 }
 
-function selectPawn(playerIdx, emoji) {
+// `pawn` is either one of PAWN_EMOJIS or an uploaded image's data URL (see
+// handlePawnFile) — selectPawn() itself doesn't need to tell them apart.
+function selectPawn(playerIdx, pawn) {
   PAWNS_USED.delete(playerDefs[playerIdx].pawn);
-  playerDefs[playerIdx].pawn = emoji;
-  PAWNS_USED.add(emoji);
+  playerDefs[playerIdx].pawn = pawn;
+  PAWNS_USED.add(pawn);
   renderSetup();
+}
+
+// Uploaded pawn images are normalized to this square size (px) — small
+// enough to keep the resulting data URL light, big enough to still look
+// sharp at the sizes a pawn is shown on-screen (see .pawn-img-icon, sized
+// in em so the display size elsewhere is independent of this anyway).
+const PAWN_IMG_SIZE = 96;
+
+// Reads the chosen file, draws it center-cropped to a PAWN_IMG_SIZE square
+// canvas (so every uploaded pawn ends up the same size regardless of the
+// source photo's resolution or aspect ratio), and sets the result as this
+// player's pawn.
+function handlePawnFile(idx, inputEl){
+  const file = inputEl.files && inputEl.files[0];
+  if(!file) return;
+  if(!file.type.startsWith('image/')){
+    toast("Ce fichier n'est pas une image.");
+    inputEl.value='';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = PAWN_IMG_SIZE;
+      canvas.height = PAWN_IMG_SIZE;
+      const ctx = canvas.getContext('2d');
+      const side = Math.min(img.naturalWidth, img.naturalHeight);
+      const sx = (img.naturalWidth-side)/2, sy = (img.naturalHeight-side)/2;
+      ctx.drawImage(img, sx, sy, side, side, 0, 0, PAWN_IMG_SIZE, PAWN_IMG_SIZE);
+      selectPawn(idx, canvas.toDataURL('image/png'));
+    };
+    img.onerror = () => toast("Impossible de lire cette image.");
+    img.src = e.target.result;
+  };
+  reader.onerror = () => toast('Impossible de lire ce fichier.');
+  reader.readAsDataURL(file);
+  inputEl.value=''; // so choosing the same file again still fires onchange
 }
 
 function renderSetup() {
@@ -531,6 +583,8 @@ function renderSetup() {
       <input type="text" value="${p.name}" placeholder="Nom du joueur" oninput="playerDefs[${i}].name=this.value">
       <div class="pawn-pick">
         ${PAWN_EMOJIS.map(em=>`<div class="pawn-btn${p.pawn===em?' sel':''}" onclick="selectPawn(${i},'${em}')">${em}</div>`).join('')}
+        <div class="pawn-btn pawn-btn-upload${isImagePawn(p.pawn)?' sel':''}" onclick="document.getElementById('pawnFile${i}').click()" title="Utiliser une image">${isImagePawn(p.pawn)?`<img src="${p.pawn}" class="pawn-btn-thumb" alt="">`:'📷'}</div>
+        <input type="file" id="pawnFile${i}" accept="image/*" style="display:none" onchange="handlePawnFile(${i},this)">
       </div>
       ${playerDefs.length>2?`<button class="btn-sm red" onclick="removePlayerRow(${i})" style="padding:4px 8px;flex-shrink:0">✕</button>`:''}
     </div>
@@ -645,7 +699,7 @@ function startGame() {
   buildBoard();
   renderAll();
   log(`Partie lancée avec ${G.players.length} joueurs !`, 'system');
-  log(`${G.players[0].pawn} ${G.players[0].name} commence.`, 'important');
+  log(`${pawnLogChar(G.players[0])} ${G.players[0].name} commence.`, 'important');
 }
 
 function shuffle(arr) {
@@ -704,6 +758,30 @@ function renderCellIconHtml(src, large) {
   // Emoji or text
   return `<span style="font-size:${large?'1.8em':'1.1em'};line-height:1">${src}</span>`;
 }
+
+// A player's "pawn" is either a plain emoji character (the default) or an
+// uploaded image, normalized to a small square data URL by handlePawnFile()
+// — same convention as cell icons above, so it uses the same detection.
+function isImagePawn(v){ return typeof v==='string' && /^(https?:\/\/|data:image)/i.test(v); }
+
+// HTML for a pawn wherever markup is built with innerHTML. Sized in `em` (as
+// with .currency-icon) so an uploaded image automatically matches whatever
+// font-size the surrounding element already uses (sidebar avatar, board
+// token, victory screen...) with no per-call-site size to keep in sync.
+function pawnIconHtml(pawn){
+  if(!pawn) return '';
+  return isImagePawn(pawn)
+    ? `<img src="${pawn}" class="pawn-img-icon" alt="" onerror="this.style.display='none'">`
+    : pawn;
+}
+
+// Plain-text stand-in for a pawn, for the few spots that set text directly
+// (textContent) or feed into log() — log() deliberately uses textContent,
+// never innerHTML, to keep freely-typed player names from being able to
+// inject markup (see log()'s own comment) — so a data: URL can't be
+// rendered as an image there; this substitutes a generic marker instead of
+// dumping the raw URL as visible text.
+function pawnLogChar(p){ return p && isImagePawn(p.pawn) ? '🔹' : (p ? p.pawn : ''); }
 
 // ══════════════════════════════════════════════════════════════════════════════
 // BOARD RENDERING
@@ -810,7 +888,7 @@ function ensurePawnTokens(){
   G.players.filter(p=>!p.bankrupt).forEach(p=>{
     const el=document.createElement('div');
     el.className='pawn-token';
-    el.textContent=p.pawn;
+    el.innerHTML=pawnIconHtml(p.pawn);
     layer.appendChild(el);
     G.pawnEls[p.id]=el;
   });
@@ -939,7 +1017,7 @@ function renderQuickActions(p){
 
 function opponentRowHtml(o){
   return `<div class="opp-row${o.bankrupt?' bankrupt':''}">
-    <span class="opp-pawn">${o.pawn}</span>
+    <span class="opp-pawn">${pawnIconHtml(o.pawn)}</span>
     <span class="opp-name">${o.name}${o.inJail?' ⛓️':''}${o.bankrupt?' (faillite)':''}</span>
     <span class="opp-props">${o.properties.length} biens</span>
     <span class="opp-money">${MONEY_ICON}${o.money.toLocaleString()}</span>
@@ -972,7 +1050,7 @@ function renderSidebarPanels(){
   el.innerHTML = `
     <div class="panel panel-active">
       <div class="pa-top">
-        <span class="pa-pawn">${p.pawn}</span>
+        <span class="pa-pawn">${pawnIconHtml(p.pawn)}</span>
         <span class="pa-name">${p.name}${p.inJail?' <span class="jail-badge">⛓️ prison</span>':''}</span>
         <span class="pa-money">${MONEY_ICON}${p.money.toLocaleString()}</span>
       </div>
@@ -1085,15 +1163,15 @@ async function rollDice(){
   await animateDiceRoll(d1,d2);
 
   G.diceRoll=[d1,d2];
-  log(`${p.pawn} ${p.name} lance : ${DICE_FACES[d1-1]}+${DICE_FACES[d2-1]} = ${total}${doubles?' (doubles!)':''}`, 'move');
+  log(`${pawnLogChar(p)} ${p.name} lance : ${DICE_FACES[d1-1]}+${DICE_FACES[d2-1]} = ${total}${doubles?' (doubles!)':''}`, 'move');
 
   if(p.inJail){
-    if(doubles){p.inJail=false;p.jailTurns=0;log(`${p.pawn} Sort de prison grâce aux doubles !`,'gain');}
+    if(doubles){p.inJail=false;p.jailTurns=0;log(`${pawnLogChar(p)} Sort de prison grâce aux doubles !`,'gain');}
     else{
       p.jailTurns++;
-      if(p.jailTurns>=3){p.inJail=false;p.jailTurns=0;p.money-=50;log(`${p.pawn} Sort de prison après 3 tours. Paye M$50.`,'loss');}
+      if(p.jailTurns>=3){p.inJail=false;p.jailTurns=0;p.money-=50;log(`${pawnLogChar(p)} Sort de prison après 3 tours. Paye M$50.`,'loss');}
       else{
-        log(`${p.pawn} En prison — tour ${p.jailTurns}/3.`);
+        log(`${pawnLogChar(p)} En prison — tour ${p.jailTurns}/3.`);
         G.phase='action';
         G.animating=false;
         renderAll();
@@ -1134,7 +1212,7 @@ async function movePlayer(p, steps){
   p.pos=newPos;
   if(steps>0 && path.includes(0)){
     p.money+=200;
-    log(`${p.pawn} Passe par la case Départ → reçoit M$200`,'gain');
+    log(`${pawnLogChar(p)} Passe par la case Départ → reçoit M$200`,'gain');
   }
   renderAll();
   await delay(150);
@@ -1144,22 +1222,22 @@ async function movePlayer(p, steps){
 function landOn(p){
   const cell=G.board[p.pos];
   if(!cell) return;
-  log(`${p.pawn} arrive sur : ${cell.name}`,'move');
+  log(`${pawnLogChar(p)} arrive sur : ${cell.name}`,'move');
 
   switch(cell.type){
     case 'go':
       p.money+=200;
-      log(`${p.pawn} Case Départ → reçoit M$200`,'gain');
+      log(`${pawnLogChar(p)} Case Départ → reçoit M$200`,'gain');
       break;
     case 'tax':
       p.money-=cell.price;
-      log(`${p.pawn} Taxe : paye M$${cell.price}`,'loss');
+      log(`${pawnLogChar(p)} Taxe : paye M$${cell.price}`,'loss');
       break;
     case 'goto_jail':
       goToJail(p);
       break;
     case 'jail': case 'free':
-      log(`${p.pawn} Simple visite.`);
+      log(`${pawnLogChar(p)} Simple visite.`);
       break;
     case 'chance':
       drawCard(p,'chance');
@@ -1176,7 +1254,7 @@ function landOn(p){
 
 function goToJail(p){
   p.pos=10; p.inJail=true; p.jailTurns=0;
-  log(`⛓️ ${p.pawn} ${p.name} est envoyé en prison !`,'loss');
+  log(`⛓️ ${pawnLogChar(p)} ${p.name} est envoyé en prison !`,'loss');
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1191,7 +1269,7 @@ function drawCard(p,deck){
   if(deck==='chance') G.chanceIdx++;
   else G.communityIdx++;
 
-  log(`${p.pawn} Tire une carte ${deck==='chance'?'Chance':'Communauté'} : "${card.text}"`, 'chance');
+  log(`${pawnLogChar(p)} Tire une carte ${deck==='chance'?'Chance':'Communauté'} : "${card.text}"`, 'chance');
   applyCard(p, card, deck);
 }
 
@@ -1202,11 +1280,11 @@ function applyCard(p, card, deck){
 
   switch(card.effect){
     case 'gain':
-      applyFn=()=>{p.money+=card.amount;log(`${p.pawn} Reçoit M$${card.amount}`,'gain');};
+      applyFn=()=>{p.money+=card.amount;log(`${pawnLogChar(p)} Reçoit M$${card.amount}`,'gain');};
       amountBadge=`<div class="card-display-amount pos">+ ${MONEY_ICON}${card.amount}</div>`;
       break;
     case 'lose':
-      applyFn=()=>{p.money-=card.amount;log(`${p.pawn} Paie M$${card.amount}`,'loss');};
+      applyFn=()=>{p.money-=card.amount;log(`${pawnLogChar(p)} Paie M$${card.amount}`,'loss');};
       amountBadge=`<div class="card-display-amount neg">- ${MONEY_ICON}${card.amount}</div>`;
       break;
     case 'goto_jail':
@@ -1214,7 +1292,7 @@ function applyCard(p, card, deck){
       amountBadge=`<div style="font-size:30px">⛓️</div>`;
       break;
     case 'get_out':
-      applyFn=()=>{p.getOutCards++;log(`${p.pawn} Obtient une carte sortie de prison.`,'gain');};
+      applyFn=()=>{p.getOutCards++;log(`${pawnLogChar(p)} Obtient une carte sortie de prison.`,'gain');};
       amountBadge=`<div style="font-size:30px">🔑</div>`;
       break;
     case 'move_to':
@@ -1224,7 +1302,7 @@ function applyCard(p, card, deck){
         // usual M$200) — movePlayer() walks the pawn there and calls
         // landOn() itself once it arrives, animation included.
         const steps=(target-p.pos+40)%40;
-        log(`${p.pawn} Se déplace case ${target} : ${G.board[target]?.name}`,'move');
+        log(`${pawnLogChar(p)} Se déplace case ${target} : ${G.board[target]?.name}`,'move');
         movePlayer(p,steps);
       };
       amountBadge=`<div style="font-size:24px">→ case ${card.targetPos}</div>`;
@@ -1233,7 +1311,7 @@ function applyCard(p, card, deck){
       applyFn=()=>{
         const steps=card.moveSteps||0;
         movePlayer(p,steps);
-        log(`${p.pawn} Avance de ${steps} cases`,'move');
+        log(`${pawnLogChar(p)} Avance de ${steps} cases`,'move');
       };
       amountBadge=`<div style="font-size:20px">${card.moveSteps>0?'+':''}${card.moveSteps} cases</div>`;
       break;
@@ -1245,7 +1323,7 @@ function applyCard(p, card, deck){
           total+=b.houses*card.perHouse+b.hotel*card.perHotel;
         });
         p.money-=total;
-        log(`${p.pawn} Réparations : paye M$${total}`,'loss');
+        log(`${pawnLogChar(p)} Réparations : paye M$${total}`,'loss');
       };
       amountBadge=`<div style="font-size:13px;color:#888">🏠 ${MONEY_ICON}${card.perHouse}/maison<br>🏨 ${MONEY_ICON}${card.perHotel}/hôtel</div>`;
       break;
@@ -1254,7 +1332,7 @@ function applyCard(p, card, deck){
         const amt=card.collectAmount||card.amount||0;
         others.forEach(o=>{o.money-=amt;});
         p.money+=amt*others.length;
-        log(`${p.pawn} Collecte M$${amt} de chaque joueur → total M$${amt*others.length}`,'gain');
+        log(`${pawnLogChar(p)} Collecte M$${amt} de chaque joueur → total M$${amt*others.length}`,'gain');
       };
       amountBadge=`<div class="card-display-amount pos">+ ${MONEY_ICON}${card.collectAmount||card.amount} × joueurs</div>`;
       break;
@@ -1263,12 +1341,12 @@ function applyCard(p, card, deck){
         const amt=card.amount||0;
         others.forEach(o=>{o.money+=amt;});
         p.money-=amt*others.length;
-        log(`${p.pawn} Verse M$${amt} à chaque joueur`,'loss');
+        log(`${pawnLogChar(p)} Verse M$${amt} à chaque joueur`,'loss');
       };
       amountBadge=`<div class="card-display-amount neg">- ${MONEY_ICON}${card.amount} × joueurs</div>`;
       break;
     default:
-      applyFn=()=>{log(`${p.pawn} Carte spéciale : ${card.text}`,'chance');};
+      applyFn=()=>{log(`${pawnLogChar(p)} Carte spéciale : ${card.text}`,'chance');};
   }
 
   showCardModal(card, deck, amountBadge, applyFn);
@@ -1312,13 +1390,13 @@ function handlePropertyLanding(p, cell){
     showBuyModal(p, cell);
     return;
   }
-  if(owner.id===p.id){log(`${p.pawn} C'est votre propriété.`);return;}
+  if(owner.id===p.id){log(`${pawnLogChar(p)} C'est votre propriété.`);return;}
   if(G.mortgaged.has(cell.pos)){log(`${cell.name} est hypothéquée, pas de loyer.`);return;}
 
   const rent=calcRent(cell, owner);
   p.money-=rent;
   owner.money+=rent;
-  log(`${p.pawn} Paye loyer M$${rent} à ${owner.pawn} ${owner.name} pour ${cell.name}`,'loss');
+  log(`${pawnLogChar(p)} Paye loyer M$${rent} à ${pawnLogChar(owner)} ${owner.name} pour ${cell.name}`,'loss');
   renderSidebarPanels();
 }
 
@@ -1389,7 +1467,7 @@ function buyProperty(){
   if(!cell||p.money<cell.price) return;
   p.money-=cell.price;
   p.properties.push(cell.pos);
-  log(`${p.pawn} ${p.name} achète ${cell.name} pour M$${cell.price}`,'gain');
+  log(`${pawnLogChar(p)} ${p.name} achète ${cell.name} pour M$${cell.price}`,'gain');
   renderAll();
 }
 
@@ -1427,7 +1505,7 @@ function buildHouse(pos){
   if(G.propertyBuildings[pos].houses>=4) return;
   p.money-=cell.buildCost;
   G.propertyBuildings[pos].houses++;
-  log(`${p.pawn} Construit une maison sur ${cell.name}`,'gain');
+  log(`${pawnLogChar(p)} Construit une maison sur ${cell.name}`,'gain');
   renderAll(); showBuildModal();
 }
 
@@ -1437,7 +1515,7 @@ function buildHotel(pos){
   if(p.money<cell.buildCost){toast('Fonds insuffisants.');return;}
   p.money-=cell.buildCost;
   G.propertyBuildings[pos]={houses:0,hotel:1};
-  log(`${p.pawn} Construit un hôtel sur ${cell.name}`,'gain');
+  log(`${pawnLogChar(p)} Construit un hôtel sur ${cell.name}`,'gain');
   renderAll(); showBuildModal();
 }
 
@@ -1471,7 +1549,7 @@ function sellHouse(pos){
   if(!b||b.houses<=0) return;
   const refund=Math.round(cell.buildCost/2);
   b.houses--; p.money+=refund;
-  log(`${p.pawn} Vend une maison sur ${cell.name} (+M$${refund})`,'gain');
+  log(`${pawnLogChar(p)} Vend une maison sur ${cell.name} (+M$${refund})`,'gain');
   renderAll(); showSellModal();
 }
 
@@ -1482,7 +1560,7 @@ function sellHotel(pos){
   if(!b||!b.hotel) return;
   const refund=Math.round(cell.buildCost/2);
   b.hotel=0; b.houses=4; p.money+=refund;
-  log(`${p.pawn} Vend l'hôtel sur ${cell.name} (revient à 4 maisons) (+M$${refund})`,'gain');
+  log(`${pawnLogChar(p)} Vend l'hôtel sur ${cell.name} (revient à 4 maisons) (+M$${refund})`,'gain');
   renderAll(); showSellModal();
 }
 
@@ -1507,7 +1585,7 @@ function mortgage(pos){
   const p=G.players[G.currentPlayer];
   G.mortgaged.add(pos);
   p.money+=G.board[pos].mortgage;
-  log(`${p.pawn} Hypothèque ${G.board[pos].name} → reçoit M$${G.board[pos].mortgage}`,'gain');
+  log(`${pawnLogChar(p)} Hypothèque ${G.board[pos].name} → reçoit M$${G.board[pos].mortgage}`,'gain');
   renderAll(); showMortgageModal('mortgage');
 }
 function unmortgage(pos){
@@ -1516,7 +1594,7 @@ function unmortgage(pos){
   if(p.money<cost){toast('Fonds insuffisants.');return;}
   G.mortgaged.delete(pos);
   p.money-=cost;
-  log(`${p.pawn} Lève hypothèque ${G.board[pos].name} → paye M$${cost}`,'loss');
+  log(`${pawnLogChar(p)} Lève hypothèque ${G.board[pos].name} → paye M$${cost}`,'loss');
   renderAll(); showMortgageModal('unmortgage');
 }
 
@@ -1529,7 +1607,7 @@ function showMenuModal(){
   document.getElementById('modalBody').innerHTML=`
     <div style="font-size:13px;color:var(--text2);line-height:1.6">
       Partie en cours — ${G.players.length} joueurs, tour ${G.turn}.<br>
-      ${G.players.map(pl=>`${pl.pawn} ${pl.name} : ${MONEY_ICON}${pl.money.toLocaleString()}`).join('<br>')}
+      ${G.players.map(pl=>`${pawnIconHtml(pl.pawn)} ${pl.name} : ${MONEY_ICON}${pl.money.toLocaleString()}`).join('<br>')}
     </div>
   `;
   document.getElementById('modalFooter').innerHTML=`
@@ -1543,14 +1621,14 @@ function payJail(){
   const p=G.players[G.currentPlayer];
   if(p.money<50){toast('Fonds insuffisants.');return;}
   p.money-=50; p.inJail=false; p.jailTurns=0;
-  log(`${p.pawn} Paye M$50 pour sortir de prison.`,'loss');
+  log(`${pawnLogChar(p)} Paye M$50 pour sortir de prison.`,'loss');
   renderAll();
 }
 function useGetOutCard(){
   const p=G.players[G.currentPlayer];
   if(p.getOutCards<=0) return;
   p.getOutCards--; p.inJail=false; p.jailTurns=0;
-  log(`${p.pawn} Utilise sa carte sortie de prison.`,'gain');
+  log(`${pawnLogChar(p)} Utilise sa carte sortie de prison.`,'gain');
   renderAll();
 }
 
@@ -1562,7 +1640,7 @@ function endTurn(){
   const p=G.players[G.currentPlayer];
   const rolledDoubles=G.diceRoll&&G.diceRoll[0]===G.diceRoll[1]&&G.doublesCount>0;
   if(rolledDoubles&&!p.inJail){
-    log(`${p.pawn} Doubles — rejoue !`,'chance');
+    log(`${pawnLogChar(p)} Doubles — rejoue !`,'chance');
     G.phase='roll';
     G.diceRoll=null;
     renderAll();
@@ -1583,7 +1661,7 @@ function nextPlayer(){
   if(next<=G.currentPlayer-1) G.turn++;
   G.phase='roll';
   const p=G.players[next];
-  log(`--- Tour de ${p.pawn} ${p.name} ---`,'system');
+  log(`--- Tour de ${pawnLogChar(p)} ${p.name} ---`,'system');
   renderAll();
 }
 
@@ -1593,7 +1671,7 @@ function declareBankrupt(){
   p.bankrupt=true;
   p.properties.forEach(pos=>G.board[pos].owner=null);
   p.properties=[];
-  log(`🏳️ ${p.pawn} ${p.name} est en faillite !`,'loss');
+  log(`🏳️ ${pawnLogChar(p)} ${p.name} est en faillite !`,'loss');
   const alive=G.players.filter(pl=>!pl.bankrupt);
   if(alive.length===1){
     endGame(alive[0]);
@@ -1603,7 +1681,7 @@ function declareBankrupt(){
 }
 
 function endGame(winner){
-  document.getElementById('winPawn').textContent=winner.pawn;
+  document.getElementById('winPawn').innerHTML=pawnIconHtml(winner.pawn);
   document.getElementById('winSub').textContent=`${winner.name} remporte la partie avec M$${winner.money.toLocaleString()} et ${winner.properties.length} propriétés !`;
   document.getElementById('gameScreen').classList.add('hidden');
   document.getElementById('winScreen').classList.remove('hidden');
@@ -1623,7 +1701,7 @@ function showCellInfo(pos){
   let body='';
   if(['property','station','utility'].includes(cell.type)){
     body=`
-      <div class="owner-line">${owner?`Propriétaire : ${owner.pawn} ${owner.name}`:'Disponible à l’achat'}</div>
+      <div class="owner-line">${owner?`Propriétaire : ${pawnIconHtml(owner.pawn)} ${owner.name}`:'Disponible à l’achat'}</div>
       ${b.hotel?'<div class="build-line">🏨 Hôtel construit</div>':b.houses>0?`<div class="build-line">🏠 × ${b.houses}</div>`:''}
       ${G.mortgaged.has(pos)?'<div class="mortgaged-line">🔒 Hypothéquée</div>':''}
       ${titleDeedHtml(cell, color)}

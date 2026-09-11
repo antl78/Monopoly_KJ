@@ -37,11 +37,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .pawn-pick{display:flex;gap:4px;flex-wrap:wrap}
 .pawn-btn{width:32px;height:32px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .12s;flex-shrink:0}
 .pawn-btn:hover,.pawn-btn.sel{border-color:var(--accent);background:rgba(15,110,99,.1)}
-/* Upload-your-own-image pawn button: same 32×32 slot as the emoji choices,
-   but shows a small camera glyph, or a thumbnail of the image once one has
-   been chosen (see handlePawnFile()). */
-.pawn-btn-upload{overflow:hidden;padding:0;font-size:15px}
-.pawn-btn-thumb{width:100%;height:100%;object-fit:cover;border-radius:5px}
+/* Upload-your-own-image pawn control: deliberately NOT a plain 32×32 square
+   like the emoji choices, so it doesn't read as "just another pawn" — it's
+   wider, has a dashed border, and always carries an explicit text label.
+   Shows a small camera glyph + label, or a thumbnail + "Modifier" once an
+   image has been chosen (see handlePawnFile()). */
+.pawn-btn-upload{width:auto;height:32px;padding:0 10px 0 7px;gap:6px;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;white-space:nowrap;border-style:dashed;color:var(--text2,inherit)}
+.pawn-btn-upload.sel{border-style:solid}
+.pawn-btn-thumb{width:20px;height:20px;object-fit:cover;border-radius:4px;flex-shrink:0}
 /* An uploaded pawn image, wherever a pawn is shown (sidebar avatar, board
    token, victory screen...) — see pawnIconHtml(). Sized in `em` so it
    always matches the font-size of whatever pawn slot it's dropped into,
@@ -583,7 +586,7 @@ function renderSetup() {
       <input type="text" value="${p.name}" placeholder="Nom du joueur" oninput="playerDefs[${i}].name=this.value">
       <div class="pawn-pick">
         ${PAWN_EMOJIS.map(em=>`<div class="pawn-btn${p.pawn===em?' sel':''}" onclick="selectPawn(${i},'${em}')">${em}</div>`).join('')}
-        <div class="pawn-btn pawn-btn-upload${isImagePawn(p.pawn)?' sel':''}" onclick="document.getElementById('pawnFile${i}').click()" title="Utiliser une image">${isImagePawn(p.pawn)?`<img src="${p.pawn}" class="pawn-btn-thumb" alt="">`:'📷'}</div>
+        <div class="pawn-btn pawn-btn-upload${isImagePawn(p.pawn)?' sel':''}" onclick="document.getElementById('pawnFile${i}').click()" title="${isImagePawn(p.pawn)?'Changer l\'image du pion':'Utiliser une image comme pion'}">${isImagePawn(p.pawn)?`<img src="${p.pawn}" class="pawn-btn-thumb" alt=""> Modifier`:'📷 Image'}</div>
         <input type="file" id="pawnFile${i}" accept="image/*" style="display:none" onchange="handlePawnFile(${i},this)">
       </div>
       ${playerDefs.length>2?`<button class="btn-sm red" onclick="removePlayerRow(${i})" style="padding:4px 8px;flex-shrink:0">✕</button>`:''}

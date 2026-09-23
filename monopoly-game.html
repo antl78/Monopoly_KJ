@@ -1294,6 +1294,20 @@ function applyCard(p, card, deck){
       applyFn=()=>goToJail(p);
       amountBadge=`<div style="font-size:30px">⛓️</div>`;
       break;
+    case 'goto_direct':
+      // Instant reposition to an arbitrary cell, no walk animation and no
+      // "passed Go" bonus even if the straight-line path would have crossed
+      // position 0 — same convention as goto_jail above (a direct send is
+      // not a real board movement), but the destination is whatever
+      // card.targetPos says instead of being hardcoded to the jail cell.
+      applyFn=()=>{
+        const target=card.targetPos||0;
+        p.pos=target;
+        log(`${pawnLogChar(p)} Est envoyé directement case ${target} : ${G.board[target]?.name}`,'move');
+        landOn(p);
+      };
+      amountBadge=`<div style="font-size:22px">⇢ case ${card.targetPos}</div>`;
+      break;
     case 'get_out':
       applyFn=()=>{p.getOutCards++;log(`${pawnLogChar(p)} Obtient une carte sortie de prison.`,'gain');};
       amountBadge=`<div style="font-size:30px">🔑</div>`;

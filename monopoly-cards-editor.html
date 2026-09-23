@@ -154,6 +154,15 @@ header{padding:.85rem 2rem;border-bottom:1px solid var(--border);display:flex;al
 /* Currency icon (oufingouf.png), replaces the "M$" symbol everywhere. Sized
    in em units so it always tracks the font-size of the text it sits next to. */
 .currency-icon{height:1em;width:1em;object-fit:contain;vertical-align:-0.15em;margin:0 .12em;flex-shrink:0}
+/* Custom-image card icon, same convention as the currency icon and as the
+   pawn-image upload in monopoly-game.html: an uploaded picture is cropped to
+   a square and stored as a base64 data URL directly in cartes.json (icon
+   field), no external hosting needed. Sized in 1em so it matches whichever
+   font-size context renders it (card list row, big preview icon, ...). */
+.card-icon-img{width:1em;height:1em;object-fit:cover;border-radius:3px;vertical-align:-0.15em;flex-shrink:0}
+.icon-btn-upload{border-style:dashed;font-size:12px}
+.icon-btn-upload.sel{border-style:solid}
+.icon-btn-thumb{width:18px;height:18px;object-fit:cover;border-radius:3px;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -259,6 +268,7 @@ const EFFECTS = [
   { id:'gain',       label:'Recevoir',   color:'#4eca8a', desc:"Le joueur reçoit de l'argent" },
   { id:'lose',       label:'Payer',      color:'#e85454', desc:"Le joueur paye de l'argent" },
   { id:'move_to',    label:'Se déplacer vers',color:'#e8a830', desc:'Aller sur une case précise' },
+  { id:'goto_direct', label:'Aller directement vers', color:'#5a6b8c', desc:"Aller directement sur une case, sans bonus de passage par le Départ ni animation de trajet (comme la prison)" },
   { id:'move_by',    label:'Avancer/Reculer', color:'#c8a830', desc:'Avancer ou reculer de N cases' },
   { id:'goto_jail',  label:'Prison',     color:'#888',    desc:'Aller directement en prison' },
   { id:'get_out',    label:'Carte sortie de prison', color:'#3a9de8', desc:'Conserver pour quitter la prison gratuitement' },
@@ -277,6 +287,58 @@ const ICONS_COMM   = ['🏘️','❤️','🏥','📬','🎓','🌍','💡','�
 let decks = { chance: [], community: [] };
 let currentDeck = 'chance';
 let currentCardIdx = -1;
+// A card "icon" is either a plain emoji character (the default) or an
+// uploaded image, normalized to a small square data URL by
+// handleCardIconFile() — same convention as MONEY_ICON above and as pawn
+// images in monopoly-game.html.
+function isImageIcon(v){ return typeof v==='string' && /^(https?:\/\/|data:image)/i.test(v); }
+
+function cardIconHtml(icon){
+  if(!icon) return '';
+  return isImageIcon(icon)
+    ? `<img src="${icon}" class="card-icon-img" alt="" onerror="this.style.display='none'">`
+    : icon;
+}
+
+// Uploaded card icons are center-cropped to a square and downscaled to this
+// size before being embedded as a data URL — plenty sharp at the sizes a
+// card icon is ever shown (list row ~15px, big preview icon ~30px), while
+// keeping cartes.json reasonably light.
+const CARD_ICON_IMG_SIZE = 96;
+
+// Reads the chosen file, draws it center-cropped to a CARD_ICON_IMG_SIZE
+// square on an offscreen canvas, and stores the resulting PNG data URL as
+// the current card's icon — mirrors handlePawnFile() in monopoly-game.html.
+function handleCardIconFile(inputEl){
+  const file = inputEl.files && inputEl.files[0];
+  if(!file) return;
+  if(!file.type.startsWith('image/')){
+    toast("Ce fichier n'est pas une image.");
+    inputEl.value='';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = CARD_ICON_IMG_SIZE;
+      canvas.height = CARD_ICON_IMG_SIZE;
+      const ctx = canvas.getContext('2d');
+      const side = Math.min(img.naturalWidth, img.naturalHeight);
+      const sx = (img.naturalWidth-side)/2, sy = (img.naturalHeight-side)/2;
+      ctx.drawImage(img, sx, sy, side, side, 0, 0, CARD_ICON_IMG_SIZE, CARD_ICON_IMG_SIZE);
+      upd('icon', canvas.toDataURL('image/png'));
+      render();
+    };
+    img.onerror = () => toast("Impossible de lire cette image.");
+    img.src = e.target.result;
+  };
+  reader.onerror = () => toast('Impossible de lire ce fichier.');
+  reader.readAsDataURL(file);
+  inputEl.value=''; // so choosing the same file again still fires onchange
+}
+
 let nextId = 1;
 
 function makeCard(deck) {
@@ -301,24 +363,14 @@ function makeCard(deck) {
 function makeDefaults() {
   nextId = 1;
   decks.chance = [
-    {id:nextId++,deck:'chance',icon:'🏦',text:'La banque vous verse des dividendes.',flavor:'Vos actions sont au beau fixe.',effect:'gain',amount:50,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
-    {id:nextId++,deck:'chance',icon:'🚔',text:'Allez directement en prison.',flavor:'Ne passez pas par la case Départ.',effect:'goto_jail',amount:0,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
-    {id:nextId++,deck:'chance',icon:'🎂',text:'C\'est votre anniversaire ! Chaque joueur vous offre 10 M$.',flavor:'',effect:'birthday',amount:10,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:10},
-    {id:nextId++,deck:'chance',icon:'⚡',text:'Facture d\'électricité imprévue. Payez 50 M$.',flavor:'Le compteur s\'est emballé.',effect:'lose',amount:50,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
-    {id:nextId++,deck:'chance',icon:'🚀',text:'Avancez de 3 cases.',flavor:'Le vent est dans votre dos.',effect:'move_by',amount:0,perHouse:0,perHotel:0,targetPos:0,moveSteps:3,collectAmount:0},
-    {id:nextId++,deck:'chance',icon:'🔑',text:'Carte sortie de prison gratuite. Conservez-la jusqu\'à utilisation.',flavor:'Précieuse, n\'est-ce pas ?',effect:'get_out',amount:0,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
-    {id:nextId++,deck:'chance',icon:'🏆',text:'Vous remportez un concours. Recevez 100 M$.',flavor:'',effect:'gain',amount:100,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
-    {id:nextId++,deck:'chance',icon:'🔧',text:'Réparations sur vos propriétés. Payez 25 M$ par maison, 100 M$ par hôtel.',flavor:'',effect:'repairs',amount:0,perHouse:25,perHotel:100,targetPos:0,moveSteps:0,collectAmount:0},
+    {id:nextId++,deck:'chance',icon:'🎮',text:"Avancez jusqu'à la case JVC. Touchez 200 M$.",flavor:'',effect:'move_to',amount:0,perHouse:0,perHotel:0,targetPos:12,moveSteps:0,collectAmount:0},
+    {id:nextId++,deck:'chance',icon:'🕹️',text:"Soirée rétro : avancez jusqu'à l'Extra Life Café. Si vous passez par la case Départ, recevez 200 M$.",flavor:'',effect:'move_to',amount:0,perHouse:0,perHotel:0,targetPos:35,moveSteps:0,collectAmount:0},
+    {id:nextId++,deck:'chance',icon:'🍻',text:"Yeslife : rendez-vous au bar le plus proche. Si vous passez par la case Départ, recevez 200 M$.",flavor:'',effect:'move_to',amount:0,perHouse:0,perHotel:0,targetPos:20,moveSteps:0,collectAmount:0},
+    {id:nextId++,deck:'chance',icon:'🛒',text:'Saga Auchan : reculez de trois cases.',flavor:'',effect:'move_by',amount:0,perHouse:0,perHotel:0,targetPos:0,moveSteps:-3,collectAmount:0},
+    {id:nextId++,deck:'chance',icon:'🚪',text:"Allez au bar. Rendez-vous directement au bar. Ne passez pas par la case Départ, ne touchez pas 200 M$.",flavor:'',effect:'goto_direct',amount:0,perHouse:0,perHotel:0,targetPos:20,moveSteps:0,collectAmount:0},
   ];
   decks.community = [
-    {id:nextId++,deck:'community',icon:'💰',text:'Remboursement d\'impôts. Recevez 200 M$.',flavor:'Le fisc est généreux aujourd\'hui.',effect:'gain',amount:200,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
-    {id:nextId++,deck:'community',icon:'🏥',text:'Frais médicaux. Payez 100 M$.',flavor:'La santé, ça a un prix.',effect:'lose',amount:100,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
-    {id:nextId++,deck:'community',icon:'📬',text:'Vous avez gagné un voyage. Rendez-vous sur la case Départ.',flavor:'',effect:'move_to',amount:0,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
-    {id:nextId++,deck:'community',icon:'🎓',text:'Bourse d\'études. Recevez 150 M$.',flavor:'Le savoir, ça rapporte.',effect:'gain',amount:150,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
-    {id:nextId++,deck:'community',icon:'🤝',text:'Collecte pour l\'association. Versez 10 M$ à chaque joueur.',flavor:'',effect:'pay_all',amount:10,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
-    {id:nextId++,deck:'community',icon:'🔑',text:'Carte sortie de prison gratuite.',flavor:'',effect:'get_out',amount:0,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
-    {id:nextId++,deck:'community',icon:'🏛️',text:'Élection au conseil municipal. Recevez 75 M$.',flavor:'Vos administrés vous apprécient.',effect:'gain',amount:75,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
-    {id:nextId++,deck:'community',icon:'🚔',text:'Infraction routière. Payez 30 M$ d\'amende.',flavor:'',effect:'lose',amount:30,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
+    {id:nextId++,deck:'community',icon:'🎴',text:"Carte waifu : vous êtes libéré du bar. Cette carte peut être conservée jusqu'à ce qu'elle soit utilisée ou vendue.",flavor:'',effect:'get_out',amount:0,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
   ];
 }
 
@@ -345,7 +397,7 @@ function renderList() {
     div.className = 'card-item' + (currentDeck===c.deck && i===currentCardIdx ? ' active' : '');
     div.innerHTML = `
       <span class="card-num">${i+1}</span>
-      <span style="font-size:15px">${c.icon}</span>
+      <span style="font-size:15px">${cardIconHtml(c.icon)}</span>
       <span class="card-text-list">${fmtM(c.text)||'<span style="color:var(--text3)">Sans texte</span>'}</span>
       <span class="card-effect-label" style="color:${eff.color};border-color:${eff.color}33;background:${eff.color}11">${eff.label}</span>
     `;
@@ -396,6 +448,10 @@ function renderEditor() {
           ${iconList.map(ic=>`<div onclick="upd('icon','${ic}')" style="font-size:20px;cursor:pointer;padding:4px;border-radius:6px;border:1px solid ${c.icon===ic?accentVar:'var(--border2)'};background:${c.icon===ic?isChance?'rgba(232,168,48,.15)':'rgba(58,157,232,.15)':'transparent'};transition:all .1s">${ic}</div>`).join('')}
         </div>
         <input type="text" placeholder="Ou colle n'importe quel emoji…" value="${esc(c.icon)}" oninput="upd('icon',this.value)" style="margin-top:6px">
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+          <div class="btn icon-btn-upload${isImageIcon(c.icon)?' sel':''}" onclick="document.getElementById('cardIconFile').click()" title="${isImageIcon(c.icon)?'Changer l\'image de l\'icône':'Utiliser une image comme icône'}">${isImageIcon(c.icon)?`<img src="${c.icon}" class="icon-btn-thumb" alt=""> Modifier l'image`:'📷 Image personnalisée'}</div>
+          <input type="file" id="cardIconFile" accept="image/*" style="display:none" onchange="handleCardIconFile(this)">
+        </div>
       </div>
 
       <div class="field">
@@ -444,6 +500,11 @@ function renderEffectParams(c) {
     html = `<div class="cond-section">
       <div class="field"><label>Numéro de la case cible (0–39)</label><input type="number" min="0" max="39" value="${c.targetPos}" oninput="updN('targetPos',this.value)">
       <span class="hint">0 = Départ, 10 = Prison/Visite, 20 = Parc gratuit, etc.</span></div>
+    </div>`;
+  } else if(c.effect==='goto_direct') {
+    html = `<div class="cond-section">
+      <div class="field"><label>Numéro de la case cible (0–39)</label><input type="number" min="0" max="39" value="${c.targetPos}" oninput="updN('targetPos',this.value)">
+      <span class="hint">Déplacement direct : jamais de bonus de M$200, même si le trajet aurait dû passer par le Départ.</span></div>
     </div>`;
   } else if(c.effect==='move_by') {
     html = `<div class="cond-section">
@@ -498,6 +559,7 @@ function renderPreview() {
   else if(c.effect==='goto_jail') amountDisplay = `<div style="font-size:20px;text-align:center">⛓️</div>`;
   else if(c.effect==='get_out') amountDisplay = `<div style="font-size:20px;text-align:center">🔑</div>`;
   else if(c.effect==='move_to') amountDisplay = `<div style="font-size:11px;color:#888;text-align:center">→ case ${c.targetPos}</div>`;
+  else if(c.effect==='goto_direct') amountDisplay = `<div style="font-size:11px;color:#888;text-align:center">⇢ case ${c.targetPos} (direct)</div>`;
   else if(c.effect==='move_by') amountDisplay = `<div style="font-size:11px;color:#888;text-align:center">${c.moveSteps>0?'+':''}${c.moveSteps} cases</div>`;
 
   const totalCards = decks[c.deck].length;
@@ -508,7 +570,7 @@ function renderPreview() {
         <div class="card-header-label" style="color:rgba(255,255,255,.85)">${isChance?'CHANCE':'COMMUNAUTÉ'}</div>
       </div>
       <div class="card-content">
-        <div style="font-size:30px">${c.icon||'🃏'}</div>
+        <div style="font-size:30px">${c.icon?cardIconHtml(c.icon):'🃏'}</div>
         <div class="card-text">${fmtM(c.text)||'<span style="opacity:.4;font-style:italic">Texte de la carte</span>'}</div>
         ${amountDisplay}
         ${c.flavor?`<div class="card-flavor">${fmtM(c.flavor)}</div>`:''}

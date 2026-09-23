@@ -22,7 +22,7 @@
     },
     {
       "pos": 1,
-      "name": "Case 1",
+      "name": "HLM de Natsume",
       "type": "property",
       "group": "brown",
       "price": 60,
@@ -58,7 +58,7 @@
     },
     {
       "pos": 3,
-      "name": "Case 3",
+      "name": "Crous d'Anok",
       "type": "property",
       "group": "brown",
       "price": 60,
@@ -149,7 +149,7 @@
     },
     {
       "pos": 8,
-      "name": "Case 8",
+      "name": "BK de Barbès",
       "type": "property",
       "group": "lblue",
       "price": 100,
@@ -167,7 +167,7 @@
     },
     {
       "pos": 9,
-      "name": "Case 9",
+      "name": "Auchan de Nancy",
       "type": "property",
       "group": "lblue",
       "price": 120,
@@ -329,7 +329,7 @@
     },
     {
       "pos": 18,
-      "name": "Case 18",
+      "name": "Caesar Palace",
       "type": "property",
       "group": "orange",
       "price": 180,
@@ -347,7 +347,7 @@
     },
     {
       "pos": 19,
-      "name": "Case 19",
+      "name": "Bar à putes de Pigalle",
       "type": "property",
       "group": "orange",
       "price": 200,
@@ -475,7 +475,7 @@
     },
     {
       "pos": 26,
-      "name": "Case 26",
+      "name": "Pamiers",
       "type": "property",
       "group": "yellow",
       "price": 260,
@@ -529,7 +529,7 @@
     },
     {
       "pos": 29,
-      "name": "Case 29",
+      "name": "Douarnenez",
       "type": "property",
       "group": "yellow",
       "price": 280,
@@ -584,7 +584,7 @@
     },
     {
       "pos": 32,
-      "name": "Case 32",
+      "name": "Alfortville",
       "type": "property",
       "group": "green",
       "price": 300,
@@ -620,7 +620,7 @@
     },
     {
       "pos": 34,
-      "name": "Case 34",
+      "name": "Geek Room",
       "type": "property",
       "group": "green",
       "price": 320,
@@ -675,7 +675,7 @@
     },
     {
       "pos": 37,
-      "name": "Case 37",
+      "name": "Japan Expo",
       "type": "property",
       "group": "blue",
       "price": 350,
@@ -711,7 +711,7 @@
     },
     {
       "pos": 39,
-      "name": "Case 39",
+      "name": "Rue de la PAZ",
       "type": "property",
       "group": "blue",
       "price": 400,

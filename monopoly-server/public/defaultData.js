@@ -52,7 +52,7 @@ function defaultCards() {
       {id:5,deck:'chance',icon:'🚀',text:"Avancez de 3 cases.",flavor:'',effect:'move_by',amount:0,perHouse:0,perHotel:0,targetPos:0,moveSteps:3,collectAmount:0},
       {id:6,deck:'chance',icon:'🔑',text:"Carte sortie de prison gratuite.",flavor:'',effect:'get_out',amount:0,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
       {id:7,deck:'chance',icon:'🏆',text:"Concours remporté. Recevez 100 M$.",flavor:'',effect:'gain',amount:100,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
-      {id:8,deck:'chance',icon:'🔧',text:"Réparations : 25 M$/maison, 100 M$/hôtel.",flavor:'',effect:'repairs',amount:0,perHouse:25,perHotel:100,targetPos:0,moveSteps:0,collectAmount:0},
+      {id:8,deck:'chance',icon:'🔧',text:"Réparations : 25 M$/alerte, 100 M$/alerteprison.",flavor:'',effect:'repairs',amount:0,perHouse:25,perHotel:100,targetPos:0,moveSteps:0,collectAmount:0},
     ],
     community:[
       {id:9,deck:'community',icon:'💰',text:"Remboursement impôts. Recevez 200 M$.",flavor:'',effect:'gain',amount:200,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},

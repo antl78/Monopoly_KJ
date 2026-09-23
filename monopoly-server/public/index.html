@@ -525,7 +525,7 @@ function renderPlayerList() {
         ${!p.connected ? '<span class="badge disc">DÉCO</span>' : ''}
         ${p.getOutCards > 0 ? `<span class="badge" style="border-color:rgba(232,212,77,.4);color:var(--accent)">🔑×${p.getOutCards}</span>` : ''}
       </div>
-      ${props ? `<div class="pc-props">${props}${houses > 0 ? `<span style="font-size:10px;color:var(--text3);margin-left:3px">🏠${houses}</span>` : ''}${hotels > 0 ? `<span style="font-size:10px;color:var(--text3)">🏨${hotels}</span>` : ''}</div>` : ''}
+      ${props ? `<div class="pc-props">${props}${houses > 0 ? `<span style="font-size:10px;color:var(--text3);margin-left:3px"><img src="images/alerte.png" alt="alerte" style="height:1.1em;width:1.1em;object-fit:contain;vertical-align:-0.2em">${houses}</span>` : ''}${hotels > 0 ? `<span style="font-size:10px;color:var(--text3)"><img src="images/alerteprison.png" alt="alerteprison" style="height:1.1em;width:1.1em;object-fit:contain;vertical-align:-0.2em">${hotels}</span>` : ''}</div>` : ''}
     </div>`;
   }).join('');
   document.getElementById('turnNum').textContent = G.turn;
@@ -557,7 +557,7 @@ function renderActions() {
     const owned = G.players.some(p => p.properties.includes(cp.pos));
     if (cell && ['property','station','utility'].includes(cell.type) && !owned && cp.money >= cell.price)
       html += `<button class="btn-sm green" onclick="sendAction({type:'buy'})">🏠 Acheter (M$${cell.price})</button>`;
-    html += `<button class="btn-sm yellow" onclick="showBuildModal()">🔨 Construire</button>`;
+    html += `<button class="btn-sm yellow" onclick="showBuildModal()"><img src="images/alerte.png" alt="alerte" style="height:1.1em;width:1.1em;object-fit:contain;vertical-align:-0.2em"> Alertes</button>`;
     if (cp.properties.length > 0) html += `<button class="btn-sm" onclick="showMortgageModal()">🏦 Hypothèque</button>`;
     if (cp.inJail) {
       html += `<button class="btn-sm yellow" onclick="sendAction({type:'payJail'})">💰 Payer M$50 prison</button>`;
@@ -594,7 +594,7 @@ function showCardModal(pending) {
     case 'lose': amountBadge = `<div class="card-display-amount neg">- M$${card.amount}</div>`; break;
     case 'goto_jail': amountBadge = `<div style="font-size:28px">⛓️</div>`; break;
     case 'get_out': amountBadge = `<div style="font-size:28px">🔑</div>`; break;
-    case 'repairs': amountBadge = `<div style="font-size:12px;color:#888">🏠${card.perHouse}M$/maison · 🏨${card.perHotel}M$/hôtel</div>`; break;
+    case 'repairs': amountBadge = `<div style="font-size:12px;color:#888"><img src="images/alerte.png" alt="alerte" style="height:1.1em;width:1.1em;object-fit:contain;vertical-align:-0.2em">${card.perHouse}M$/alerte · <img src="images/alerteprison.png" alt="alerteprison" style="height:1.1em;width:1.1em;object-fit:contain;vertical-align:-0.2em">${card.perHotel}M$/alerteprison</div>`; break;
     case 'birthday': case 'collect_all': amountBadge = `<div class="card-display-amount pos">+ M$${card.collectAmount||card.amount} × joueurs</div>`; break;
     case 'pay_all': amountBadge = `<div class="card-display-amount neg">- M$${card.amount} × joueurs</div>`; break;
     case 'move_to': amountBadge = `<div style="font-size:13px;color:#888">→ case ${card.targetPos}</div>`; break;
@@ -630,7 +630,7 @@ function showCellInfo(pos) {
   let body = '';
   if (['property','station','utility'].includes(cell.type)) {
     const rentRows = cell.type === 'property'
-      ? ['Loyer nu','Monopole','1 maison','2 maisons','3 maisons','Hôtel'].map((l,i) => `<tr><td>${l}</td><td>M$${cell.rents[i]}</td></tr>`).join('')
+      ? ['Loyer nu','Monopole','1 alerte','2 alertes','3 alertes','Alerteprison'].map((l,i) => `<tr><td>${l}</td><td>M$${cell.rents[i]}</td></tr>`).join('')
       : cell.type === 'station'
       ? ['1 gare','2 gares','3 gares','4 gares'].map((l,i) => `<tr><td>${l}</td><td>M$${cell.rents[i]}</td></tr>`).join('')
       : '<tr><td>×4 dés si 1, ×10 si 2 compagnies</td><td></td></tr>';
@@ -638,10 +638,10 @@ function showCellInfo(pos) {
       <div style="width:16px;height:16px;border-radius:3px;background:${color}"></div>
       <div><div style="font-weight:500">${cell.name}</div><div style="font-size:12px;color:var(--text2)">${owner ? owner.pawn + ' ' + owner.name : 'Disponible'}</div></div>
     </div>
-    ${b.hotel ? '<div style="color:var(--accent);font-size:12px">🏨 Hôtel</div>' : b.houses > 0 ? `<div style="font-size:12px">🏠×${b.houses}</div>` : ''}
+    ${b.hotel ? '<div style="color:var(--accent);font-size:12px"><img src="images/alerteprison.png" alt="alerteprison" style="height:1.1em;width:1.1em;object-fit:contain;vertical-align:-0.2em"> Alerteprison</div>' : b.houses > 0 ? `<div style="font-size:12px"><img src="images/alerte.png" alt="alerte" style="height:1.1em;width:1.1em;object-fit:contain;vertical-align:-0.2em">×${b.houses}</div>` : ''}
     ${G.mortgaged.includes(pos) ? '<div style="color:#e85454;font-size:11px">🔒 Hypothéquée</div>' : ''}
     <table class="prop-table">${rentRows}</table>
-    ${cell.price ? `<div style="margin-top:6px;font-size:11px;color:var(--text2)">Prix M$${cell.price} · Hypothèque M$${cell.mortgage}${cell.buildCost ? ' · Construction M$' + cell.buildCost : ''}</div>` : ''}
+    ${cell.price ? `<div style="margin-top:6px;font-size:11px;color:var(--text2)">Prix M$${cell.price} · Hypothèque M$${cell.mortgage}${cell.buildCost ? ' · Alerte M$' + cell.buildCost : ''}</div>` : ''}
     </div>`;
   } else {
     body = `<div style="color:var(--text2);font-size:14px">${cell.desc || 'Case spéciale.'}</div>`;
@@ -661,15 +661,15 @@ function showBuildModal() {
     const grp = G.board.filter(c => c.group === cell.group && c.type === 'property');
     return grp.every(c => cp.properties.includes(c.pos));
   });
-  if (buildable.length === 0) { showInfo('Construction', '<div style="color:var(--text2)">Vous avez besoin d\'un monopole complet.</div>'); return; }
+  if (buildable.length === 0) { showInfo('Alertes', '<div style="color:var(--text2)">Vous devez posséder toutes les propriétés d\'une même couleur pour acheter des alertes.</div>'); return; }
   const rows = buildable.map(pos => {
     const cell = G.board[pos], b = G.propertyBuildings[pos] || { houses: 0, hotel: 0 };
-    const cur = b.hotel ? '🏨 Hôtel' : b.houses > 0 ? `🏠×${b.houses}` : 'Nu';
-    const canH = !b.hotel && b.houses < 4 ? `<button class="btn-sm green" onclick="sendAction({type:'buildHouse',pos:${pos}});showBuildModal()">+🏠 M$${cell.buildCost}</button>` : '';
-    const canT = b.houses >= 4 && !b.hotel ? `<button class="btn-sm yellow" onclick="sendAction({type:'buildHotel',pos:${pos}});showBuildModal()">🏨 M$${cell.buildCost}</button>` : '';
+    const cur = b.hotel ? `<img src="images/alerteprison.png" alt="alerteprison" style="height:1.1em;width:1.1em;object-fit:contain;vertical-align:-0.2em"> Alerteprison` : b.houses > 0 ? `<img src="images/alerte.png" alt="alerte" style="height:1.1em;width:1.1em;object-fit:contain;vertical-align:-0.2em">×${b.houses}` : 'Aucune alerte';
+    const canH = !b.hotel && b.houses < 4 ? `<button class="btn-sm green" onclick="sendAction({type:'buildHouse',pos:${pos}});showBuildModal()">+<img src="images/alerte.png" alt="alerte" style="height:1.1em;width:1.1em;object-fit:contain;vertical-align:-0.2em"> M$${cell.buildCost}</button>` : '';
+    const canT = b.houses >= 4 && !b.hotel ? `<button class="btn-sm yellow" onclick="sendAction({type:'buildHotel',pos:${pos}});showBuildModal()"><img src="images/alerteprison.png" alt="alerteprison" style="height:1.1em;width:1.1em;object-fit:contain;vertical-align:-0.2em"> Convertir M$${cell.buildCost}</button>` : '';
     return `<div class="info-row"><span class="lbl">${cell.name}</span><span style="display:flex;align-items:center;gap:5px">${cur} ${canH}${canT}</span></div>`;
   }).join('');
-  document.getElementById('modalTitle').textContent = '🔨 Construction';
+  document.getElementById('modalTitle').innerHTML = '<img src="images/alerte.png" alt="alerte" style="height:1.1em;width:1.1em;object-fit:contain;vertical-align:-0.2em"> Alertes';
   document.getElementById('modalBody').innerHTML = rows;
   document.getElementById('modalFooter').innerHTML = '<button class="btn-sm" onclick="closeModal()">Fermer</button>';
   document.getElementById('modalOverlay').classList.remove('hidden');

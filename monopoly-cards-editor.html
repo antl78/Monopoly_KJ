@@ -272,7 +272,7 @@ const EFFECTS = [
   { id:'move_by',    label:'Avancer/Reculer', color:'#c8a830', desc:'Avancer ou reculer de N cases' },
   { id:'goto_jail',  label:'Prison',     color:'#888',    desc:'Aller directement en prison' },
   { id:'get_out',    label:'Carte sortie de prison', color:'#3a9de8', desc:'Conserver pour quitter la prison gratuitement' },
-  { id:'repairs',    label:'Réparations',color:'#d4834a', desc:'Payer par maison et hôtel possédés' },
+  { id:'repairs',    label:'Réparations',color:'#d4834a', desc:'Payer par alerte et alerteprison possédées' },
   { id:'collect_all',label:'Collecte joueurs',color:'#9b59b6',desc:'Chaque autre joueur vous paie' },
   { id:'pay_all',    label:'Cotisation joueurs', color:'#c0392b',desc:'Vous payez chaque autre joueur' },
   { id:'birthday',   label:'Anniversaire',color:'#e8a830', desc:'Chaque joueur vous offre N M$' },
@@ -513,8 +513,8 @@ function renderEffectParams(c) {
   } else if(c.effect==='repairs') {
     html = `<div class="cond-section">
       <div class="cond-row">
-        <div class="field"><label>${MONEY_ICON} par maison</label><input type="number" min="0" value="${c.perHouse}" oninput="updN('perHouse',this.value)"></div>
-        <div class="field"><label>${MONEY_ICON} par hôtel</label><input type="number" min="0" value="${c.perHotel}" oninput="updN('perHotel',this.value)"></div>
+        <div class="field"><label>${MONEY_ICON} par alerte</label><input type="number" min="0" value="${c.perHouse}" oninput="updN('perHouse',this.value)"></div>
+        <div class="field"><label>${MONEY_ICON} par alerteprison</label><input type="number" min="0" value="${c.perHotel}" oninput="updN('perHotel',this.value)"></div>
       </div>
     </div>`;
   } else if(c.effect==='collect_all'||c.effect==='birthday') {
@@ -553,7 +553,7 @@ function renderPreview() {
   let amountDisplay = '';
   if(c.effect==='gain') amountDisplay = `<div class="card-amount-badge positive">+ ${MONEY_ICON}${c.amount}</div>`;
   else if(c.effect==='lose') amountDisplay = `<div class="card-amount-badge negative">- ${MONEY_ICON}${c.amount}</div>`;
-  else if(c.effect==='repairs') amountDisplay = `<div style="font-size:10px;color:#888;text-align:center">🏠 ${c.perHouse}${MONEY_ICON} / 🏨 ${c.perHotel}${MONEY_ICON}</div>`;
+  else if(c.effect==='repairs') amountDisplay = `<div style="font-size:10px;color:#888;text-align:center"><img src="images/alerte.png" alt="alerte" style="height:1.1em;width:1.1em;object-fit:contain;vertical-align:-0.2em"> ${c.perHouse}${MONEY_ICON} / <img src="images/alerteprison.png" alt="alerteprison" style="height:1.1em;width:1.1em;object-fit:contain;vertical-align:-0.2em"> ${c.perHotel}${MONEY_ICON}</div>`;
   else if(c.effect==='birthday'||c.effect==='collect_all') amountDisplay = `<div class="card-amount-badge positive">+ ${MONEY_ICON}${c.collectAmount||c.amount} × joueurs</div>`;
   else if(c.effect==='pay_all') amountDisplay = `<div class="card-amount-badge negative">- ${MONEY_ICON}${c.amount} × joueurs</div>`;
   else if(c.effect==='goto_jail') amountDisplay = `<div style="font-size:20px;text-align:center">⛓️</div>`;

@@ -178,7 +178,7 @@ function processAction(room, wsId, action, data) {
       const b=gs.propertyBuildings[pos];
       if(b.hotel||b.houses>=4||p.money<cell.buildCost) return false;
       p.money-=cell.buildCost; b.houses++;
-      log(p.pawn+' construit maison sur '+cell.name,'gain'); return true;
+      log(p.pawn+' achète une alerte sur '+cell.name,'gain'); return true;
     }
     case 'build_hotel': {
       const pos=data.pos, cell=board[pos];
@@ -187,7 +187,7 @@ function processAction(room, wsId, action, data) {
       const b=gs.propertyBuildings[pos];
       if(b.hotel||b.houses<4||p.money<cell.buildCost) return false;
       p.money-=cell.buildCost; b.houses=0; b.hotel=1;
-      log(p.pawn+' construit hotel sur '+cell.name,'gain'); return true;
+      log(p.pawn+' convertit ses 4 alertes en alerteprison sur '+cell.name,'gain'); return true;
     }
     case 'mortgage': {
       const pos=data.pos, cell=board[pos];

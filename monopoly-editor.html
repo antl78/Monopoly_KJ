@@ -710,7 +710,7 @@ function renderEditor() {
 
       ${hasBuild ? `
       <div class="field">
-        <label>Coût construction maison/hôtel (${MONEY_ICON})</label>
+        <label>Coût d'une alerte (${MONEY_ICON})</label>
         <input type="number" value="${c.buildCost}" min="0" oninput="updN('buildCost',this.value)">
       </div>` : ''}
 
@@ -721,10 +721,10 @@ function renderEditor() {
         <div class="rents-grid">
           <div class="rent-field"><label>Nu</label><input type="number" value="${c.rents[0]}" min="0" oninput="updRent(0,this.value)"></div>
           <div class="rent-field"><label>Monopole</label><input type="number" value="${c.rents[1]}" min="0" oninput="updRent(1,this.value)"></div>
-          <div class="rent-field"><label>1 maison</label><input type="number" value="${c.rents[2]}" min="0" oninput="updRent(2,this.value)"></div>
-          <div class="rent-field"><label>2 maisons</label><input type="number" value="${c.rents[3]}" min="0" oninput="updRent(3,this.value)"></div>
-          <div class="rent-field"><label>3 maisons</label><input type="number" value="${c.rents[4]}" min="0" oninput="updRent(4,this.value)"></div>
-          <div class="rent-field"><label>Hôtel</label><input type="number" value="${c.rents[5]}" min="0" oninput="updRent(5,this.value)"></div>
+          <div class="rent-field"><label>1 alerte</label><input type="number" value="${c.rents[2]}" min="0" oninput="updRent(2,this.value)"></div>
+          <div class="rent-field"><label>2 alertes</label><input type="number" value="${c.rents[3]}" min="0" oninput="updRent(3,this.value)"></div>
+          <div class="rent-field"><label>3 alertes</label><input type="number" value="${c.rents[4]}" min="0" oninput="updRent(4,this.value)"></div>
+          <div class="rent-field"><label>Alerteprison</label><input type="number" value="${c.rents[5]}" min="0" oninput="updRent(5,this.value)"></div>
         </div>
       </div>` : ''}
 
@@ -798,12 +798,12 @@ function renderPreview() {
           <hr class="card-divider">
           <div class="card-rent-row"><span>Loyer nu</span><span>${MONEY_ICON}${c.rents[0]}</span></div>
           <div class="card-rent-row"><span>Monopole</span><span>${MONEY_ICON}${c.rents[1]}</span></div>
-          <div class="card-rent-row"><span>1 maison</span><span>${MONEY_ICON}${c.rents[2]}</span></div>
-          <div class="card-rent-row"><span>2 maisons</span><span>${MONEY_ICON}${c.rents[3]}</span></div>
-          <div class="card-rent-row"><span>3 maisons</span><span>${MONEY_ICON}${c.rents[4]}</span></div>
-          <div class="card-rent-row highlight"><span>Hôtel</span><span>${MONEY_ICON}${c.rents[5]}</span></div>
+          <div class="card-rent-row"><span>1 alerte</span><span>${MONEY_ICON}${c.rents[2]}</span></div>
+          <div class="card-rent-row"><span>2 alertes</span><span>${MONEY_ICON}${c.rents[3]}</span></div>
+          <div class="card-rent-row"><span>3 alertes</span><span>${MONEY_ICON}${c.rents[4]}</span></div>
+          <div class="card-rent-row highlight"><span>Alerteprison</span><span>${MONEY_ICON}${c.rents[5]}</span></div>
           <hr class="card-divider">
-          <div class="card-rent-row"><span>Maison/Hôtel</span><span>${MONEY_ICON}${c.buildCost}</span></div>
+          <div class="card-rent-row"><span>Prix d'une alerte</span><span>${MONEY_ICON}${c.buildCost}</span></div>
           <div class="card-mortgage">Hypothèque: ${MONEY_ICON}${c.mortgage}</div>
         </div>
       </div>`;

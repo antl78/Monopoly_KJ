@@ -1249,7 +1249,13 @@ async function movePlayer(p, steps){
   renderConsoleBar();
   await walkPawn(p, path);
   p.pos=newPos;
-  if(steps>0 && path.includes(0)){
+  // newPos!==0 excludes landing *exactly* on the Départ cell: that case is
+  // handled by landOn()'s own 'go' branch below, which also grants M$200 —
+  // without this guard, a move that lands precisely on 0 would pay the
+  // bonus twice (once here for "passed through 0", once for "arrived on
+  // the Départ cell"). Only an actual pass-through (0 crossed mid-path,
+  // final position elsewhere) should trigger this bonus.
+  if(steps>0 && newPos!==0 && path.includes(0)){
     p.money+=200;
     log(`${pawnLogChar(p)} Passe par la case Départ → reçoit M$200`,'gain');
   }
@@ -1398,6 +1404,14 @@ function applyCard(p, card, deck){
       };
       amountBadge=`<div class="card-display-amount neg">- ${MONEY_ICON}${card.amount} × joueurs</div>`;
       break;
+    case 'pay_or_chance':
+      // The only card effect that isn't a single deterministic outcome: the
+      // player picks between paying a fixed fine or drawing a Chance card
+      // instead. showCardModal()'s single "OK" button can't express a
+      // choice, so this bypasses it entirely and shows its own two-button
+      // modal (see showChoiceModal below), then returns immediately.
+      showChoiceModal(p, card, deck);
+      return;
     default:
       applyFn=()=>{log(`${pawnLogChar(p)} Carte spéciale : ${card.text}`,'chance');};
   }
@@ -1428,6 +1442,47 @@ function confirmCard(){
   if(G.pendingCard){G.pendingCard();G.pendingCard=null;}
   closeModal();
   renderAll();
+}
+
+// Two-button variant of showCardModal(), used only by the 'pay_or_chance'
+// effect: the player explicitly picks "Payer" or "Tirer une carte Chance"
+// instead of a single "OK" confirming one predetermined outcome. Player id
+// (not the player object) is threaded through the onclick handlers since
+// they're serialized into HTML strings.
+function showChoiceModal(p, card, deck){
+  const isChance=deck==='chance';
+  document.getElementById('modalTitle').textContent=isChance?'🃏 Chance':'🏘️ Communauté';
+  document.getElementById('modalBody').innerHTML=`
+    <div class="card-display ${deck}">
+      <div class="card-display-deck">${isChance?'CHANCE':'COMMUNAUTÉ'}</div>
+      <div class="card-display-icon">${card.icon||'🃏'}</div>
+      <div class="card-display-text">${fmtM(card.text)}</div>
+      <div class="card-display-amount neg">- ${MONEY_ICON}${card.amount} <span style="opacity:.6;font-size:.7em">ou tirer Chance</span></div>
+      ${card.flavor?`<div class="card-display-flavor">${fmtM(card.flavor)}</div>`:''}
+    </div>
+  `;
+  document.getElementById('modalFooter').innerHTML=`
+    <button class="btn-roll" style="font-size:14px;padding:9px 18px" onclick="resolveChoicePay(${p.id},${card.amount})">Payer ${MONEY_ICON}${card.amount}</button>
+    <button class="btn-roll" style="font-size:14px;padding:9px 18px;background:#e8a830" onclick="resolveChoiceDraw(${p.id})">🃏 Tirer une carte Chance</button>
+  `;
+  document.getElementById('modalOverlay').classList.remove('hidden');
+}
+
+function resolveChoicePay(playerId, amount){
+  const p = G.players.find(pl=>pl.id===playerId);
+  if(!p) return;
+  p.money -= amount;
+  log(`${pawnLogChar(p)} Choisit de payer M$${amount}`,'loss');
+  closeModal();
+  renderAll();
+}
+
+function resolveChoiceDraw(playerId){
+  const p = G.players.find(pl=>pl.id===playerId);
+  if(!p) return;
+  log(`${pawnLogChar(p)} Choisit de tirer une carte Chance plutôt que payer`,'chance');
+  closeModal();
+  drawCard(p,'chance');
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

@@ -167,7 +167,8 @@
       "perHotel": 0,
       "targetPos": 3,
       "moveSteps": 0,
-      "collectAmount": 0
+      "collectAmount": 0,
+      "moveBackward": true
     },
     {
       "id": 17,

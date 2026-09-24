@@ -356,6 +356,7 @@ function makeCard(deck) {
     targetPos: 0,
     moveSteps: 3,
     collectAmount: 50,
+    moveBackward: false,
   };
 }
 
@@ -375,7 +376,7 @@ function makeDefaults() {
     {id:nextId++,deck:'chance',icon:'📈',text:"Les bons tuyaux d'Anok : votre bitcoin et vos NFT rapportent. Touchez 150 M$.",flavor:'',effect:'gain',amount:150,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
     {id:nextId++,deck:'chance',icon:'🏆',text:'Prix annuels du serveur : vous avez gagné le prix du plus gentil. Recevez 100 M$.',flavor:'',effect:'gain',amount:100,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
     {id:nextId++,deck:'chance',icon:'🏁',text:'Placez-vous sur la case Départ. Touchez 200 M$.',flavor:'',effect:'move_to',amount:0,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
-    {id:nextId++,deck:'chance',icon:'📚',text:"Redoublement : retournez à la case Crous d'Anok (case 3).",flavor:'',effect:'move_to',amount:0,perHouse:0,perHotel:0,targetPos:3,moveSteps:0,collectAmount:0},
+    {id:nextId++,deck:'chance',icon:'📚',text:"Redoublement : retournez à la case Crous d'Anok (case 3).",flavor:'',effect:'move_to',amount:0,perHouse:0,perHotel:0,targetPos:3,moveSteps:0,collectAmount:0,moveBackward:true},
     {id:nextId++,deck:'chance',icon:'🚔',text:'Allez au gymnase. Rendez-vous directement au gymnase. Ne passez pas par la case Départ, ne touchez pas 200 M$.',flavor:'',effect:'goto_jail',amount:0,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
     {id:nextId++,deck:'chance',icon:'🏦',text:'Erreur des modos en votre faveur : recevez 200 M$.',flavor:'',effect:'gain',amount:200,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
     {id:nextId++,deck:'chance',icon:'📦',text:'Vente de mangas : la vente de votre stock vous rapporte 50 M$.',flavor:'',effect:'gain',amount:50,perHouse:0,perHotel:0,targetPos:0,moveSteps:0,collectAmount:0},
@@ -523,6 +524,8 @@ function renderEffectParams(c) {
     html = `<div class="cond-section">
       <div class="field"><label>Numéro de la case cible (0–39)</label><input type="number" min="0" max="39" value="${c.targetPos}" oninput="updN('targetPos',this.value)">
       <span class="hint">0 = Départ, 10 = Prison/Visite, 20 = Parc gratuit, etc.</span></div>
+      <div class="field"><label><input type="checkbox" ${c.moveBackward?'checked':''} onchange="upd('moveBackward',this.checked)" style="width:auto;margin-right:6px;vertical-align:middle"> Reculer jusqu'à la case (au lieu d'avancer)</label>
+      <span class="hint">À cocher pour une carte "retour en arrière" (ex. Redoublement) : le pion recule directement, sans faire le tour du plateau et sans jamais toucher les M$200 du Départ.</span></div>
     </div>`;
   } else if(c.effect==='goto_direct') {
     html = `<div class="cond-section">
@@ -582,7 +585,7 @@ function renderPreview() {
   else if(c.effect==='pay_all') amountDisplay = `<div class="card-amount-badge negative">- ${MONEY_ICON}${c.amount} × joueurs</div>`;
   else if(c.effect==='goto_jail') amountDisplay = `<div style="font-size:20px;text-align:center">⛓️</div>`;
   else if(c.effect==='get_out') amountDisplay = `<div style="font-size:20px;text-align:center">🔑</div>`;
-  else if(c.effect==='move_to') amountDisplay = `<div style="font-size:11px;color:#888;text-align:center">→ case ${c.targetPos}</div>`;
+  else if(c.effect==='move_to') amountDisplay = `<div style="font-size:11px;color:#888;text-align:center">${c.moveBackward?'←':'→'} case ${c.targetPos}${c.moveBackward?' (recule)':''}</div>`;
   else if(c.effect==='goto_direct') amountDisplay = `<div style="font-size:11px;color:#888;text-align:center">⇢ case ${c.targetPos} (direct)</div>`;
   else if(c.effect==='move_by') amountDisplay = `<div style="font-size:11px;color:#888;text-align:center">${c.moveSteps>0?'+':''}${c.moveSteps} cases</div>`;
 

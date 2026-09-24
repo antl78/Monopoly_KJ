@@ -1359,14 +1359,21 @@ function applyCard(p, card, deck){
     case 'move_to':
       applyFn=()=>{
         const target=card.targetPos||0;
-        // "Advance to X" always moves forward (wrapping past Go awards the
-        // usual 200 oufingoufs) — movePlayer() walks the pawn there and calls
-        // landOn() itself once it arrives, animation included.
-        const steps=(target-p.pos+40)%40;
-        log(`${pawnLogChar(p)} Se déplace case ${target} : ${G.board[target]?.name}`,'move');
+        // card.moveBackward marks a "return to a previous cell" card (e.g.
+        // Redoublement): it should never pay the "passed Départ" bonus, so
+        // whenever the forward route would have to wrap around through 0 to
+        // reach the target (i.e. the pawn is currently past it), send it
+        // backward instead — movePlayer()'s passing bonus only fires for
+        // steps>0, so a backward move never triggers it. When the pawn is
+        // already before the target, forward is already safe (no wrap
+        // through 0) and stays the natural, shorter route either way.
+        const wrapsThroughDepart = p.pos > target;
+        const goBackward = !!card.moveBackward && wrapsThroughDepart;
+        const steps = goBackward ? -(p.pos-target) : (target-p.pos+40)%40;
+        log(`${pawnLogChar(p)} ${goBackward?'Recule jusqu\'à la':'Se déplace'} case ${target} : ${G.board[target]?.name}`,'move');
         movePlayer(p,steps);
       };
-      amountBadge=`<div style="font-size:24px">→ case ${card.targetPos}</div>`;
+      amountBadge=`<div style="font-size:24px">${card.moveBackward?'←':'→'} case ${card.targetPos}</div>`;
       break;
     case 'move_by':
       applyFn=()=>{

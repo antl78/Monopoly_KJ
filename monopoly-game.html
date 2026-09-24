@@ -126,7 +126,9 @@ input[type=file]{display:none}
 .cell-color.has-alerts{height:30%}
 .cell-alert{height:100%;aspect-ratio:1;max-width:24%;min-width:0;object-fit:contain;flex-shrink:1;filter:drop-shadow(0 1px 1px rgba(0,0,0,.45))}
 .cell-alert.prison{max-width:80%}
-.cell-name{width:100%;font-size:.95em;font-weight:700;color:#000;text-align:center;line-height:1.15;padding:1px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;word-break:break-word}
+/* No line-clamp here on purpose: a 3-line clamp cut the end of names like
+   "Caisse de communauté" / "Discord Nitro Basic" with an ellipsis. */
+.cell-name{width:100%;font-size:.95em;font-weight:700;color:#000;text-align:center;line-height:1.15;padding:1px;word-break:break-word}
 .cell-price{width:100%;font-family:'DM Mono',monospace;font-size:.88em;font-weight:700;color:#000;text-align:center}
 .cell-corner{width:100%;font-size:2.1em;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1px;color:var(--accent)}
 .cell-corner .lbl{width:100%;font-size:.5em;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.02em;word-break:break-word;line-height:1.05}

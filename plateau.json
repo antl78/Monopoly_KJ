@@ -40,7 +40,7 @@
     },
     {
       "pos": 2,
-      "name": "Caisse de Commun.",
+      "name": "Caisse de communauté",
       "type": "community",
       "group": "none",
       "price": 0,
@@ -311,7 +311,7 @@
     },
     {
       "pos": 17,
-      "name": "Caisse de Commun.",
+      "name": "Caisse de communauté",
       "type": "community",
       "group": "none",
       "price": 0,
@@ -602,7 +602,7 @@
     },
     {
       "pos": 33,
-      "name": "Caisse de Commun.",
+      "name": "Caisse de communauté",
       "type": "community",
       "group": "none",
       "price": 0,

@@ -1210,7 +1210,7 @@ async function rollDice(){
     if(doubles){p.inJail=false;p.jailTurns=0;log(`${pawnLogChar(p)} Sort de prison grâce aux doubles !`,'gain');}
     else{
       p.jailTurns++;
-      if(p.jailTurns>=3){p.inJail=false;p.jailTurns=0;p.money-=50;log(`${pawnLogChar(p)} Sort de prison après 3 tours. Paye M$50.`,'loss');}
+      if(p.jailTurns>=3){p.inJail=false;p.jailTurns=0;p.money-=50;log(`${pawnLogChar(p)} Sort de prison après 3 tours. Paye 50 oufingoufs.`,'loss');}
       else{
         log(`${pawnLogChar(p)} En prison — tour ${p.jailTurns}/3.`);
         G.phase='action';
@@ -1252,14 +1252,14 @@ async function movePlayer(p, steps){
   await walkPawn(p, path);
   p.pos=newPos;
   // newPos!==0 excludes landing *exactly* on the Départ cell: that case is
-  // handled by landOn()'s own 'go' branch below, which also grants M$200 —
+  // handled by landOn()'s own 'go' branch below, which also grants 200 oufingoufs —
   // without this guard, a move that lands precisely on 0 would pay the
   // bonus twice (once here for "passed through 0", once for "arrived on
   // the Départ cell"). Only an actual pass-through (0 crossed mid-path,
   // final position elsewhere) should trigger this bonus.
   if(steps>0 && newPos!==0 && path.includes(0)){
     p.money+=200;
-    log(`${pawnLogChar(p)} Passe par la case Départ → reçoit M$200`,'gain');
+    log(`${pawnLogChar(p)} Passe par la case Départ → reçoit 200 oufingoufs`,'gain');
   }
   renderAll();
   await delay(150);
@@ -1274,11 +1274,11 @@ function landOn(p){
   switch(cell.type){
     case 'go':
       p.money+=200;
-      log(`${pawnLogChar(p)} Case Départ → reçoit M$200`,'gain');
+      log(`${pawnLogChar(p)} Case Départ → reçoit 200 oufingoufs`,'gain');
       break;
     case 'tax':
       p.money-=cell.price;
-      log(`${pawnLogChar(p)} Taxe : paye M$${cell.price}`,'loss');
+      log(`${pawnLogChar(p)} Taxe : paye ${cell.price} oufingoufs`,'loss');
       break;
     case 'goto_jail':
       goToJail(p);
@@ -1327,11 +1327,11 @@ function applyCard(p, card, deck){
 
   switch(card.effect){
     case 'gain':
-      applyFn=()=>{p.money+=card.amount;log(`${pawnLogChar(p)} Reçoit M$${card.amount}`,'gain');};
+      applyFn=()=>{p.money+=card.amount;log(`${pawnLogChar(p)} Reçoit ${card.amount} oufingoufs`,'gain');};
       amountBadge=`<div class="card-display-amount pos">+ ${MONEY_ICON}${card.amount}</div>`;
       break;
     case 'lose':
-      applyFn=()=>{p.money-=card.amount;log(`${pawnLogChar(p)} Paie M$${card.amount}`,'loss');};
+      applyFn=()=>{p.money-=card.amount;log(`${pawnLogChar(p)} Paie ${card.amount} oufingoufs`,'loss');};
       amountBadge=`<div class="card-display-amount neg">- ${MONEY_ICON}${card.amount}</div>`;
       break;
     case 'goto_jail':
@@ -1360,7 +1360,7 @@ function applyCard(p, card, deck){
       applyFn=()=>{
         const target=card.targetPos||0;
         // "Advance to X" always moves forward (wrapping past Go awards the
-        // usual M$200) — movePlayer() walks the pawn there and calls
+        // usual 200 oufingoufs) — movePlayer() walks the pawn there and calls
         // landOn() itself once it arrives, animation included.
         const steps=(target-p.pos+40)%40;
         log(`${pawnLogChar(p)} Se déplace case ${target} : ${G.board[target]?.name}`,'move');
@@ -1384,7 +1384,7 @@ function applyCard(p, card, deck){
           total+=b.houses*card.perHouse+b.hotel*card.perHotel;
         });
         p.money-=total;
-        log(`${pawnLogChar(p)} Réparations : paye M$${total}`,'loss');
+        log(`${pawnLogChar(p)} Réparations : paye ${total} oufingoufs`,'loss');
       };
       amountBadge=`<div style="font-size:13px;color:#888">${ALERTE_ICON} ${MONEY_ICON}${card.perHouse}/alerte<br>${ALERTEPRISON_ICON} ${MONEY_ICON}${card.perHotel}/alerteprison</div>`;
       break;
@@ -1393,7 +1393,7 @@ function applyCard(p, card, deck){
         const amt=card.collectAmount||card.amount||0;
         others.forEach(o=>{o.money-=amt;});
         p.money+=amt*others.length;
-        log(`${pawnLogChar(p)} Collecte M$${amt} de chaque joueur → total M$${amt*others.length}`,'gain');
+        log(`${pawnLogChar(p)} Collecte ${amt} oufingoufs de chaque joueur → total ${amt*others.length} oufingoufs`,'gain');
       };
       amountBadge=`<div class="card-display-amount pos">+ ${MONEY_ICON}${card.collectAmount||card.amount} × joueurs</div>`;
       break;
@@ -1402,7 +1402,7 @@ function applyCard(p, card, deck){
         const amt=card.amount||0;
         others.forEach(o=>{o.money+=amt;});
         p.money-=amt*others.length;
-        log(`${pawnLogChar(p)} Verse M$${amt} à chaque joueur`,'loss');
+        log(`${pawnLogChar(p)} Verse ${amt} oufingoufs à chaque joueur`,'loss');
       };
       amountBadge=`<div class="card-display-amount neg">- ${MONEY_ICON}${card.amount} × joueurs</div>`;
       break;
@@ -1474,7 +1474,7 @@ function resolveChoicePay(playerId, amount){
   const p = G.players.find(pl=>pl.id===playerId);
   if(!p) return;
   p.money -= amount;
-  log(`${pawnLogChar(p)} Choisit de payer M$${amount}`,'loss');
+  log(`${pawnLogChar(p)} Choisit de payer ${amount} oufingoufs`,'loss');
   closeModal();
   renderAll();
 }
@@ -1506,7 +1506,7 @@ function handlePropertyLanding(p, cell){
   const rent=calcRent(cell, owner);
   p.money-=rent;
   owner.money+=rent;
-  log(`${pawnLogChar(p)} Paye loyer M$${rent} à ${pawnLogChar(owner)} ${owner.name} pour ${cell.name}`,'loss');
+  log(`${pawnLogChar(p)} Paye loyer ${rent} oufingoufs à ${pawnLogChar(owner)} ${owner.name} pour ${cell.name}`,'loss');
   renderSidebarPanels();
 }
 
@@ -1577,7 +1577,7 @@ function buyProperty(){
   if(!cell||p.money<cell.price) return;
   p.money-=cell.price;
   p.properties.push(cell.pos);
-  log(`${pawnLogChar(p)} ${p.name} achète ${cell.name} pour M$${cell.price}`,'gain');
+  log(`${pawnLogChar(p)} ${p.name} achète ${cell.name} pour ${cell.price} oufingoufs`,'gain');
   renderAll();
 }
 
@@ -1659,7 +1659,7 @@ function sellHouse(pos){
   if(!b||b.houses<=0) return;
   const refund=Math.round(cell.buildCost/2);
   b.houses--; p.money+=refund;
-  log(`${pawnLogChar(p)} Vend une alerte sur ${cell.name} (+M$${refund})`,'gain');
+  log(`${pawnLogChar(p)} Vend une alerte sur ${cell.name} (+${refund} oufingoufs)`,'gain');
   renderAll(); showSellModal();
 }
 
@@ -1670,7 +1670,7 @@ function sellHotel(pos){
   if(!b||!b.hotel) return;
   const refund=Math.round(cell.buildCost/2);
   b.hotel=0; b.houses=4; p.money+=refund;
-  log(`${pawnLogChar(p)} Vend l'alerteprison sur ${cell.name} (revient à 4 alertes) (+M$${refund})`,'gain');
+  log(`${pawnLogChar(p)} Vend l'alerteprison sur ${cell.name} (revient à 4 alertes) (+${refund} oufingoufs)`,'gain');
   renderAll(); showSellModal();
 }
 
@@ -1695,7 +1695,7 @@ function mortgage(pos){
   const p=G.players[G.currentPlayer];
   G.mortgaged.add(pos);
   p.money+=G.board[pos].mortgage;
-  log(`${pawnLogChar(p)} Hypothèque ${G.board[pos].name} → reçoit M$${G.board[pos].mortgage}`,'gain');
+  log(`${pawnLogChar(p)} Hypothèque ${G.board[pos].name} → reçoit ${G.board[pos].mortgage} oufingoufs`,'gain');
   renderAll(); showMortgageModal('mortgage');
 }
 function unmortgage(pos){
@@ -1704,7 +1704,7 @@ function unmortgage(pos){
   if(p.money<cost){toast('Fonds insuffisants.');return;}
   G.mortgaged.delete(pos);
   p.money-=cost;
-  log(`${pawnLogChar(p)} Lève hypothèque ${G.board[pos].name} → paye M$${cost}`,'loss');
+  log(`${pawnLogChar(p)} Lève hypothèque ${G.board[pos].name} → paye ${cost} oufingoufs`,'loss');
   renderAll(); showMortgageModal('unmortgage');
 }
 
@@ -1731,7 +1731,7 @@ function payJail(){
   const p=G.players[G.currentPlayer];
   if(p.money<50){toast('Fonds insuffisants.');return;}
   p.money-=50; p.inJail=false; p.jailTurns=0;
-  log(`${pawnLogChar(p)} Paye M$50 pour sortir de prison.`,'loss');
+  log(`${pawnLogChar(p)} Paye 50 oufingoufs pour sortir de prison.`,'loss');
   renderAll();
 }
 function useGetOutCard(){
@@ -1792,7 +1792,7 @@ function declareBankrupt(){
 
 function endGame(winner){
   document.getElementById('winPawn').innerHTML=pawnIconHtml(winner.pawn);
-  document.getElementById('winSub').textContent=`${winner.name} remporte la partie avec M$${winner.money.toLocaleString()} et ${winner.properties.length} propriétés !`;
+  document.getElementById('winSub').textContent=`${winner.name} remporte la partie avec ${winner.money.toLocaleString()} oufingoufs et ${winner.properties.length} propriétés !`;
   document.getElementById('gameScreen').classList.add('hidden');
   document.getElementById('winScreen').classList.remove('hidden');
 }

@@ -446,45 +446,45 @@ const GROUP_COLORS = {
 function defaultBoard() {
   return [
     {pos:0,name:'Départ',type:'go',group:'none',price:0,mortgage:0,rents:[200,0,0,0,0,0],buildCost:0,desc:'Recevez 200M$ en passant par ici'},
-    {pos:1,name:'Boulevard de Belleville',type:'property',group:'brown',price:60,mortgage:30,rents:[2,4,10,30,90,160],buildCost:50,desc:''},
+    {pos:1,name:'Boulevard de Belleville',type:'property',group:'brown',price:60,mortgage:30,rents:[2,10,30,90,160,250],buildCost:50,desc:''},
     {pos:2,name:'Caisse de communauté',type:'community',group:'none',price:0,mortgage:0,rents:[0,0,0,0,0,0],buildCost:0,desc:''},
-    {pos:3,name:'Rue Lecourbe',type:'property',group:'brown',price:60,mortgage:30,rents:[4,8,20,60,180,320],buildCost:50,desc:''},
+    {pos:3,name:'Rue Lecourbe',type:'property',group:'brown',price:60,mortgage:30,rents:[4,20,60,180,320,450],buildCost:50,desc:''},
     {pos:4,name:'Impôts',type:'tax',group:'none',price:200,mortgage:0,rents:[0,0,0,0,0,0],buildCost:0,desc:'Payez 200M$'},
     {pos:5,name:'Gare Nord',type:'station',group:'none',price:200,mortgage:100,rents:[25,50,100,200,0,0],buildCost:0,desc:''},
-    {pos:6,name:'Rue de Vaugirard',type:'property',group:'lblue',price:100,mortgage:50,rents:[6,12,30,90,270,400],buildCost:50,desc:''},
+    {pos:6,name:'Rue de Vaugirard',type:'property',group:'lblue',price:100,mortgage:50,rents:[6,30,90,270,400,550],buildCost:50,desc:''},
     {pos:7,name:'Chance',type:'chance',group:'none',price:0,mortgage:0,rents:[0,0,0,0,0,0],buildCost:0,desc:''},
-    {pos:8,name:'Rue de Courcelles',type:'property',group:'lblue',price:100,mortgage:50,rents:[6,12,30,90,270,400],buildCost:50,desc:''},
-    {pos:9,name:'Avenue de la République',type:'property',group:'lblue',price:120,mortgage:60,rents:[8,16,40,100,300,450],buildCost:50,desc:''},
+    {pos:8,name:'Rue de Courcelles',type:'property',group:'lblue',price:100,mortgage:50,rents:[6,30,90,270,400,550],buildCost:50,desc:''},
+    {pos:9,name:'Avenue de la République',type:'property',group:'lblue',price:120,mortgage:60,rents:[8,40,100,300,450,600],buildCost:50,desc:''},
     {pos:10,name:'Prison / Visite',type:'jail',group:'none',price:0,mortgage:0,rents:[0,0,0,0,0,0],buildCost:0,desc:''},
-    {pos:11,name:'Boulevard de la Villette',type:'property',group:'pink',price:140,mortgage:70,rents:[10,20,50,150,450,625],buildCost:100,desc:''},
+    {pos:11,name:'Boulevard de la Villette',type:'property',group:'pink',price:140,mortgage:70,rents:[10,50,150,450,625,750],buildCost:100,desc:''},
     {pos:12,name:'Compagnie Électrique',type:'utility',group:'none',price:150,mortgage:75,rents:[0,0,0,0,0,0],buildCost:0,desc:''},
-    {pos:13,name:'Avenue de Neuilly',type:'property',group:'pink',price:140,mortgage:70,rents:[10,20,50,150,450,625],buildCost:100,desc:''},
-    {pos:14,name:'Rue de Paradis',type:'property',group:'pink',price:160,mortgage:80,rents:[12,24,60,180,500,700],buildCost:100,desc:''},
+    {pos:13,name:'Avenue de Neuilly',type:'property',group:'pink',price:140,mortgage:70,rents:[10,50,150,450,625,750],buildCost:100,desc:''},
+    {pos:14,name:'Rue de Paradis',type:'property',group:'pink',price:160,mortgage:80,rents:[12,60,180,500,700,900],buildCost:100,desc:''},
     {pos:15,name:'Gare Est',type:'station',group:'none',price:200,mortgage:100,rents:[25,50,100,200,0,0],buildCost:0,desc:''},
-    {pos:16,name:'Avenue Mozart',type:'property',group:'orange',price:180,mortgage:90,rents:[14,28,70,200,550,750],buildCost:100,desc:''},
+    {pos:16,name:'Avenue Mozart',type:'property',group:'orange',price:180,mortgage:90,rents:[14,70,200,550,750,950],buildCost:100,desc:''},
     {pos:17,name:'Caisse de communauté',type:'community',group:'none',price:0,mortgage:0,rents:[0,0,0,0,0,0],buildCost:0,desc:''},
-    {pos:18,name:'Boulevard Saint-Michel',type:'property',group:'orange',price:180,mortgage:90,rents:[14,28,70,200,550,750],buildCost:100,desc:''},
-    {pos:19,name:'Square Rapp',type:'property',group:'orange',price:200,mortgage:100,rents:[16,32,80,220,600,800],buildCost:100,desc:''},
+    {pos:18,name:'Boulevard Saint-Michel',type:'property',group:'orange',price:180,mortgage:90,rents:[14,70,200,550,750,950],buildCost:100,desc:''},
+    {pos:19,name:'Square Rapp',type:'property',group:'orange',price:200,mortgage:100,rents:[16,80,220,600,800,1000],buildCost:100,desc:''},
     {pos:20,name:'Parc Gratuit',type:'free',group:'none',price:0,mortgage:0,rents:[0,0,0,0,0,0],buildCost:0,desc:''},
-    {pos:21,name:'Avenue Matignon',type:'property',group:'red',price:220,mortgage:110,rents:[18,36,90,250,700,875],buildCost:150,desc:''},
+    {pos:21,name:'Avenue Matignon',type:'property',group:'red',price:220,mortgage:110,rents:[18,90,250,700,875,1050],buildCost:150,desc:''},
     {pos:22,name:'Chance',type:'chance',group:'none',price:0,mortgage:0,rents:[0,0,0,0,0,0],buildCost:0,desc:''},
-    {pos:23,name:'Boulevard Malesherbes',type:'property',group:'red',price:220,mortgage:110,rents:[18,36,90,250,700,875],buildCost:150,desc:''},
-    {pos:24,name:'Avenue Henri-Martin',type:'property',group:'red',price:240,mortgage:120,rents:[20,40,100,300,750,925],buildCost:150,desc:''},
+    {pos:23,name:'Boulevard Malesherbes',type:'property',group:'red',price:220,mortgage:110,rents:[18,90,250,700,875,1050],buildCost:150,desc:''},
+    {pos:24,name:'Avenue Henri-Martin',type:'property',group:'red',price:240,mortgage:120,rents:[20,100,300,750,925,1100],buildCost:150,desc:''},
     {pos:25,name:'Gare Saint-Lazare',type:'station',group:'none',price:200,mortgage:100,rents:[25,50,100,200,0,0],buildCost:0,desc:''},
-    {pos:26,name:'Avenue de Breteuil',type:'property',group:'yellow',price:260,mortgage:130,rents:[22,44,110,330,800,975],buildCost:150,desc:''},
-    {pos:27,name:'Avenue Foch',type:'property',group:'yellow',price:260,mortgage:130,rents:[22,44,110,330,800,975],buildCost:150,desc:''},
+    {pos:26,name:'Avenue de Breteuil',type:'property',group:'yellow',price:260,mortgage:130,rents:[22,110,330,800,975,1150],buildCost:150,desc:''},
+    {pos:27,name:'Avenue Foch',type:'property',group:'yellow',price:260,mortgage:130,rents:[22,110,330,800,975,1150],buildCost:150,desc:''},
     {pos:28,name:'Compagnie des Eaux',type:'utility',group:'none',price:150,mortgage:75,rents:[0,0,0,0,0,0],buildCost:0,desc:''},
-    {pos:29,name:'Rue La Boétie',type:'property',group:'yellow',price:280,mortgage:140,rents:[24,48,120,360,850,1025],buildCost:150,desc:''},
+    {pos:29,name:'Rue La Boétie',type:'property',group:'yellow',price:280,mortgage:140,rents:[24,120,360,850,1025,1200],buildCost:150,desc:''},
     {pos:30,name:'Allez en Prison',type:'goto_jail',group:'none',price:0,mortgage:0,rents:[0,0,0,0,0,0],buildCost:0,desc:''},
-    {pos:31,name:'Boulevard des Capucines',type:'property',group:'green',price:300,mortgage:150,rents:[26,52,130,390,900,1100],buildCost:200,desc:''},
-    {pos:32,name:'Avenue de Breteuil',type:'property',group:'green',price:300,mortgage:150,rents:[26,52,130,390,900,1100],buildCost:200,desc:''},
+    {pos:31,name:'Boulevard des Capucines',type:'property',group:'green',price:300,mortgage:150,rents:[26,130,390,900,1100,1275],buildCost:200,desc:''},
+    {pos:32,name:'Avenue de Breteuil',type:'property',group:'green',price:300,mortgage:150,rents:[26,130,390,900,1100,1275],buildCost:200,desc:''},
     {pos:33,name:'Caisse de communauté',type:'community',group:'none',price:0,mortgage:0,rents:[0,0,0,0,0,0],buildCost:0,desc:''},
-    {pos:34,name:'Avenue de Wagram',type:'property',group:'green',price:320,mortgage:160,rents:[28,56,150,450,1000,1200],buildCost:200,desc:''},
+    {pos:34,name:'Avenue de Wagram',type:'property',group:'green',price:320,mortgage:160,rents:[28,150,450,1000,1200,1400],buildCost:200,desc:''},
     {pos:35,name:'Gare de Lyon',type:'station',group:'none',price:200,mortgage:100,rents:[25,50,100,200,0,0],buildCost:0,desc:''},
     {pos:36,name:'Chance',type:'chance',group:'none',price:0,mortgage:0,rents:[0,0,0,0,0,0],buildCost:0,desc:''},
-    {pos:37,name:'Avenue de la Paix',type:'property',group:'blue',price:350,mortgage:175,rents:[35,70,175,500,1100,1300],buildCost:200,desc:''},
+    {pos:37,name:'Avenue de la Paix',type:'property',group:'blue',price:350,mortgage:175,rents:[35,175,500,1100,1300,1500],buildCost:200,desc:''},
     {pos:38,name:'Taxe de Luxe',type:'tax',group:'none',price:100,mortgage:0,rents:[0,0,0,0,0,0],buildCost:0,desc:'Payez 100M$'},
-    {pos:39,name:'Rue de la Paix',type:'property',group:'blue',price:400,mortgage:200,rents:[50,100,200,600,1400,1700],buildCost:200,desc:''},
+    {pos:39,name:'Rue de la Paix',type:'property',group:'blue',price:400,mortgage:200,rents:[50,200,600,1400,1700,2000],buildCost:200,desc:''},
   ];
 }
 
@@ -1529,20 +1529,21 @@ function calcRent(cell, owner){
   }
   const b=G.propertyBuildings[cell.pos]||{houses:0,hotel:0};
   if(b.hotel) return cell.rents[5];
-  if(b.houses>0) return cell.rents[1+b.houses];
-  // Check monopoly
+  if(b.houses>0) return cell.rents[b.houses];
+  // Terrain nu : loyer doublé si le joueur possède tout le groupe
   const groupProps=G.board.filter(c=>c.group===cell.group&&c.type==='property');
   const ownsAll=groupProps.every(c=>owner.properties.includes(c.pos));
-  return ownsAll?cell.rents[1]:cell.rents[0];
+  return ownsAll?cell.rents[0]*2:cell.rents[0];
 }
 
 function titleDeedHtml(cell, color){
   const rentRows = cell.type==='property' ? `
       <tr><td>Loyer nu</td><td>${MONEY_ICON}${cell.rents[0]}</td></tr>
-      <tr><td>Avec le monopole</td><td>${MONEY_ICON}${cell.rents[1]}</td></tr>
-      <tr><td>${ALERTE_ICON} Avec 1 alerte</td><td>${MONEY_ICON}${cell.rents[2]}</td></tr>
-      <tr><td>${ALERTE_ICON} Avec 2 alertes</td><td>${MONEY_ICON}${cell.rents[3]}</td></tr>
-      <tr><td>${ALERTE_ICON} Avec 3 alertes</td><td>${MONEY_ICON}${cell.rents[4]}</td></tr>
+      <tr><td>Groupe complet (nu ×2)</td><td>${MONEY_ICON}${cell.rents[0]*2}</td></tr>
+      <tr><td>${ALERTE_ICON} Avec 1 alerte</td><td>${MONEY_ICON}${cell.rents[1]}</td></tr>
+      <tr><td>${ALERTE_ICON} Avec 2 alertes</td><td>${MONEY_ICON}${cell.rents[2]}</td></tr>
+      <tr><td>${ALERTE_ICON} Avec 3 alertes</td><td>${MONEY_ICON}${cell.rents[3]}</td></tr>
+      <tr><td>${ALERTE_ICON} Avec 4 alertes</td><td>${MONEY_ICON}${cell.rents[4]}</td></tr>
       <tr><td>${ALERTEPRISON_ICON} Avec alerteprison</td><td>${MONEY_ICON}${cell.rents[5]}</td></tr>
     ` : cell.type==='station' ? `
       <tr><td>1 gare</td><td>${MONEY_ICON}${cell.rents[0]}</td></tr>

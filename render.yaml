@@ -1,0 +1,14 @@
+# Réglages Render pour Monopoly KJ (facultatif : utilisé par « New → Blueprint »).
+# Si vous gardez le service existant, recopiez plutôt ces réglages à la main
+# (voir monopoly-server/README.md).
+services:
+  - type: web
+    name: monopoly-kj
+    runtime: node
+    plan: free
+    buildCommand: npm install --prefix monopoly-server
+    startCommand: node monopoly-server/server.js
+    healthCheckPath: /health
+    envVars:
+      - key: SNAPSHOT_SECRET
+        generateValue: true

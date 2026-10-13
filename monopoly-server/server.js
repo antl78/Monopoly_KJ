@@ -1,299 +1,329 @@
-const express = require('express');
-const { WebSocketServer } = require('ws');
-const { createServer } = require('http');
+// ════════════════════════════════════════════════════════════════════════════
+// server.js — Serveur multijoueur de Monopoly KJ
+// ────────────────────────────────────────────────────────────────────────────
+// • Sert le jeu lui-même (monopoly-game.html, engine.js, images, plateau.json,
+//   cartes.json) depuis la racine du repo : les joueurs n'ont qu'à ouvrir l'URL.
+// • Gère les salons en WebSocket. Le protocole est décrit dans protocol.md.
+// • Aucune règle de jeu ici : tout passe par le moteur partagé ../engine.js.
+//
+// Lancer en local :  npm install --prefix monopoly-server
+//                    node monopoly-server/server.js      → http://localhost:3000
+// Variables d'environnement :
+//   PORT             port d'écoute (Render le fournit)
+//   SNAPSHOT_SECRET  clé des sauvegardes (au moins 16 caractères) — OBLIGATOIRE
+//                    en ligne, sinon les sauvegardes ne survivent pas à un redémarrage
+//   GAME_ROOT        dossier du jeu (par défaut : le dossier parent de ce fichier)
+// ════════════════════════════════════════════════════════════════════════════
+const http = require('http');
+const fs = require('fs');
 const path = require('path');
-const { randomUUID } = require('crypto');
+const { WebSocketServer } = require('ws');
+const E = require('../engine.js');
+const snap = require('./snapshot.js');
+const { Room, cleanPawn, clampName } = require('./room.js');
 
-const app = express();
-const server = createServer(app);
-const wss = new WebSocketServer({ server });
+const PORT = Number(process.env.PORT) || 3000;
+const ROOT = path.resolve(process.env.GAME_ROOT || path.join(__dirname, '..'));
+const MAX_MSG = 3 * 1024 * 1024;          // un plateau perso avec images peut peser lourd
+const PROTOCOL = 1;
 
-app.use(express.json({ limit: '2mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
+// ── Fichiers servis (liste blanche : les éditeurs restent hors du serveur) ──
+const STATIC = {
+  '/': ['monopoly-game.html', 'text/html; charset=utf-8'],
+  '/monopoly-game.html': ['monopoly-game.html', 'text/html; charset=utf-8'],
+  '/engine.js': ['engine.js', 'text/javascript; charset=utf-8'],
+  '/plateau.json': ['plateau.json', 'application/json; charset=utf-8'],
+  '/cartes.json': ['cartes.json', 'application/json; charset=utf-8'],
+};
+const IMG_TYPES = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', svg: 'image/svg+xml', ico: 'image/x-icon' };
 
 const rooms = new Map();
-const clients = new Map();
 
-function broadcast(roomId, msg, excludeId=null) {
-  const room = rooms.get(roomId); if(!room) return;
-  const payload = JSON.stringify(msg);
-  for(const [wsId, info] of clients) {
-    if(info.roomId===roomId && wsId!==excludeId && info.ws.readyState===1) info.ws.send(payload);
+function official() {
+  const read = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
+  const p = read('plateau.json');
+  return { board: p.board || p, cards: E.normalizeCards(read('cartes.json')) };
+}
+
+const server = http.createServer((req, res) => {
+  const url = new URL(req.url, 'http://x');
+  const headers = { 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer' };
+  if (url.pathname === '/health') {
+    res.writeHead(200, Object.assign(headers, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }));
+    res.end(JSON.stringify({ ok: true, rooms: rooms.size, uptime: Math.round(process.uptime()) }));
+    return;
   }
-}
-function sendTo(wsId, msg) {
-  const info = clients.get(wsId);
-  if(info && info.ws.readyState===1) info.ws.send(JSON.stringify(msg));
-}
-function roomState(roomId) {
-  const room = rooms.get(roomId); if(!room) return null;
-  return { id:room.id, hostId:room.hostId, phase:room.phase, players:Object.fromEntries(room.players), gameState:room.gameState };
-}
-
-wss.on('connection', (ws) => {
-  const wsId = randomUUID();
-  clients.set(wsId, { ws, roomId:null });
-  ws.on('message', (raw) => { try { handle(wsId, JSON.parse(raw)); } catch(e){ console.error(e); } });
-  ws.on('close', () => {
-    const info = clients.get(wsId);
-    if(info && info.roomId) {
-      const room = rooms.get(info.roomId);
-      if(room) {
-        room.players.delete(wsId);
-        broadcast(info.roomId, { type:'player_left', wsId, players:Object.fromEntries(room.players) });
-        if(room.players.size===0) { rooms.delete(info.roomId); console.log('Room '+info.roomId+' supprimee'); }
-      }
-    }
-    clients.delete(wsId);
+  if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405, headers); res.end(); return; }
+  let file, type, cache = 'no-cache';
+  if (STATIC[url.pathname]) [file, type] = STATIC[url.pathname];
+  else {
+    const m = /^\/images\/([\w.-]+)\.(\w+)$/.exec(url.pathname);
+    if (m && IMG_TYPES[m[2].toLowerCase()]) { file = path.join('images', m[1] + '.' + m[2]); type = IMG_TYPES[m[2].toLowerCase()]; cache = 'public, max-age=86400'; }
+  }
+  if (!file) { res.writeHead(404, Object.assign(headers, { 'Content-Type': 'text/plain; charset=utf-8' })); res.end('Introuvable'); return; }
+  fs.readFile(path.join(ROOT, file), (err, data) => {
+    if (err) { res.writeHead(404, headers); res.end('Introuvable'); return; }
+    res.writeHead(200, Object.assign(headers, { 'Content-Type': type, 'Cache-Control': cache }));
+    res.end(req.method === 'HEAD' ? undefined : data);
   });
-  ws.send(JSON.stringify({ type:'hello', wsId }));
 });
 
-function handle(wsId, msg) {
-  const ci = clients.get(wsId);
-  switch(msg.type) {
+const wss = new WebSocketServer({ server, maxPayload: MAX_MSG });
+
+function send(ws, msg) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(msg)); }
+function err(ws, message, extra) { send(ws, Object.assign({ type: 'error', message }, extra || {})); }
+
+// Codes de salon sans caractères ambigus (0/O, 1/I...).
+const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+function newCode() {
+  for (;;) {
+    let c = ''; for (let i = 0; i < 5; i++) c += ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
+    if (!rooms.has(c)) return c;
+  }
+}
+const hooks = { send, official };
+
+// Ne garde que les champs connus d'une action venue du réseau.
+function cleanAction(a) {
+  if (!a || typeof a.type !== 'string') return null;
+  const out = { type: a.type.slice(0, 32) };
+  if ('pos' in a) out.pos = Number(a.pos);
+  if ('amount' in a) out.amount = Number(a.amount);
+  if ('to' in a) out.to = Number(a.to);
+  const side = x => (x && typeof x === 'object') ? { money: Number(x.money) || 0, props: Array.isArray(x.props) ? x.props.slice(0, 40).map(Number) : [], getOut: Number(x.getOut) || 0 } : undefined;
+  if ('give' in a) out.give = side(a.give);
+  if ('get' in a) out.get = side(a.get);
+  return out;
+}
+
+// Anti-inondation : 40 messages d'affilée, puis 20 par seconde.
+function allow(ws) {
+  const now = Date.now();
+  ws.bucket = Math.min(40, (ws.bucket ?? 40) + ((now - (ws.bucketAt || now)) / 1000) * 20);
+  ws.bucketAt = now;
+  if (ws.bucket < 1) return false;
+  ws.bucket -= 1;
+  return true;
+}
+
+function joinedMsg(room, seat, token) {
+  return { type: 'joined', code: room.code, seat, token, host: room.hostSeat === seat, phase: room.phase, protocol: PROTOCOL, ephemeralSaves: snap.isEphemeral() };
+}
+function sendRoomState(ws, room) {
+  if (room.phase === 'lobby') send(ws, room.lobbyView());
+  else send(ws, room.fullGameMsg());
+}
+
+function handle(ws, msg) {
+  const room = ws.room || null;
+  const seat = ws.seat;
+  const isHost = room && room.hostSeat === seat;
+  switch (msg.type) {
+    case 'ping': send(ws, { type: 'pong', t: msg.t }); return;
+
     case 'create_room': {
-      const roomId = Math.random().toString(36).slice(2,7).toUpperCase();
-      const room = { id:roomId, hostId:wsId, phase:'lobby', players:new Map(), gameState:null, boardData:msg.boardData||null, cardData:msg.cardData||null };
-      const player = { wsId, name:msg.playerName||'Hote', pawn:msg.pawn||'🎩', isHost:true };
-      room.players.set(wsId, player);
-      rooms.set(roomId, room);
-      ci.roomId = roomId;
-      sendTo(wsId, { type:'room_created', roomId, state:roomState(roomId) });
-      console.log('Room creee: '+roomId+' par '+msg.playerName);
-      break;
+      if (room) return err(ws, 'Vous êtes déjà dans un salon.');
+      const code = newCode();
+      const r = new Room(code, hooks);
+      rooms.set(code, r);
+      const { seat: s, token } = r.addSeat(msg.name, msg.pawn);
+      r.hostSeat = s;
+      r.attach(s, ws);
+      send(ws, joinedMsg(r, s, token));
+      r.broadcastLobby();
+      log(`Salon ${code} créé par ${r.seats[s].name}`);
+      return;
     }
+
     case 'join_room': {
-      const room = rooms.get(msg.roomId);
-      if(!room) { sendTo(wsId, { type:'error', message:'Salon introuvable.' }); return; }
-      if(room.phase!=='lobby') { sendTo(wsId, { type:'error', message:'Partie en cours.' }); return; }
-      if(room.players.size>=6) { sendTo(wsId, { type:'error', message:'Salon complet.' }); return; }
-      const player = { wsId, name:msg.playerName||'Joueur', pawn:msg.pawn||'🚂', isHost:false };
-      room.players.set(wsId, player);
-      ci.roomId = msg.roomId;
-      sendTo(wsId, { type:'room_joined', roomId:msg.roomId, state:roomState(msg.roomId) });
-      broadcast(msg.roomId, { type:'player_joined', player, players:Object.fromEntries(room.players) }, wsId);
-      console.log(msg.playerName+' rejoint '+msg.roomId);
-      break;
-    }
-    case 'upload_data': {
-      const room = rooms.get(ci.roomId);
-      if(!room||room.hostId!==wsId) return;
-      if(msg.boardData) room.boardData = msg.boardData;
-      if(msg.cardData) room.cardData = msg.cardData;
-      const upd = { type:'data_updated', hasBoardData:!!room.boardData, hasCardData:!!room.cardData };
-      broadcast(ci.roomId, upd); sendTo(wsId, upd);
-      break;
-    }
-    case 'start_game': {
-      const room = rooms.get(ci.roomId);
-      if(!room||room.hostId!==wsId) return;
-      if(room.players.size<2) { sendTo(wsId, { type:'error', message:'2 joueurs minimum.' }); return; }
-      room.phase = 'playing';
-      const sm = msg.startMoney||1500;
-      const plist = Array.from(room.players.values());
-      const { defaultCards } = require('./public/defaultData.js');
-      const cards = room.cardData||defaultCards();
-      room.gameState = {
-        players: plist.map((p,i)=>({ id:i, wsId:p.wsId, name:p.name, pawn:p.pawn, money:sm, pos:0, inJail:false, jailTurns:0, getOutCards:0, properties:[], bankrupt:false })),
-        currentPlayer:0, turn:1, phase:'roll', doublesCount:0, diceRoll:null,
-        propertyBuildings:{}, mortgaged:[],
-        chanceIdx:0, communityIdx:0,
-        chanceOrder:shuffle([...Array(cards.chance.length).keys()]),
-        communityOrder:shuffle([...Array(cards.community.length).keys()]),
-        pendingCard:null, log:[]
-      };
-      const payload = { type:'game_started', gameState:room.gameState, boardData:room.boardData, cardData:room.cardData };
-      broadcast(ci.roomId, payload); sendTo(wsId, payload);
-      console.log('Partie dans '+ci.roomId);
-      break;
-    }
-    case 'game_action': {
-      const room = rooms.get(ci.roomId);
-      if(!room||room.phase!=='playing') return;
-      const gs = room.gameState;
-      const cp = gs.players[gs.currentPlayer];
-      if(msg.action!=='card_confirm' && wsId!==cp?.wsId) { sendTo(wsId,{type:'error',message:"Pas votre tour."}); return; }
-      const ok = processAction(room, wsId, msg.action, msg.data||{});
-      if(ok) {
-        const upd = { type:'state_update', gameState:gs };
-        broadcast(ci.roomId, upd); sendTo(wsId, upd);
-        const alive = gs.players.filter(p=>!p.bankrupt);
-        if(alive.length===1 && room.phase==='playing') {
-          room.phase='ended';
-          const end = { type:'game_over', winner:alive[0] };
-          broadcast(ci.roomId, end); sendTo(wsId, end);
-        }
+      if (room) return err(ws, 'Vous êtes déjà dans un salon.');
+      const r = rooms.get(String(msg.code || '').trim().toUpperCase());
+      if (!r) return err(ws, 'Salon introuvable. Vérifiez le code.', { code: 'unknown_room' });
+      if (r.phase === 'lobby') {
+        if (r.seats.length >= 6) return err(ws, 'Salon complet (6 joueurs maximum).');
+        const { seat: s, token } = r.addSeat(msg.name, msg.pawn);
+        r.attach(s, ws);
+        send(ws, joinedMsg(r, s, token));
+        r.broadcastLobby();
+        return;
       }
-      break;
+      // Partie en cours : seules les places libérées par l'hôte peuvent être reprises.
+      const free = r.seats.map((s, i) => ({ seat: i, name: s.name, pawn: r.pawnRef(i), claimable: s.claimable && !s.connected })).filter(x => x.claimable);
+      if (!free.length) return err(ws, 'La partie a déjà commencé. Si vous en faites partie, utilisez « Reprendre une partie en ligne » ; depuis un autre appareil, demandez à l\'hôte de libérer votre place.');
+      const want = Number(msg.claim);
+      if (!free.some(f => f.seat === want)) { send(ws, { type: 'claim_list', code: r.code, seats: free }); return; }
+      const token = r.reissue(want);
+      r.attach(want, ws);
+      send(ws, joinedMsg(r, want, token));
+      send(ws, r.fullGameMsg());
+      r.broadcastSystemChat(`${r.seats[want].name} reprend sa place.`);
+      r.broadcastMeta();
+      return;
     }
-    case 'chat': {
-      const room = rooms.get(ci.roomId); if(!room) return;
-      const player = room.players.get(wsId);
-      const chatMsg = { type:'chat', from:player?.name||'?', pawn:player?.pawn||'', text:msg.text };
-      broadcast(ci.roomId, chatMsg); sendTo(wsId, chatMsg);
-      break;
+
+    case 'resume': {
+      const r = rooms.get(String(msg.code || '').toUpperCase());
+      if (!r) return send(ws, { type: 'resume_failed', code: msg.code, reason: 'unknown_room' });
+      const s = r.seatByToken(msg.token);
+      if (s < 0) return send(ws, { type: 'resume_failed', code: msg.code, reason: 'unknown_seat' });
+      if (room && room !== r) room.detach(ws);
+      r.attach(s, ws);
+      send(ws, joinedMsg(r, s, msg.token));
+      sendRoomState(ws, r);
+      if (r.phase === 'lobby') r.broadcastLobby(); else r.broadcastMeta();
+      return;
     }
-  }
-}
 
-function processAction(room, wsId, action, data) {
-  const gs = room.gameState;
-  const { defaultBoard, defaultCards } = require('./public/defaultData.js');
-  const board = room.boardData||defaultBoard();
-  const cards = room.cardData||defaultCards();
-  const p = gs.players[gs.currentPlayer];
-  if(!p) return false;
-  const log = (msg, type='') => { gs.log = gs.log.slice(-80); gs.log.push({msg,type,ts:Date.now()}); };
-
-  switch(action) {
-    case 'roll': {
-      if(gs.phase!=='roll') return false;
-      const d1=Math.ceil(Math.random()*6), d2=Math.ceil(Math.random()*6);
-      const total=d1+d2, doubles=d1===d2;
-      gs.diceRoll=[d1,d2];
-      log(p.pawn+' '+p.name+' : '+d1+'+'+d2+'='+total+(doubles?' (doubles!)':''), 'move');
-      if(p.inJail) {
-        if(doubles){p.inJail=false;p.jailTurns=0;log(p.pawn+' sort de prison (doubles).','gain');}
-        else{p.jailTurns++;if(p.jailTurns>=3){p.inJail=false;p.jailTurns=0;p.money-=50;log(p.pawn+' sort apres 3 tours, paye M$50.','loss');}else{log(p.pawn+' en prison tour '+p.jailTurns+'/3.');gs.phase='action';return true;}}
+    case 'restore': {
+      const p = snap.open(msg.snapshot);
+      if (!p) return err(ws, 'Sauvegarde illisible ou modifiée (ou faite sur un autre serveur).', { code: 'bad_snapshot' });
+      const board = msg.board && (msg.board.board || msg.board);
+      const cards = E.normalizeCards(msg.cards);
+      const pawns = Array.isArray(msg.pawns) ? msg.pawns : null;
+      if (snap.hashJson(board) !== p.boardHash || snap.hashJson(cards) !== p.cardsHash || snap.hashJson(pawns) !== p.pawnsHash) {
+        return err(ws, 'Le plateau, les cartes ou les pions ne correspondent pas à cette sauvegarde.', { code: 'bad_snapshot' });
       }
-      if(doubles){gs.doublesCount++;if(gs.doublesCount>=3){goToJail(p,gs,log);gs.phase='action';return true;}}
-      else gs.doublesCount=0;
-      movePlayer(p,total,board,gs,cards,log);
-      return true;
+      const existing = rooms.get(p.code);
+      if (existing) {
+        // Deux joueurs peuvent revenir en même temps : on garde la sauvegarde
+        // la plus récente, tant que personne n'a encore rejoué depuis la restauration.
+        const untouched = existing.restoredAt && existing.state && existing.state.seq === existing.restoredSeq;
+        if (!untouched || existing.state.seq >= p.state.seq) return send(ws, { type: 'restored', code: p.code, already: true });
+        const nr = Room.fromSnapshot(p, board, cards, pawns, hooks);
+        rooms.set(p.code, nr);
+        existing.seats.forEach((s, i) => { if (s.ws && nr.seats[i]) nr.attach(i, s.ws); });
+        nr.broadcast(nr.fullGameMsg());
+      } else {
+        rooms.set(p.code, Room.fromSnapshot(p, board, cards, pawns, hooks));
+      }
+      log(`Salon ${p.code} restauré (coup ${p.state.seq})`);
+      send(ws, { type: 'restored', code: p.code });
+      return;
     }
-    case 'buy': {
-      if(gs.phase!=='action') return false;
-      const cell=board[p.pos];
-      if(!cell||!['property','station','utility'].includes(cell.type)) return false;
-      if(gs.players.some(pl=>pl.properties.includes(p.pos))) return false;
-      if(p.money<cell.price) return false;
-      p.money-=cell.price; p.properties.push(p.pos);
-      log(p.pawn+' achete '+cell.name+' (M$'+cell.price+')','gain'); return true;
+  }
+
+  // ── Messages qui demandent d'être dans un salon ──
+  if (!room) return err(ws, 'Rejoignez d\'abord un salon.');
+  switch (msg.type) {
+    case 'leave': {
+      if (room.phase === 'lobby') {
+        room.removeLobbySeat(seat);
+        ws.room = null; ws.seat = null;
+        if (!room.seats.length) rooms.delete(room.code); else room.broadcastLobby();
+      } else {
+        room.detach(ws);
+        ws.room = null; ws.seat = null;
+      }
+      return;
     }
-    case 'build_house': {
-      const pos=data.pos, cell=board[pos];
-      if(!cell||!p.properties.includes(pos)) return false;
-      if(!gs.propertyBuildings[pos]) gs.propertyBuildings[pos]={houses:0,hotel:0};
-      const b=gs.propertyBuildings[pos];
-      if(b.hotel||b.houses>=4||p.money<cell.buildCost) return false;
-      p.money-=cell.buildCost; b.houses++;
-      log(p.pawn+' achète une alerte sur '+cell.name,'gain'); return true;
+    case 'lobby_me':
+      if (room.phase !== 'lobby') return;
+      if ('name' in msg) room.seats[seat].name = clampName(msg.name, room.seats[seat].name);
+      if ('pawn' in msg) {
+        const p = cleanPawn(msg.pawn);
+        if (room.pawnTaken(p, seat)) { err(ws, 'Ce pion est déjà pris par un autre joueur.'); room.broadcastLobby(); return; }
+        room.seats[seat].pawn = p;
+      }
+      room.broadcastLobby();
+      return;
+    case 'lobby_config':
+      if (!isHost || room.phase !== 'lobby') return err(ws, "Seul l'hôte peut régler la partie.");
+      room.setConfig(msg.config);
+      room.broadcastLobby();
+      return;
+    case 'lobby_data': {
+      if (!isHost || room.phase !== 'lobby') return err(ws, "Seul l'hôte peut changer le plateau.");
+      const e = room.setData(msg.board, msg.cards);
+      if (e) return err(ws, e);
+      room.broadcastLobby();
+      return;
     }
-    case 'build_hotel': {
-      const pos=data.pos, cell=board[pos];
-      if(!cell||!p.properties.includes(pos)) return false;
-      if(!gs.propertyBuildings[pos]) gs.propertyBuildings[pos]={houses:0,hotel:0};
-      const b=gs.propertyBuildings[pos];
-      if(b.hotel||b.houses<4||p.money<cell.buildCost) return false;
-      p.money-=cell.buildCost; b.houses=0; b.hotel=1;
-      log(p.pawn+' convertit ses 4 alertes en alerteprison sur '+cell.name,'gain'); return true;
+    case 'kick_lobby':
+      if (!isHost || room.phase !== 'lobby') return;
+      if (msg.seat === seat || !room.seats[msg.seat]) return;
+      { const w = room.seats[msg.seat].ws; room.removeLobbySeat(msg.seat); if (w) { w.room = null; w.seat = null; send(w, { type: 'kicked' }); } }
+      room.broadcastLobby();
+      return;
+    case 'start': {
+      if (!isHost) return err(ws, "Seul l'hôte peut lancer la partie.");
+      if (room.phase !== 'lobby') return;
+      let e;
+      try { e = room.start(); } catch (ex) { e = 'Impossible de lancer : ' + ex.message; }
+      if (e) err(ws, e); else log(`Partie lancée dans ${room.code} (${room.seats.length} joueurs)`);
+      return;
     }
-    case 'mortgage': {
-      const pos=data.pos, cell=board[pos];
-      if(!p.properties.includes(pos)||gs.mortgaged.includes(pos)) return false;
-      gs.mortgaged.push(pos); p.money+=cell.mortgage;
-      log(p.pawn+' hypotheque '+cell.name,'gain'); return true;
+    case 'act': {
+      const a = cleanAction(msg.action);
+      if (!a) return err(ws, 'Action invalide.');
+      if (room.seats[seat].removed) return err(ws, 'Vous avez été retiré de la partie.');
+      const e = room.act(seat, a);
+      if (e) err(ws, e, { refused: a.type });
+      return;
     }
-    case 'unmortgage': {
-      const pos=data.pos, cell=board[pos];
-      const cost=Math.round(cell.mortgage*1.1);
-      if(!gs.mortgaged.includes(pos)||p.money<cost) return false;
-      gs.mortgaged=gs.mortgaged.filter(x=>x!==pos); p.money-=cost;
-      log(p.pawn+' leve hypotheque '+cell.name,'loss'); return true;
+    case 'presence':
+      if (room.phase !== 'playing') return;
+      room.setAway(seat, !!msg.away);
+      return;
+    case 'host': {
+      const e = room.hostCommand(seat, String(msg.cmd || ''), Number(msg.seat), msg.value);
+      if (e) err(ws, e);
+      return;
     }
-    case 'pay_jail': { if(!p.inJail||p.money<50) return false; p.money-=50;p.inJail=false;p.jailTurns=0; log(p.pawn+' paye M$50 prison.','loss'); return true; }
-    case 'use_get_out': { if(!p.inJail||p.getOutCards<=0) return false; p.getOutCards--;p.inJail=false;p.jailTurns=0; log(p.pawn+' utilise carte prison.','gain'); return true; }
-    case 'card_confirm': { gs.pendingCard=null; return true; }
-    case 'end_turn': {
-      if(gs.phase!=='action') return false;
-      const rolledDoubles=gs.diceRoll&&gs.diceRoll[0]===gs.diceRoll[1]&&gs.doublesCount>0;
-      if(rolledDoubles&&!p.inJail){log(p.pawn+' rejoue (doubles)!','chance');gs.phase='roll';gs.diceRoll=null;return true;}
-      nextPlayer(gs,log); return true;
-    }
-    case 'bankrupt': {
-      p.bankrupt=true; p.properties=[];
-      log('🏳️ '+p.pawn+' '+p.name+' faillite!','loss');
-      const alive=gs.players.filter(pl=>!pl.bankrupt);
-      if(alive.length>1) nextPlayer(gs,log);
-      return true;
-    }
-    default: return false;
+    case 'chat':
+      if (!ws.chatAt || Date.now() - ws.chatAt > 400) { ws.chatAt = Date.now(); room.addChat(seat, msg.text); }
+      return;
+    case 'sync':
+      sendRoomState(ws, room);
+      return;
+    default:
+      err(ws, 'Message inconnu.');
   }
 }
 
-function goToJail(p,gs,log){p.pos=10;p.inJail=true;p.jailTurns=0;log('⛓️ '+p.pawn+' en prison!','loss');}
-function isOwned(pos,gs){return gs.players.some(p=>p.properties.includes(pos));}
-function ownerOf(pos,gs){return gs.players.find(p=>p.properties.includes(pos));}
-
-function movePlayer(p,steps,board,gs,cards,log){
-  const old=p.pos; p.pos=(p.pos+steps)%40;
-  if(p.pos<old){p.money+=200;log(p.pawn+' passe Depart -> M$200','gain');}
-  gs.phase='action';
-  landOn(p,board,gs,cards,log);
-}
-
-function landOn(p,board,gs,cards,log){
-  const cell=board[p.pos]; if(!cell) return;
-  log(p.pawn+' -> '+cell.name,'move');
-  switch(cell.type){
-    case 'go': p.money+=200;log(p.pawn+' case Depart -> M$200','gain');break;
-    case 'tax': p.money-=cell.price;log(p.pawn+' taxe M$'+cell.price,'loss');break;
-    case 'goto_jail': goToJail(p,gs,log);break;
-    case 'chance': applyCard(p,'chance',board,gs,cards,log);break;
-    case 'community': applyCard(p,'community',board,gs,cards,log);break;
-    case 'property': case 'station': case 'utility': handleRent(p,cell,board,gs,log);break;
-  }
-}
-
-function applyCard(p,deck,board,gs,cards,log){
-  const dc=deck==='chance'?cards.chance:cards.community;
-  if(!dc||dc.length===0) return;
-  const ok=deck==='chance'?'chanceOrder':'communityOrder', ik=deck==='chance'?'chanceIdx':'communityIdx';
-  if(!gs[ok]||gs[ok].length===0) gs[ok]=shuffle([...Array(dc.length).keys()]);
-  const card=dc[gs[ok][gs[ik]%gs[ok].length]]; gs[ik]++;
-  gs.pendingCard=card;
-  log(p.pawn+' carte '+deck+': "'+card.text+'"','chance');
-  const others=gs.players.filter(pl=>!pl.bankrupt&&pl.id!==p.id);
-  switch(card.effect){
-    case 'gain': p.money+=card.amount;break;
-    case 'lose': p.money-=card.amount;break;
-    case 'goto_jail': goToJail(p,gs,log);break;
-    case 'get_out': p.getOutCards++;log(p.pawn+' carte sortie prison.','gain');break;
-    case 'move_to': {const t=card.targetPos||0;if(t<p.pos){p.money+=200;log(p.pawn+' passe Depart','gain');}p.pos=t;landOn(p,board,gs,cards,log);break;}
-    case 'move_by': movePlayer(p,card.moveSteps||0,board,gs,cards,log);break;
-    case 'repairs': {let tot=0;p.properties.forEach(pos=>{const b=gs.propertyBuildings[pos]||{houses:0,hotel:0};tot+=b.houses*(card.perHouse||0)+b.hotel*(card.perHotel||0);});p.money-=tot;log(p.pawn+' reparations M$'+tot,'loss');break;}
-    case 'birthday': case 'collect_all': {const a=card.collectAmount||card.amount||0;others.forEach(o=>o.money-=a);p.money+=a*others.length;log(p.pawn+' collecte M$'+a*others.length,'gain');break;}
-    case 'pay_all': {const a=card.amount||0;others.forEach(o=>o.money+=a);p.money-=a*others.length;log(p.pawn+' verse M$'+a*others.length,'loss');break;}
-  }
-}
-
-function handleRent(p,cell,board,gs,log){
-  const owner=ownerOf(cell.pos,gs);
-  if(!owner||owner.id===p.id) return;
-  if(gs.mortgaged.includes(cell.pos)){log(cell.name+' hypothequee.');return;}
-  let rent=0;
-  if(cell.type==='station'){const n=owner.properties.filter(pos=>board[pos]?.type==='station').length;rent=cell.rents[Math.min(n-1,3)]||25;}
-  else if(cell.type==='utility'){const n=owner.properties.filter(pos=>board[pos]?.type==='utility').length;const d=gs.diceRoll?gs.diceRoll[0]+gs.diceRoll[1]:7;rent=n>=2?d*10:d*4;}
-  else{const b=gs.propertyBuildings[cell.pos]||{houses:0,hotel:0};if(b.hotel)rent=cell.rents[5];else if(b.houses>0)rent=cell.rents[1+b.houses];else{const g=board.filter(c=>c.group===cell.group&&c.type==='property');rent=g.every(c=>owner.properties.includes(c.pos))?cell.rents[1]:cell.rents[0];}}
-  p.money-=rent;owner.money+=rent;
-  log(p.pawn+' loyer M$'+rent+' -> '+owner.pawn+' '+owner.name,'loss');
-}
-
-function nextPlayer(gs,log){
-  gs.doublesCount=0;gs.diceRoll=null;
-  let next=gs.currentPlayer;
-  for(let i=0;i<gs.players.length;i++){next=(next+1)%gs.players.length;if(!gs.players[next].bankrupt)break;}
-  if(next<=gs.currentPlayer) gs.turn++;
-  gs.currentPlayer=next; gs.phase='roll';
-  const np=gs.players[next];
-  log('--- Tour de '+np.pawn+' '+np.name+' ---','system');
-}
-
-function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;}
-
-const PORT=process.env.PORT||3000;
-server.listen(PORT,()=>{
-  console.log('✅ Monopoly Custom sur http://localhost:'+PORT);
-  console.log('   Reseau local : http://<votre-IP>:'+PORT);
+wss.on('connection', ws => {
+  ws.isAlive = true;
+  ws.on('pong', () => { ws.isAlive = true; });
+  ws.on('message', raw => {
+    ws.isAlive = true;
+    if (!allow(ws)) return err(ws, 'Trop de messages, ralentissez.');
+    let msg;
+    try { msg = JSON.parse(raw); } catch (e) { return err(ws, 'Message illisible.'); }
+    if (!msg || typeof msg.type !== 'string') return;
+    try { handle(ws, msg); } catch (e) { console.error(e); err(ws, 'Erreur serveur.'); }
+  });
+  ws.on('close', () => { if (ws.room) ws.room.detach(ws); });
+  send(ws, { type: 'hello', protocol: PROTOCOL });
 });
+
+// Battement de cœur : une connexion qui ne répond plus à deux pings d'affilée
+// (~30 s) est coupée, ce qui marque le joueur comme déconnecté.
+const heartbeat = setInterval(() => {
+  wss.clients.forEach(ws => {
+    if (!ws.isAlive) { ws.terminate(); return; }
+    ws.isAlive = false;
+    try { ws.ping(); } catch (e) { /* ignore */ }
+  });
+}, 15000);
+
+// Horloge des salons + ménage des salons vides.
+const clock = setInterval(() => {
+  const now = Date.now();
+  for (const [code, r] of rooms) {
+    try { r.tick(now); } catch (e) { console.error('tick', code, e); }
+    const idle = r.emptySince ? now - r.emptySince : 0;
+    const limit = r.phase === 'lobby' ? 10 * 60000 : r.phase === 'ended' ? 15 * 60000 : 60 * 60000;
+    const neverJoined = !r.emptySince && !r.seats.some(s => s.connected) && now - r.createdAt > 10 * 60000;
+    if ((r.emptySince && idle > limit) || neverJoined) { rooms.delete(code); log(`Salon ${code} fermé (vide)`); }
+  }
+}, 1000);
+
+function log(m) { if (!process.env.QUIET) console.log(new Date().toISOString().slice(11, 19), m); }
+
+if (require.main === module) {
+  server.listen(PORT, () => {
+    console.log(`✅ Monopoly KJ sur http://localhost:${PORT}  (jeu servi depuis ${ROOT})`);
+    if (snap.isEphemeral()) console.warn('⚠️  SNAPSHOT_SECRET absent : les sauvegardes ne survivront pas à un redémarrage du serveur. Ajoutez cette variable dans les réglages Render.');
+  });
+}
+
+module.exports = { server, rooms, stop: () => { clearInterval(heartbeat); clearInterval(clock); wss.clients.forEach(c => c.terminate()); wss.close(); server.close(); server.closeAllConnections(); } };

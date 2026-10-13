@@ -318,49 +318,271 @@ input[type=file]{display:none}
 .win-pawn{font-size:80px;margin-bottom:1rem}
 .win-title{font-family:'Bebas Neue',sans-serif;font-size:64px;color:var(--accent);letter-spacing:.12em}
 .win-sub{font-size:18px;color:var(--text2);margin-bottom:2rem}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MULTIJOUEUR & NOUVELLES FENÊTRES (ajouts du 25/09/2026)
+   ══════════════════════════════════════════════════════════════════════════ */
+.setup-card{max-height:94vh;overflow-y:auto}
+/* Onglets de l'écran d'accueil : Partie locale / En ligne */
+.mode-tabs{display:flex;gap:6px;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:4px;margin-bottom:1.5rem}
+.mode-tab{flex:1;padding:9px;border:none;border-radius:9px;background:transparent;font-family:'DM Sans',sans-serif;font-weight:600;font-size:13.5px;color:var(--text2);cursor:pointer;transition:all .12s}
+.mode-tab.sel{background:var(--surface);color:var(--accent);box-shadow:var(--shadow)}
+.mode-pane.hidden{display:none}
+.rules-row{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--text)}
+.rules-row label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.rules-row input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px}
+.text-input{font-family:'DM Sans',sans-serif;font-size:14px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);padding:8px 12px;outline:none;width:100%}
+.text-input:focus{border-color:var(--accent)}
+.code-input{font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.3em;font-size:18px;text-align:center}
+.row{display:flex;gap:8px;align-items:center}
+.hint{font-size:12px;color:var(--text3);line-height:1.45}
+.hint.warn{color:#8a6314}
+.btn-secondary{width:100%;padding:11px;background:var(--surface2);color:var(--accent);font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;border:1px solid var(--border2);border-radius:var(--r);cursor:pointer;transition:all .12s}
+.btn-secondary:hover{border-color:var(--accent)}
+.btn-secondary:disabled{opacity:.4;cursor:not-allowed}
+.save-list{display:flex;flex-direction:column;gap:6px}
+.save-item{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);padding:8px 10px;font-size:13px}
+.save-item .grow{flex:1;min-width:0}
+.save-item .sub{font-size:11px;color:var(--text3)}
+.divider{height:1px;background:var(--border);margin:1.25rem 0}
+
+/* LOBBY */
+#lobbyScreen{background:radial-gradient(ellipse at 50% 0%, #dcece0 0%, var(--bg) 70%)}
+.lobby-code{font-family:'DM Mono',monospace;font-size:34px;letter-spacing:.35em;color:var(--accent2);text-align:center;font-weight:500;margin:4px 0 2px}
+.lobby-players{display:flex;flex-direction:column;gap:6px}
+.lobby-player{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);font-size:14px}
+.lobby-player .pawn{font-size:22px;width:28px;text-align:center}
+.lobby-player .grow{flex:1}
+.lobby-player.me{border-color:var(--accent)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#2fb36b;flex-shrink:0}
+.dot.off{background:#c23b3b}.dot.away{background:#e8a830}.dot.auto{background:#6b7fd6}.dot.gone{background:#999}
+.settings-grid{display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center;font-size:13px}
+.settings-grid select,.settings-grid input[type=number]{font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 8px;border:1px solid var(--border2);border-radius:8px;background:var(--surface2);color:var(--text)}
+
+/* Bandeaux au-dessus du plateau (connexion, pause, décisions de l'hôte) */
+.banners{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:30;display:flex;flex-direction:column;gap:6px;align-items:center;width:min(94%,640px);pointer-events:none}
+.banner{pointer-events:auto;background:var(--surface);border:1px solid var(--border2);box-shadow:var(--shadow);border-radius:12px;padding:8px 14px;font-size:13px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;text-align:center}
+.banner.danger{border-color:rgba(194,59,59,.45);background:#fff4f4}
+.banner.warn{border-color:rgba(184,134,11,.45);background:#fffaf0}
+.banner.info{border-color:rgba(15,110,99,.35);background:#f1faf6}
+.pause-veil{position:fixed;inset:0;background:rgba(10,25,20,.45);display:flex;align-items:center;justify-content:center;z-index:60}
+.pause-veil .banner{font-size:16px;padding:16px 22px}
+
+/* Qui joue / minuteur */
+.turn-line{font-size:12.5px;color:var(--text2);padding:0 1rem .5rem;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.turn-line b{color:var(--text)}
+.timer-chip{font-family:'DM Mono',monospace;font-size:12px;padding:2px 8px;border-radius:99px;background:rgba(15,110,99,.1);color:var(--accent2)}
+.timer-chip.urgent{background:rgba(194,59,59,.12);color:var(--danger);animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.55}}
+.me-tag{font-size:10px;font-weight:700;letter-spacing:.06em;color:#fff;background:var(--accent);border-radius:99px;padding:1px 7px;text-transform:uppercase}
+.opp-row.current{background:rgba(15,110,99,.06);border-radius:8px}
+.opp-status{font-size:11px;color:var(--text3)}
+
+/* Propriétaire et hypothèque sur le plateau */
+.cell-owner{position:absolute;z-index:3;font-size:clamp(9px,1.7cqw,17px);line-height:1;background:rgba(255,255,255,.88);border-radius:50%;padding:1px;box-shadow:0 1px 2px rgba(0,0,0,.3);pointer-events:none}
+.cell-owner .pawn-img-icon{box-shadow:none}
+.cell-side-bottom .cell-owner{bottom:2px;right:2px}
+.cell-side-top .cell-owner{top:2px;left:2px}
+.cell-side-left .cell-owner{bottom:2px;left:2px}
+.cell-side-right .cell-owner{top:2px;right:2px}
+.cell.mortgaged .cell-content{opacity:.4;filter:grayscale(.7)}
+.cell.mortgaged::after{content:'🔒';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:clamp(10px,2cqw,20px);z-index:2;pointer-events:none}
+.cell.pending-sale{box-shadow:inset 0 0 0 3px #e8a830}
+
+/* Historique / Chat */
+.history-tabs{display:flex;gap:4px}
+.history-tab{background:none;border:none;font:inherit;font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;cursor:pointer;padding:2px 6px;border-radius:6px}
+.history-tab.sel{color:var(--accent);background:rgba(15,110,99,.08)}
+.unread{display:inline-block;min-width:16px;padding:0 4px;border-radius:99px;background:var(--danger);color:#fff;font-size:10px;text-align:center;margin-left:3px}
+.chat-area{flex:1;overflow-y:auto;padding:8px 10px;display:flex;flex-direction:column;gap:4px;background:var(--surface)}
+.chat-msg{font-size:12.5px;line-height:1.4;color:var(--text);word-break:break-word}
+.chat-msg .who{font-weight:600;color:var(--accent2)}
+.chat-msg.system{color:var(--text3);font-style:italic}
+.chat-form{display:flex;gap:6px;padding:8px;border-top:1px solid var(--border);background:var(--surface)}
+.chat-form input{flex:1;font:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--border2);border-radius:8px;outline:none}
+.chat-form input:focus{border-color:var(--accent)}
+.hidden{display:none !important}
+
+/* Enchères */
+.auction-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.auction-bid{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--accent);letter-spacing:.04em}
+.auction-rows{display:flex;flex-direction:column;gap:6px}
+.auction-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:6px 8px;border:1px solid var(--border);border-radius:10px;font-size:13px}
+.auction-row .grow{flex:1;min-width:90px}
+.auction-row.passed{opacity:.45}
+.auction-row.leader{border-color:rgba(24,138,76,.5);background:rgba(24,138,76,.05)}
+.bid-input{width:80px;font-family:'DM Mono',monospace;font-size:13px;padding:5px 7px;border:1px solid var(--border2);border-radius:8px}
+
+/* Échanges */
+.trade-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.trade-col{border:1px solid var(--border);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.trade-col h4{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--text2)}
+.trade-prop{display:flex;align-items:center;gap:6px;font-size:12.5px}
+.trade-prop input{accent-color:var(--accent)}
+.trade-prop.disabled{opacity:.4}
+.swatch{display:inline-block;width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.modal.wide{width:620px}
+.debt-box{background:#fff4f4;border:1px solid rgba(194,59,59,.35);border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.5}
+.win-rank{margin:0 auto 1.5rem;max-width:420px;text-align:left}
+
+.toast{white-space:normal;max-width:min(90vw,560px);text-align:center}
+/* Barre du bas plus compacte sur les écrans moyens */
+@media (max-width:1560px){ .console-brand{display:none} .console-btn{padding:9px 12px} .console-bar{gap:8px} }
+@media (max-width:1180px){ .console-btn{font-size:11.5px;padding:8px 9px} }
 </style>
 </head>
 <body>
 
-<!-- ══ SETUP SCREEN ════════════════════════════════════════════════════════ -->
+<!-- ══ ACCUEIL : partie locale ou en ligne ═════════════════════════════════ -->
 <div class="screen" id="setupScreen">
   <div class="setup-card">
-    <div class="setup-title">MONOPOLY</div>
-    <div class="setup-sub">Moteur de jeu — configurez votre partie</div>
+    <div class="setup-title">MONOPOLY KJ</div>
+    <div class="setup-sub">Configurez votre partie</div>
 
-    <div class="setup-section">
-      <div class="setup-label">Charger vos fichiers (optionnel)</div>
-      <div class="import-row">
-        <div class="import-box" id="plateauBox" onclick="document.getElementById('filePlateau').click()">
-          <span>🗺️ plateau.json</span><span id="plateauStatus">Défaut</span>
+    <div class="mode-tabs">
+      <button class="mode-tab sel" id="tabLocal" onclick="setHomeTab('local')">🖥️ Partie locale</button>
+      <button class="mode-tab" id="tabOnline" onclick="setHomeTab('online')">🌐 En ligne</button>
+    </div>
+
+    <!-- Partie locale : tout le monde joue sur le même écran -->
+    <div class="mode-pane" id="paneLocal">
+      <div class="setup-section hidden" id="soloResumeBox">
+        <button class="btn-secondary" onclick="resumeSolo()">↩️ Reprendre la partie locale en cours</button>
+      </div>
+      <div class="setup-section">
+        <div class="setup-label">Charger vos fichiers (optionnel)</div>
+        <div class="import-row">
+          <div class="import-box" id="plateauBox" onclick="document.getElementById('filePlateau').click()">
+            <span>🗺️ plateau.json</span><span id="plateauStatus">Défaut</span>
+          </div>
+          <div class="import-box" id="cartesBox" onclick="document.getElementById('fileCartes').click()">
+            <span>🃏 cartes.json</span><span id="cartesStatus">Défaut</span>
+          </div>
         </div>
-        <div class="import-box" id="cartesBox" onclick="document.getElementById('fileCartes').click()">
-          <span>🃏 cartes.json</span><span id="cartesStatus">Défaut</span>
+        <input type="file" id="filePlateau" accept=".json">
+        <input type="file" id="fileCartes" accept=".json">
+      </div>
+
+      <div class="setup-section">
+        <div class="setup-label" style="display:flex;justify-content:space-between">
+          Joueurs
+          <span style="font-size:10px;color:var(--text3);font-style:italic">2 à 6 joueurs</span>
+        </div>
+        <div class="player-rows" id="playerRows"></div>
+        <button class="add-player-btn" id="addPlayerBtn" onclick="addPlayerRow()">+ Ajouter un joueur</button>
+      </div>
+
+      <div class="setup-section">
+        <div class="setup-label">Capital de départ (<img src="images/oufingouf.png" alt="oufingouf" class="currency-icon">)</div>
+        <input class="money-input" type="number" id="startMoney" value="1500" min="100" step="100">
+      </div>
+
+      <div class="setup-section">
+        <div class="setup-label">Règles</div>
+        <div class="rules-row">
+          <label><input type="checkbox" id="ruleAuctions" checked> Enchères si on refuse d'acheter</label>
+          <label><input type="checkbox" id="ruleEven" checked> Construction homogène</label>
+          <label><input type="checkbox" id="ruleLimit"> Pénurie d'alertes</label>
         </div>
       </div>
-      <input type="file" id="filePlateau" accept=".json">
-      <input type="file" id="fileCartes" accept=".json">
+
+      <button class="btn-start" id="btnStart" onclick="startSoloGame()">LANCER LA PARTIE</button>
     </div>
 
-    <div class="setup-section">
-      <div class="setup-label" style="display:flex;justify-content:space-between">
-        Joueurs
-        <span style="font-size:10px;color:var(--text3);font-style:italic">2 à 6 joueurs</span>
+    <!-- En ligne : chaque joueur sur son appareil -->
+    <div class="mode-pane hidden" id="paneOnline">
+      <div class="setup-section">
+        <div class="setup-label">Votre nom et votre pion</div>
+        <input class="text-input" id="onlineName" maxlength="24" placeholder="Votre pseudo" style="margin-bottom:8px">
+        <div class="pawn-pick" id="onlinePawnPick"></div>
+        <input type="file" id="onlinePawnFile" accept="image/*" style="display:none">
       </div>
-      <div class="player-rows" id="playerRows"></div>
-      <button class="add-player-btn" id="addPlayerBtn" onclick="addPlayerRow()">+ Ajouter un joueur</button>
-    </div>
 
-    <div class="setup-section">
-      <div class="setup-label">Capital de départ (<img src="images/oufingouf.png" alt="oufingouf" class="currency-icon">)</div>
-      <input class="money-input" type="number" id="startMoney" value="1500" min="100" step="100">
-    </div>
+      <div class="setup-section hidden" id="serverUrlBox">
+        <div class="setup-label">Adresse du serveur</div>
+        <input class="text-input" id="serverUrl" placeholder="wss://votre-serveur.onrender.com">
+        <div class="hint" style="margin-top:4px">La page est ouverte depuis un fichier : indiquez l'adresse de votre serveur Render (ou ouvrez directement l'adresse du serveur dans le navigateur).</div>
+      </div>
 
-    <button class="btn-start" id="btnStart" onclick="startGame()">LANCER LA PARTIE</button>
+      <div class="setup-section">
+        <button class="btn-start" style="margin-top:0" onclick="onlineCreate()">CRÉER UN SALON</button>
+      </div>
+
+      <div class="setup-section">
+        <div class="setup-label">Rejoindre un salon</div>
+        <div class="row">
+          <input class="text-input code-input" id="joinCode" maxlength="5" placeholder="CODE" autocomplete="off">
+          <button class="btn-roll" style="white-space:nowrap" onclick="onlineJoin()">Rejoindre</button>
+        </div>
+      </div>
+
+      <div class="setup-section" id="savesBox">
+        <div class="setup-label">Reprendre une partie en ligne</div>
+        <div class="save-list" id="saveList"></div>
+        <button class="btn-secondary" style="margin-top:8px" onclick="document.getElementById('saveFileInput').click()">📂 Importer un fichier de sauvegarde</button>
+        <input type="file" id="saveFileInput" accept=".json">
+      </div>
+      <div class="hint" id="onlineStatus"></div>
+    </div>
   </div>
 </div>
 
-<!-- ══ GAME SCREEN ══════════════════════════════════════════════════════════ -->
+<!-- ══ SALON D'ATTENTE ═════════════════════════════════════════════════════ -->
+<div class="screen hidden" id="lobbyScreen">
+  <div class="setup-card">
+    <div class="setup-sub" style="margin-bottom:0">Code du salon</div>
+    <div class="lobby-code" id="lobbyCode">·····</div>
+    <div class="row" style="justify-content:center;margin-bottom:1.25rem">
+      <button class="btn-sm" onclick="copyInvite('code')">📋 Copier le code</button>
+      <button class="btn-sm" id="btnCopyLink" onclick="copyInvite('link')">🔗 Copier le lien d'invitation</button>
+    </div>
+
+    <div class="setup-section">
+      <div class="setup-label">Joueurs (<span id="lobbyCount">0</span>/6)</div>
+      <div class="lobby-players" id="lobbyPlayers"></div>
+    </div>
+
+    <div class="setup-section">
+      <div class="setup-label">Mon pion</div>
+      <input class="text-input" id="lobbyName" maxlength="24" style="margin-bottom:8px">
+      <div class="pawn-pick" id="lobbyPawnPick"></div>
+      <input type="file" id="lobbyPawnFile" accept="image/*" style="display:none">
+    </div>
+
+    <div class="setup-section">
+      <div class="setup-label">Réglages <span id="lobbyHostOnly" style="text-transform:none;letter-spacing:0;font-style:italic;color:var(--text3)">(choisis par l'hôte)</span></div>
+      <div class="settings-grid">
+        <span>Capital de départ</span><input type="number" id="cfgMoney" min="100" step="100" style="width:100px">
+        <span>Enchères si on refuse d'acheter</span><input type="checkbox" id="cfgAuctions">
+        <span>Construction homogène</span><input type="checkbox" id="cfgEven">
+        <span>Pénurie d'alertes (32 / 12)</span><input type="checkbox" id="cfgLimit">
+        <span>Temps par décision</span>
+        <select id="cfgTimer">
+          <option value="0">Illimité</option><option value="30">30 s</option><option value="60">1 min</option>
+          <option value="90">1 min 30</option><option value="120">2 min</option><option value="180">3 min</option><option value="300">5 min</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="setup-section">
+      <div class="setup-label">Plateau et cartes</div>
+      <div class="hint" id="lobbyDataLine">Fichiers officiels du jeu.</div>
+      <div class="row hostonly" style="margin-top:6px;flex-wrap:wrap">
+        <button class="btn-sm" onclick="document.getElementById('lobbyPlateauFile').click()">🗺️ Importer un plateau</button>
+        <button class="btn-sm" onclick="document.getElementById('lobbyCartesFile').click()">🃏 Importer des cartes</button>
+        <button class="btn-sm" id="btnLobbyOfficial" onclick="lobbyOfficialData()">↩️ Revenir aux fichiers officiels</button>
+      </div>
+      <input type="file" id="lobbyPlateauFile" accept=".json">
+      <input type="file" id="lobbyCartesFile" accept=".json">
+    </div>
+
+    <button class="btn-start" id="btnLobbyStart" onclick="NET.send({type:'start'})">LANCER LA PARTIE</button>
+    <div class="hint" id="lobbyWaitHost" style="text-align:center;margin-top:10px">En attente du lancement par l'hôte…</div>
+    <button class="btn-secondary" style="margin-top:10px" onclick="leaveOnline()">Quitter le salon</button>
+  </div>
+</div>
+
+<!-- ══ PARTIE ══════════════════════════════════════════════════════════════ -->
 <div class="screen hidden" id="gameScreen">
   <!-- Big dice shown center-screen for each roll — see animateDiceRoll(). -->
   <div class="dice-overlay" id="diceOverlay">
@@ -372,20 +594,30 @@ input[type=file]{display:none}
   </div>
   <div class="game-main">
     <div class="board-wrap">
+      <div class="banners" id="banners"></div>
       <div class="board" id="board"></div>
     </div>
     <aside class="sidebar">
       <div class="sidebar-header">
-        <span class="sidebar-title">MONOPOLY</span>
+        <span class="sidebar-title" id="sidebarTitle">MONOPOLY</span>
         <span class="turn-indicator">Tour <span id="turnNum">1</span></span>
       </div>
+      <div class="turn-line" id="turnLine"></div>
       <div class="panels-scroll" id="sidebarPanels"></div>
       <div class="history-panel">
         <div class="history-header">
-          <span>Historique</span>
+          <span class="history-tabs">
+            <button class="history-tab sel" id="tabLog" onclick="setLogTab('log')">Historique</button>
+            <button class="history-tab hidden" id="tabChat" onclick="setLogTab('chat')">Chat<span class="unread hidden" id="chatUnread">0</span></button>
+          </span>
           <span class="history-timer" id="historyTimer">00:00:00</span>
         </div>
         <div class="log-area" id="logArea"></div>
+        <div class="chat-area hidden" id="chatArea"></div>
+        <form class="chat-form hidden" id="chatForm" onsubmit="sendChat(event)">
+          <input id="chatInput" maxlength="300" placeholder="Écrire un message…" autocomplete="off">
+          <button class="btn-sm" type="submit">Envoyer</button>
+        </form>
       </div>
     </aside>
   </div>
@@ -402,27 +634,31 @@ input[type=file]{display:none}
     <button class="console-btn" id="btnConsoleSell" onclick="showSellModal()">💰 Vendre</button>
     <button class="console-btn" id="btnConsoleMortgage" onclick="showMortgageModal('mortgage')">🏦 Hypothéquer</button>
     <button class="console-btn" id="btnConsoleUnmortgage" onclick="showMortgageModal('unmortgage')">🔓 Lever l'hypothèque</button>
-    <button class="console-btn" onclick="showTradeSoon()">🔁 Échange</button>
+    <button class="console-btn" id="btnConsoleTrade" onclick="showTradeComposer()">🔁 Échange</button>
+    <button class="console-btn" id="btnConsoleEnd" onclick="endTurn()">⏭ Fin de tour</button>
+    <button class="console-btn hidden" id="btnAway" onclick="toggleAway()">💤 Je m'absente</button>
+    <button class="console-btn" id="btnSound" onclick="toggleSound()" title="Sons">🔊</button>
     <div class="console-brand">MONOPOLY <span>KJ</span></div>
   </div>
 </div>
 
-<!-- ══ WIN SCREEN ═══════════════════════════════════════════════════════════ -->
+<!-- ══ VICTOIRE ════════════════════════════════════════════════════════════ -->
 <div class="screen hidden" id="winScreen">
   <div class="win-card">
     <div class="win-pawn" id="winPawn">🏆</div>
     <div class="win-title">VICTOIRE !</div>
     <div class="win-sub" id="winSub">Félicitations !</div>
-    <button class="btn-start" style="width:280px" onclick="location.reload()">NOUVELLE PARTIE</button>
+    <div class="win-rank" id="winRank"></div>
+    <button class="btn-start" style="width:280px" onclick="backHome()">RETOUR À L'ACCUEIL</button>
   </div>
 </div>
 
-<!-- ══ MODAL ════════════════════════════════════════════════════════════════ -->
+<!-- ══ FENÊTRE (modale) ════════════════════════════════════════════════════ -->
 <div class="modal-overlay hidden" id="modalOverlay">
-  <div class="modal">
+  <div class="modal" id="modalBox">
     <div class="modal-header">
       <span class="modal-title" id="modalTitle">Info</span>
-      <button class="btn-sm" onclick="closeModal()">✕</button>
+      <button class="btn-sm" id="modalClose" onclick="closeModal()">✕</button>
     </div>
     <div class="modal-body" id="modalBody"></div>
     <div class="modal-footer" id="modalFooter"></div>
@@ -431,7 +667,24 @@ input[type=file]{display:none}
 
 <div class="toast" id="toast"></div>
 
+<!-- Le moteur de règles partagé (même fichier que le serveur utilise). -->
+<script src="engine.js"></script>
 <script>
+// ══════════════════════════════════════════════════════════════════════════════
+// ORGANISATION DE CE FICHIER
+// ──────────────────────────────────────────────────────────────────────────────
+// Les RÈGLES du jeu ne sont plus ici : elles sont dans engine.js (MonoEngine),
+// partagé avec le serveur. Cette page ne fait que :
+//   1. afficher l'état du moteur (plateau, panneaux, fenêtres) ;
+//   2. envoyer les actions des joueurs :
+//        • partie locale → directement au moteur (MonoEngine.apply) ;
+//        • partie en ligne → au serveur, qui applique le même moteur ;
+//   3. animer les « événements » renvoyés (dés, marche du pion, carte...).
+// Les deux modes passent par doAction() puis enqueue() : même écran, mêmes
+// animations, mêmes règles.
+// ══════════════════════════════════════════════════════════════════════════════
+const E = window.MonoEngine;
+
 // ══════════════════════════════════════════════════════════════════════════════
 // DATA — DEFAULTS
 // ══════════════════════════════════════════════════════════════════════════════
@@ -443,6 +696,8 @@ const GROUP_COLORS = {
   red:'#CC0000',yellow:'#F7C948',green:'#1A7B1A',blue:'#0033CC',none:'#444'
 };
 
+// Plateau/cartes de secours, utilisés seulement si plateau.json / cartes.json
+// n'ont pas pu être chargés (page ouverte en double-clic, voir autoLoadDefaultFiles).
 function defaultBoard() {
   return [
     {pos:0,name:'Départ',type:'go',group:'none',price:0,mortgage:0,rents:[200,0,0,0,0,0],buildCost:0,desc:'Recevez 200M$ en passant par ici'},
@@ -514,14 +769,128 @@ function defaultCards() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// SETUP
+// PETITS OUTILS D'AFFICHAGE
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Échappe un texte avant de l'insérer en HTML. Indispensable en ligne : noms
+// des joueurs, noms de cases et textes de cartes peuvent venir d'autres
+// personnes (plateau importé par l'hôte...).
+function esc(v){ return String(v==null?'':v).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// Whether the browser supports container query width units (cqw). Used to
+// size cell icons relative to the actual rendered board (so the board looks
+// right whatever the player's screen size), with a viewport-width fallback
+// for older browsers that don't support cqw.
+const SUPPORTS_CQW = (typeof CSS !== 'undefined' && CSS.supports && CSS.supports('width', '1cqw'));
+
+// Currency icon: oufingouf.png replaces the "M$" symbol throughout the UI.
+// Sized via the .currency-icon CSS class (1em) so it automatically matches
+// the font-size of the amount it's displayed next to.
+const MONEY_ICON = '<img src="images/oufingouf.png" alt="oufingouf" class="currency-icon">';
+// Houses/hotels are "alertes"/"alerteprison" in this game (the two Discord
+// reaction emotes of the community): buy up to 4 alertes on a property of a
+// complete color set, then convert them into one alerteprison. The data keys
+// stay houses/hotel/buildCost/perHouse/perHotel so plateau.json, cartes.json
+// and the engine keep working unchanged — only the UI wording and visuals changed.
+const ALERTE_SRC = 'images/alerte.png';
+const ALERTEPRISON_SRC = 'images/alerteprison.png';
+const ALERTE_ICON = `<img src="${ALERTE_SRC}" alt="alerte" class="inline-alert">`;
+const ALERTEPRISON_ICON = `<img src="${ALERTEPRISON_SRC}" alt="alerteprison" class="inline-alert">`;
+// Escapes free-form text (card/cell descriptions coming from plateau.json /
+// cartes.json) then substitutes any "M$" with the currency icon. Only use
+// this on strings rendered via innerHTML — never on textContent targets.
+function fmtM(str) { return esc(str).split('M$').join(MONEY_ICON); }
+function money(n){ return `${MONEY_ICON}${Number(n||0).toLocaleString('fr-FR')}`; }
+
+// Render an icon for a cell: emoji string → span, URL/base64 → img
+function renderCellIconHtml(src, large) {
+  if(!src) return '';
+  const isImage = /^(https?:\/\/|data:image)/i.test(src);
+  if(isImage) {
+    // Corner cells are ~1.8x the size of a regular cell, so their icon
+    // (large=true) is sized as a much bigger share of the board's own
+    // width (cqw) — it scales up on big screens and down on small ones.
+    const size = SUPPORTS_CQW
+      ? (large ? 'clamp(34px,9.5cqw,100px)' : 'clamp(16px,3.2cqw,34px)')
+      : (large ? 'clamp(30px,9vw,90px)' : 'clamp(14px,2.8vw,30px)');
+    return `<img src="${esc(src)}" style="width:${size};height:${size};object-fit:cover;border-radius:2px;vertical-align:middle;flex-shrink:0" onerror="this.style.display='none'">`;
+  }
+  return `<span style="font-size:${large?'1.8em':'1.1em'};line-height:1">${esc(src)}</span>`;
+}
+
+// A player's "pawn" is either a plain emoji character (the default) or an
+// uploaded image, normalized to a small square data URL by the pawn upload
+// — same convention as cell icons above, so it uses the same detection.
+function isImagePawn(v){ return typeof v==='string' && /^(https?:\/\/|data:image|img:)/i.test(v); }
+// En ligne, un pion en image voyage une seule fois (au lancement) : dans l'état
+// de jeu il devient « img:N », qu'on retrouve ici.
+function pawnSrc(v){
+  if(typeof v==='string' && v.startsWith('img:')) return (typeof NET!=='undefined' && NET.pawns && NET.pawns[Number(v.slice(4))]) || '';
+  return v;
+}
+
+// HTML for a pawn wherever markup is built with innerHTML. Sized in `em` (as
+// with .currency-icon) so an uploaded image automatically matches whatever
+// font-size the surrounding element already uses.
+function pawnIconHtml(pawn){
+  if(!pawn) return '';
+  if(!isImagePawn(pawn)) return esc(pawn);
+  const src=pawnSrc(pawn);
+  return src ? `<img src="${esc(src)}" class="pawn-img-icon" alt="" onerror="this.style.display='none'">` : '🔹';
+}
+function pname(p){ return p ? `${pawnIconHtml(p.pawn)} ${esc(p.name)}` : ''; }
+
+function delay(ms){ return new Promise(resolve=>setTimeout(resolve, ms)); }
+function store(key, val){ try{ if(val===undefined) localStorage.removeItem(key); else localStorage.setItem(key, JSON.stringify(val)); return true; }catch(e){ return false; } }
+function load(key){ try{ const v=localStorage.getItem(key); return v?JSON.parse(v):null; }catch(e){ return null; } }
+// Session en cours : propre à CET onglet (sessionStorage). Rafraîchir la page
+// ramène dans la partie, mais un 2e onglet ne vole pas la place du premier.
+function sessionSet(val){ try{ if(val===undefined) sessionStorage.removeItem('mkj.session'); else sessionStorage.setItem('mkj.session', JSON.stringify(val)); }catch(e){} }
+function sessionGet(){ try{ const v=sessionStorage.getItem('mkj.session'); return v?JSON.parse(v):null; }catch(e){ return null; } }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ÉTAT DE LA PAGE
+// ══════════════════════════════════════════════════════════════════════════════
+
+let S = null;          // état du moteur (en ligne : la vue envoyée par le serveur)
+const MODE = { online:false };
+const UI = {
+  pos:{},              // position AFFICHÉE de chaque pion (suit les animations)
+  pawnEls:{},          // player.id -> floating pawn-token DOM element (see buildBoard)
+  queue:[], processing:false,
+  modal:null,          // {kind:'decision'|'user'|'card', key}
+  opponentsOpen:true, bankOpen:false,
+  logTab:'log', unread:0,
+  startedAt:null, inflight:false,
+  sound: load('mkj.sound')!==false,
+};
+
+// « Moi » : en ligne, ma place ; en local, tout le monde joue sur le même écran,
+// donc chaque décision s'affiche pour le joueur concerné.
+function isMe(pid){ return !MODE.online || pid===NET.seat; }
+// Joueur dont on affiche le panneau principal.
+function viewerId(){
+  if(MODE.online) return NET.seat;
+  const m = E.manager(S);
+  return m===null||m===undefined ? S.current : m;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ACCUEIL — PARTIE LOCALE
 // ══════════════════════════════════════════════════════════════════════════════
 
 let boardData = defaultBoard();
 let cardData = defaultCards();
 let playerDefs = [];
-
 const PAWNS_USED = new Set();
+
+function setHomeTab(tab){
+  document.getElementById('tabLocal').classList.toggle('sel', tab==='local');
+  document.getElementById('tabOnline').classList.toggle('sel', tab==='online');
+  document.getElementById('paneLocal').classList.toggle('hidden', tab!=='local');
+  document.getElementById('paneOnline').classList.toggle('hidden', tab!=='online');
+  if(tab==='online') renderOnlineHome();
+}
 
 function addPlayerRow(name='', pawn='') {
   if(playerDefs.length >= 6) return;
@@ -539,8 +908,7 @@ function removePlayerRow(idx) {
   renderSetup();
 }
 
-// `pawn` is either one of PAWN_EMOJIS or an uploaded image's data URL (see
-// handlePawnFile) — selectPawn() itself doesn't need to tell them apart.
+// `pawn` is either one of PAWN_EMOJIS or an uploaded image's data URL.
 function selectPawn(playerIdx, pawn) {
   PAWNS_USED.delete(playerDefs[playerIdx].pawn);
   playerDefs[playerIdx].pawn = pawn;
@@ -549,52 +917,56 @@ function selectPawn(playerIdx, pawn) {
 }
 
 // Uploaded pawn images are normalized to this square size (px) — small
-// enough to keep the resulting data URL light, big enough to still look
-// sharp at the sizes a pawn is shown on-screen (see .pawn-img-icon, sized
-// in em so the display size elsewhere is independent of this anyway).
+// enough to keep the resulting data URL light (it travels over the network
+// in online games), big enough to still look sharp on screen.
 const PAWN_IMG_SIZE = 96;
 
-// Reads the chosen file, draws it center-cropped to a PAWN_IMG_SIZE square
+// Reads the chosen image, draws it center-cropped to a PAWN_IMG_SIZE square
 // canvas (so every uploaded pawn ends up the same size regardless of the
-// source photo's resolution or aspect ratio), and sets the result as this
-// player's pawn.
-function handlePawnFile(idx, inputEl){
+// source photo), and hands the resulting data URL to `done`.
+function readPawnImage(inputEl, done){
   const file = inputEl.files && inputEl.files[0];
+  inputEl.value=''; // so choosing the same file again still fires onchange
   if(!file) return;
-  if(!file.type.startsWith('image/')){
-    toast("Ce fichier n'est pas une image.");
-    inputEl.value='';
-    return;
-  }
+  if(!file.type.startsWith('image/')){ toast("Ce fichier n'est pas une image."); return; }
   const reader = new FileReader();
   reader.onload = (e) => {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      canvas.width = PAWN_IMG_SIZE;
-      canvas.height = PAWN_IMG_SIZE;
+      canvas.width = PAWN_IMG_SIZE; canvas.height = PAWN_IMG_SIZE;
       const ctx = canvas.getContext('2d');
       const side = Math.min(img.naturalWidth, img.naturalHeight);
       const sx = (img.naturalWidth-side)/2, sy = (img.naturalHeight-side)/2;
       ctx.drawImage(img, sx, sy, side, side, 0, 0, PAWN_IMG_SIZE, PAWN_IMG_SIZE);
-      selectPawn(idx, canvas.toDataURL('image/png'));
+      done(canvas.toDataURL('image/png'));
     };
     img.onerror = () => toast("Impossible de lire cette image.");
     img.src = e.target.result;
   };
   reader.onerror = () => toast('Impossible de lire ce fichier.');
   reader.readAsDataURL(file);
-  inputEl.value=''; // so choosing the same file again still fires onchange
+}
+function handlePawnFile(idx, inputEl){ readPawnImage(inputEl, url=>selectPawn(idx, url)); }
+
+// Rangée « choix du pion » (emojis + bouton image), réutilisée en local, en
+// ligne et dans le salon. `onPick` est le nom d'une fonction globale.
+function pawnPickerHtml(current, onPick, fileInputId, taken){
+  taken=taken||[];
+  return PAWN_EMOJIS.map(em=>taken.includes(em)&&current!==em
+      ? `<div class="pawn-btn" style="opacity:.25;cursor:not-allowed" title="Déjà pris">${em}</div>`
+      : `<div class="pawn-btn${current===em?' sel':''}" onclick="${onPick}('${em}')">${em}</div>`).join('')
+    + `<div class="pawn-btn pawn-btn-upload${isImagePawn(current)?' sel':''}" onclick="document.getElementById('${fileInputId}').click()">${isImagePawn(current)?`<img src="${esc(current)}" class="pawn-btn-thumb" alt=""> Modifier`:'📷 Image'}</div>`;
 }
 
 function renderSetup() {
   const rows = document.getElementById('playerRows');
   rows.innerHTML = playerDefs.map((p,i) => `
     <div class="player-row">
-      <input type="text" value="${p.name}" placeholder="Nom du joueur" oninput="playerDefs[${i}].name=this.value">
+      <input type="text" value="${esc(p.name)}" placeholder="Nom du joueur" maxlength="24" oninput="playerDefs[${i}].name=this.value">
       <div class="pawn-pick">
         ${PAWN_EMOJIS.map(em=>`<div class="pawn-btn${p.pawn===em?' sel':''}" onclick="selectPawn(${i},'${em}')">${em}</div>`).join('')}
-        <div class="pawn-btn pawn-btn-upload${isImagePawn(p.pawn)?' sel':''}" onclick="document.getElementById('pawnFile${i}').click()" title="${isImagePawn(p.pawn)?'Changer l\'image du pion':'Utiliser une image comme pion'}">${isImagePawn(p.pawn)?`<img src="${p.pawn}" class="pawn-btn-thumb" alt=""> Modifier`:'📷 Image'}</div>
+        <div class="pawn-btn pawn-btn-upload${isImagePawn(p.pawn)?' sel':''}" onclick="document.getElementById('pawnFile${i}').click()" title="${isImagePawn(p.pawn)?'Changer l\'image du pion':'Utiliser une image comme pion'}">${isImagePawn(p.pawn)?`<img src="${esc(p.pawn)}" class="pawn-btn-thumb" alt=""> Modifier`:'📷 Image'}</div>
         <input type="file" id="pawnFile${i}" accept="image/*" style="display:none" onchange="handlePawnFile(${i},this)">
       </div>
       ${playerDefs.length>2?`<button class="btn-sm red" onclick="removePlayerRow(${i})" style="padding:4px 8px;flex-shrink:0">✕</button>`:''}
@@ -604,37 +976,31 @@ function renderSetup() {
   document.getElementById('btnStart').disabled = playerDefs.length < 2;
 }
 
-// File loading
-document.getElementById('filePlateau').addEventListener('change', function(e) {
-  const f=e.target.files[0]; if(!f) return;
+// Lecture d'un fichier JSON choisi par l'utilisateur.
+function readJsonFile(inputEl, done){
+  const f=inputEl.files[0]; inputEl.value=''; if(!f) return;
   const r=new FileReader();
-  r.onload=ev=>{
-    try{
-      const d=JSON.parse(ev.target.result);
-      boardData = d.board||d;
-      plateauManuallyLoaded = true;
-      document.getElementById('plateauBox').classList.add('loaded');
-      document.getElementById('plateauStatus').textContent='✓ Chargé';
-      toast('Plateau chargé !');
-    }catch{toast('Erreur JSON plateau');}
-  };
+  r.onload=ev=>{ try{ done(JSON.parse(ev.target.result)); }catch(e){ toast('Fichier JSON illisible.'); } };
   r.readAsText(f);
-});
+}
 
-document.getElementById('fileCartes').addEventListener('change', function(e) {
-  const f=e.target.files[0]; if(!f) return;
-  const r=new FileReader();
-  r.onload=ev=>{
-    try{
-      const d=JSON.parse(ev.target.result);
-      cardData = (d.chance&&d.community)?d:{chance:d.chance||[],community:d.community||[]};
-      cartesManuallyLoaded = true;
-      document.getElementById('cartesBox').classList.add('loaded');
-      document.getElementById('cartesStatus').textContent='✓ Chargé';
-      toast('Cartes chargées !');
-    }catch{toast('Erreur JSON cartes');}
-  };
-  r.readAsText(f);
+document.getElementById('filePlateau').addEventListener('change', function() {
+  readJsonFile(this, d=>{
+    const b=d.board||d; const err=E.validateBoard(b);
+    if(err){ toast('Plateau invalide : '+err); return; }
+    boardData=b; plateauManuallyLoaded=true;
+    document.getElementById('plateauBox').classList.add('loaded');
+    document.getElementById('plateauStatus').textContent='✓ Chargé';
+    toast('Plateau chargé !');
+  });
+});
+document.getElementById('fileCartes').addEventListener('change', function() {
+  readJsonFile(this, d=>{
+    cardData=E.normalizeCards(d); cartesManuallyLoaded=true;
+    document.getElementById('cartesBox').classList.add('loaded');
+    document.getElementById('cartesStatus').textContent='✓ Chargé';
+    toast('Cartes chargées !');
+  });
 });
 
 // Auto-load plateau.json / cartes.json from the same folder if the user
@@ -643,7 +1009,6 @@ document.getElementById('fileCartes').addEventListener('change', function(e) {
 // a file:// document instead of served through a local server).
 let plateauManuallyLoaded = false;
 let cartesManuallyLoaded = false;
-
 async function autoLoadDefaultFiles() {
   try {
     const res = await fetch('plateau.json', {cache:'no-store'});
@@ -654,155 +1019,91 @@ async function autoLoadDefaultFiles() {
       document.getElementById('plateauStatus').textContent = '✓ Auto-chargé';
     }
   } catch(e) { /* pas de serveur local ou fichier absent → défaut conservé */ }
-
   try {
     const res = await fetch('cartes.json', {cache:'no-store'});
     if(res.ok && !cartesManuallyLoaded) {
-      const d = await res.json();
-      cardData = (d.chance && d.community) ? d : {chance:d.chance||[], community:d.community||[]};
+      cardData = E.normalizeCards(await res.json());
       document.getElementById('cartesBox').classList.add('loaded');
       document.getElementById('cartesStatus').textContent = '✓ Auto-chargé';
     }
   } catch(e) { /* pas de serveur local ou fichier absent → défaut conservé */ }
 }
-autoLoadDefaultFiles();
 
-// Init 2 default players
-addPlayerRow('Joueur 1','🎩');
-addPlayerRow('Joueur 2','🚂');
+function startSoloGame() {
+  let state;
+  try{
+    state = E.createGame({
+      board: boardData, cards: cardData,
+      players: playerDefs.map(p=>({name:p.name, pawn:p.pawn})),
+      config: {
+        startMoney: parseInt(document.getElementById('startMoney').value)||1500,
+        auctions: document.getElementById('ruleAuctions').checked,
+        evenBuild: document.getElementById('ruleEven').checked,
+        buildingLimit: document.getElementById('ruleLimit').checked,
+      },
+    });
+  }catch(e){ toast(e.message); return; }
+  MODE.online=false;
+  enterGame(state);
+  saveSolo();
+}
+
+// La partie locale est sauvegardée dans le navigateur après chaque coup :
+// fermer l'onglet par erreur ne fait rien perdre.
+function saveSolo(){ if(!MODE.online && S) store('mkj.solo', S.phase==='ended'?undefined:S); }
+function resumeSolo(){
+  const s=load('mkj.solo');
+  if(!s||!s.players){ toast('Aucune partie locale à reprendre.'); return; }
+  MODE.online=false;
+  enterGame(s);
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
-// GAME STATE
+// ENTRÉE EN PARTIE
 // ══════════════════════════════════════════════════════════════════════════════
 
-let G = {}; // game state
+function showScreen(id){
+  ['setupScreen','lobbyScreen','gameScreen','winScreen'].forEach(s=>document.getElementById(s).classList.toggle('hidden', s!==id));
+}
 
-function startGame() {
-  const startMoney = parseInt(document.getElementById('startMoney').value)||1500;
-  G = {
-    players: playerDefs.map((p,i)=>({
-      id:i, name:p.name, pawn:p.pawn,
-      money:startMoney, pos:0,
-      inJail:false, jailTurns:0,
-      getOutCards:0,
-      properties:[], // positions owned
-      bankrupt:false,
-    })),
-    board: boardData,
-    chanceCards: shuffle([...cardData.chance]),
-    communityCards: shuffle([...cardData.community]),
-    chanceIdx:0, communityIdx:0,
-    currentPlayer:0,
-    turn:1,
-    phase:'roll', // roll | action | end
-    pendingCard:null,
-    diceRoll:null,
-    doublesCount:0,
-    propertyBuildings:{}, // pos -> {houses, hotel}
-    mortgaged:new Set(),
-    ui:{opponentsOpen:false, bankOpen:false},
-    startedAt: performance.now(),
-    pawnEls:{}, // player.id -> floating pawn-token DOM element (see buildBoard)
-    animating:false, // true while a roll/move animation is in flight (blocks re-rolling)
-  };
-  document.getElementById('setupScreen').classList.add('hidden');
-  document.getElementById('gameScreen').classList.remove('hidden');
+// Affiche une partie à partir d'un état complet (nouvelle partie, reprise,
+// arrivée en cours de route, resynchronisation).
+function enterGame(state){
+  S = state;
+  UI.queue=[]; UI.processing=false; UI.inflight=false;
+  UI.startedAt = UI.startedAt || performance.now();
+  closeModal(true);
+  showScreen('gameScreen');
+  document.getElementById('tabChat').classList.toggle('hidden', !MODE.online);
+  document.getElementById('btnAway').classList.toggle('hidden', !MODE.online);
+  if(!MODE.online) setLogTab('log');
   buildBoard();
+  UI.pos={}; S.players.forEach(p=>UI.pos[p.id]=p.pos);
+  ensurePawnTokens();
+  const area=document.getElementById('logArea');
+  area.innerHTML='';
+  S.log.forEach(l=>appendLog(l.msg, l.kind));
+  if(S.dice) setSmallDice(S.dice);
   renderAll();
-  log(`Partie lancée avec ${G.players.length} joueurs !`, 'system');
-  log(`${pawnLogChar(G.players[0])} ${G.players[0].name} commence.`, 'important');
+  if(S.phase==='ended') { showWin(); return; }
+  syncDecisionUI();
 }
-
-function shuffle(arr) {
-  for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}
-  return arr;
-}
-
-function delay(ms){ return new Promise(resolve=>setTimeout(resolve, ms)); }
 
 // Keep the floating pawn tokens aligned with their cells when the board is
 // resized (the board's own size is fluid — see .board's width/height in
 // CSS — so a pawn's last computed pixel position goes stale on resize).
-window.addEventListener('resize', ()=>{
-  if(document.getElementById('board') && G.pawnEls) positionAllPawnTokens();
-});
+window.addEventListener('resize', ()=>{ if(S && document.getElementById('board')) positionAllPawnTokens(); });
 
-// Session timer shown in the history panel header (mm:ss / hh:mm:ss).
+// Session timer shown in the history panel header (hh:mm:ss) + minuteurs.
 setInterval(()=>{
-  if(!G.startedAt) return;
-  const secs=Math.floor((performance.now()-G.startedAt)/1000);
-  const hh=Math.floor(secs/3600), mm=Math.floor((secs%3600)/60), ss=secs%60;
-  const el=document.getElementById('historyTimer');
-  if(el) el.textContent = `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
-}, 1000);
-
-// Whether the browser supports container query width units (cqw). Used to
-// size cell icons relative to the actual rendered board (so the board looks
-// right whatever the player's screen size), with a viewport-width fallback
-// for older browsers that don't support cqw.
-const SUPPORTS_CQW = (typeof CSS !== 'undefined' && CSS.supports && CSS.supports('width', '1cqw'));
-
-// Currency icon: oufingouf.png replaces the "M$" symbol throughout the UI.
-// Sized via the .currency-icon CSS class (1em) so it automatically matches
-// the font-size of the amount it's displayed next to.
-const MONEY_ICON = '<img src="images/oufingouf.png" alt="oufingouf" class="currency-icon">';
-// Houses/hotels are "alertes"/"alerteprison" in this game (the two Discord
-// reaction emotes of the community): buy up to 4 alertes on a property of a
-// complete color set, then convert them into one alerteprison. The data keys
-// stay houses/hotel/buildCost/perHouse/perHotel so plateau.json, cartes.json
-// and the multiplayer server keep working unchanged — only the UI wording and
-// visuals changed.
-const ALERTE_SRC = 'images/alerte.png';
-const ALERTEPRISON_SRC = 'images/alerteprison.png';
-const ALERTE_ICON = `<img src="${ALERTE_SRC}" alt="alerte" class="inline-alert">`;
-const ALERTEPRISON_ICON = `<img src="${ALERTEPRISON_SRC}" alt="alerteprison" class="inline-alert">`;
-// Substitutes any "M$" found in free-form text (card/cell descriptions
-// coming from plateau.json / cartes.json) with the currency icon. Only use
-// this on strings rendered via innerHTML — never on textContent targets.
-function fmtM(str) { return String(str || '').split('M$').join(MONEY_ICON); }
-
-// Render an icon for a cell: emoji string → span, URL/base64 → img
-function renderCellIconHtml(src, large) {
-  if(!src) return '';
-  // Detect image: starts with http, https, data:image, or common extensions
-  const isImage = /^(https?:\/\/|data:image)/i.test(src);
-  if(isImage) {
-    // Corner cells are ~1.8x the size of a regular cell, so their icon
-    // (large=true) is sized as a much bigger share of the board's own
-    // width (cqw) — it now scales up on big screens and down on small ones
-    // instead of hitting a low fixed cap, filling more of the corner.
-    const size = SUPPORTS_CQW
-      ? (large ? 'clamp(34px,9.5cqw,100px)' : 'clamp(16px,3.2cqw,34px)')
-      : (large ? 'clamp(30px,9vw,90px)' : 'clamp(14px,2.8vw,30px)');
-    return `<img src="${src}" style="width:${size};height:${size};object-fit:cover;border-radius:2px;vertical-align:middle;flex-shrink:0" onerror="this.style.display='none'">`;
+  if(UI.startedAt){
+    const secs=Math.floor((performance.now()-UI.startedAt)/1000);
+    const hh=Math.floor(secs/3600), mm=Math.floor((secs%3600)/60), ss=secs%60;
+    const el=document.getElementById('historyTimer');
+    if(el) el.textContent = `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
   }
-  // Emoji or text
-  return `<span style="font-size:${large?'1.8em':'1.1em'};line-height:1">${src}</span>`;
-}
-
-// A player's "pawn" is either a plain emoji character (the default) or an
-// uploaded image, normalized to a small square data URL by handlePawnFile()
-// — same convention as cell icons above, so it uses the same detection.
-function isImagePawn(v){ return typeof v==='string' && /^(https?:\/\/|data:image)/i.test(v); }
-
-// HTML for a pawn wherever markup is built with innerHTML. Sized in `em` (as
-// with .currency-icon) so an uploaded image automatically matches whatever
-// font-size the surrounding element already uses (sidebar avatar, board
-// token, victory screen...) with no per-call-site size to keep in sync.
-function pawnIconHtml(pawn){
-  if(!pawn) return '';
-  return isImagePawn(pawn)
-    ? `<img src="${pawn}" class="pawn-img-icon" alt="" onerror="this.style.display='none'">`
-    : pawn;
-}
-
-// Plain-text stand-in for a pawn, for the few spots that set text directly
-// (textContent) or feed into log() — log() deliberately uses textContent,
-// never innerHTML, to keep freely-typed player names from being able to
-// inject markup (see log()'s own comment) — so a data: URL can't be
-// rendered as an image there; this substitutes a generic marker instead of
-// dumping the raw URL as visible text.
-function pawnLogChar(p){ return p && isImagePawn(p.pawn) ? '🔹' : (p ? p.pawn : ''); }
+  if(MODE.online && S) tickTimers();
+}, 500);
 
 // ══════════════════════════════════════════════════════════════════════════════
 // BOARD RENDERING
@@ -821,11 +1122,10 @@ function cellGridPos(pos) {
 function buildBoard() {
   const board = document.getElementById('board');
   board.innerHTML = '';
-  const cells = {};
 
   // Which edge a (non-corner) cell sits on, so its content can be rotated to
-  // face outward: top row upside down, left/right columns rotated ±90°,
-  // bottom row left as-is (see cellGridPos for the pos ranges per edge).
+  // face the right way: left/right columns rotated ±90°, top and bottom rows
+  // left as-is (see cellGridPos for the pos ranges per edge).
   function cellSide(pos) {
     if(pos>=1&&pos<=9) return 'bottom';
     if(pos>=11&&pos<=19) return 'left';
@@ -834,7 +1134,7 @@ function buildBoard() {
     return '';
   }
 
-  G.board.forEach(c => {
+  S.board.forEach(c => {
     const {col,row} = cellGridPos(c.pos);
     const div = document.createElement('div');
     const isCorner = [0,10,20,30].includes(c.pos);
@@ -842,7 +1142,6 @@ function buildBoard() {
     div.id=`cell-${c.pos}`;
     div.style.gridColumn=col;
     div.style.gridRow=row;
-
     const color = GROUP_COLORS[c.group]||'#444';
 
     if(isCorner) {
@@ -850,7 +1149,7 @@ function buildBoard() {
       const labels = {0:'ENTRÉE SANCTUAIRE',10:'GYMNASE',20:'POCO BAR',30:'BAN DU SERVEUR'};
       // Support custom corner icon override via c.icon
       const cornerIconHtml = renderCellIconHtml(c.icon || cornerIcons[c.pos], true);
-      div.innerHTML=`<div class="cell-content"><div class="cell-corner">${cornerIconHtml}<div class="lbl">${labels[c.pos]}</div></div></div>`;
+      div.innerHTML=`<div class="cell-content"><div class="cell-corner">${cornerIconHtml}<div class="lbl">${esc(labels[c.pos]||String(c.name||'').toUpperCase())}</div></div></div>`;
     } else {
       let inner = '';
       if(c.type==='property'||c.type==='station'||c.type==='utility'){
@@ -864,20 +1163,19 @@ function buildBoard() {
       // together as a unit, glued to the board's outer edge, while the
       // color band (if any) is glued to the inner edge — see the
       // .cell-content:has(.cell-color) CSS rule.
-      let text = `<div class="cell-name">${iconHtml}${c.name}</div>`;
+      let text = `<div class="cell-name">${iconHtml}${esc(c.name)}</div>`;
       if(c.price>0) text += `<div class="cell-price">${c.price}${MONEY_ICON}</div>`;
       inner += `<div class="cell-text">${text}</div>`;
       div.innerHTML=`<div class="cell-content">${inner}</div>`;
     }
     div.onclick=()=>showCellInfo(c.pos);
-    cells[c.pos]=div;
     board.appendChild(div);
   });
 
   // Center
   const center = document.createElement('div');
   center.className='cell-center';
-  center.innerHTML=`<div class="center-title">MONOPOLY</div><div class="center-sub">Jeu custom</div>`;
+  center.innerHTML=`<div class="center-title">MONOPOLY KJ</div><div class="center-sub">${MODE.online?'Salon '+esc(NET.code||''):'Partie locale'}</div>`;
   board.appendChild(center);
 
   // Floating layer pawns live in (see #pawnLayer / .pawn-token in CSS and
@@ -886,17 +1184,15 @@ function buildBoard() {
   const pawnLayer=document.createElement('div');
   pawnLayer.id='pawnLayer';
   board.appendChild(pawnLayer);
-  G.pawnEls={};
+  UI.pawnEls={};
 }
 
 // Pawns are floating tokens (see #pawnLayer / .pawn-token in CSS) positioned
-// with transform:translate() to a pixel point read off the real DOM cell —
-// see positionAllPawnTokens()/cellCenterPx() and the animated walkPawn()
-// used for dice-driven moves further below.
+// with transform:translate() to a pixel point read off the real DOM cell.
 function renderPawns() {
-  const live=G.players.filter(p=>!p.bankrupt);
-  const haveIds=Object.keys(G.pawnEls||{});
-  const mismatched = haveIds.length!==live.length || live.some(p=>!G.pawnEls[p.id]);
+  const live=S.players.filter(p=>!p.bankrupt);
+  const haveIds=Object.keys(UI.pawnEls||{});
+  const mismatched = haveIds.length!==live.length || live.some(p=>!UI.pawnEls[p.id]);
   if(mismatched) ensurePawnTokens();
   else positionAllPawnTokens();
 }
@@ -905,32 +1201,32 @@ function ensurePawnTokens(){
   const layer=document.getElementById('pawnLayer');
   if(!layer) return;
   layer.innerHTML='';
-  G.pawnEls={};
-  G.players.filter(p=>!p.bankrupt).forEach(p=>{
+  UI.pawnEls={};
+  S.players.filter(p=>!p.bankrupt).forEach(p=>{
     const el=document.createElement('div');
     el.className='pawn-token';
     el.innerHTML=pawnIconHtml(p.pawn);
+    el.title=p.name;
     layer.appendChild(el);
-    G.pawnEls[p.id]=el;
+    UI.pawnEls[p.id]=el;
   });
   positionAllPawnTokens();
 }
 
-// Snap every pawn token to its player's current .pos (no animation — used
-// after a state change that isn't a dice-driven move, and to re-align on
-// resize). Players sharing a cell are fanned out slightly so they don't
-// stack exactly on top of each other.
+// Snap every pawn token to its displayed position (no animation — used
+// after a state change that isn't a walk, and to re-align on resize).
+// Players sharing a cell are fanned out slightly so they don't stack.
 function positionAllPawnTokens(){
   const board=document.getElementById('board');
-  if(!board) return;
+  if(!board||!S) return;
   const boardRect=board.getBoundingClientRect();
   const groups={};
-  G.players.forEach(p=>{ if(!p.bankrupt) (groups[p.pos]=groups[p.pos]||[]).push(p); });
-  Object.values(groups).forEach(list=>{
+  S.players.forEach(p=>{ if(!p.bankrupt){ const pos=UI.pos[p.id]??p.pos; (groups[pos]=groups[pos]||[]).push(p); } });
+  Object.entries(groups).forEach(([pos,list])=>{
     list.forEach((p,i)=>{
-      const el=G.pawnEls[p.id];
+      const el=UI.pawnEls[p.id];
       if(!el) return;
-      const {x,y}=cellCenterPx(p.pos, boardRect, list.length, i);
+      const {x,y}=cellCenterPx(Number(pos), boardRect, list.length, i);
       el.style.transition='none';
       el.style.transform=`translate(calc(${x}px - 50%), calc(${y}px - 50%))`;
       el.offsetHeight; // flush the style change before transitions are re-enabled
@@ -953,26 +1249,15 @@ function cellCenterPx(pos, boardRect, count, index){
   return {x:cx+Math.cos(angle)*spread, y:cy+Math.sin(angle)*spread};
 }
 
-// Build the ordered list of cells a pawn passes through to go `steps`
-// forward (positive) or backward (negative) from `fromPos`, wrapping
-// correctly around the 40-cell track in either direction.
-function pathForSteps(fromPos, steps){
-  const dir = steps>=0 ? 1 : -1;
-  const n = Math.abs(steps);
-  const path=[];
-  let cur=fromPos;
-  for(let i=0;i<n;i++){ cur=((cur+dir)%40+40)%40; path.push(cur); }
-  return path;
-}
+const PAWN_HOP_MS = 140;            // duration of one cell-to-cell hop
+const PAWN_HOP_MAX_TOTAL_MS = 1400; // cap on a whole walk's duration, however many hops
 
-// Animate a pawn hopping through each cell in `path` in turn (purely
-// visual — doesn't touch p.pos). Resolves once the last hop's transition
-// finishes. The whole walk is capped at PAWN_HOP_MAX_TOTAL_MS so a long
-// forced move (e.g. a card sending someone most of the way around the
-// board) doesn't take forever — each hop just gets shorter.
-function walkPawn(p, path){
+// Animate a pawn hopping through each cell in `path` in turn. Resolves once
+// the last hop's transition finishes. The whole walk is capped at
+// PAWN_HOP_MAX_TOTAL_MS so a long forced move doesn't take forever.
+function walkPawn(pid, path){
   return new Promise(resolve=>{
-    const el=G.pawnEls&&G.pawnEls[p.id];
+    const el=UI.pawnEls&&UI.pawnEls[pid];
     if(!el || !path.length){ resolve(); return; }
     const board=document.getElementById('board');
     const stepMs=Math.max(55, Math.min(PAWN_HOP_MS, PAWN_HOP_MAX_TOTAL_MS/path.length));
@@ -990,140 +1275,32 @@ function walkPawn(p, path){
   });
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// SIDEBAR PANELS (Joueur actif / Adversaires / Banque)
-// ══════════════════════════════════════════════════════════════════════════════
-
-function groupPipsHtml(player){
-  const order=['brown','lblue','pink','orange','red','yellow','green','blue'];
-  let html='<div class="grp-grid">';
-  order.forEach(g=>{
-    const cells=G.board.filter(c=>c.group===g && c.type==='property');
-    if(!cells.length) return;
-    html+='<div class="grp-row">'+cells.map(c=>{
-      const owned=player.properties.includes(c.pos);
-      return `<span class="grp-pip${owned?' filled':''}" style="--pc:${GROUP_COLORS[g]}" title="${c.name}"></span>`;
-    }).join('')+'</div>';
-  });
-  const stations=G.board.filter(c=>c.type==='station');
-  if(stations.length){
-    html+='<div class="grp-row">'+stations.map(c=>{
-      const owned=player.properties.includes(c.pos);
-      return `<span class="grp-pip${owned?' filled':''}" style="--pc:#4a5a56" title="${c.name}"></span>`;
-    }).join('')+'</div>';
-  }
-  const utilities=G.board.filter(c=>c.type==='utility');
-  if(utilities.length){
-    html+='<div class="grp-row">'+utilities.map(c=>{
-      const owned=player.properties.includes(c.pos);
-      return `<span class="grp-pip${owned?' filled':''}" style="--pc:#2f7ab8" title="${c.name}"></span>`;
-    }).join('')+'</div>';
-  }
-  html+='</div>';
-  return html;
-}
-
-function renderQuickActions(p){
-  let html='';
-  if(p.inJail && G.phase==='roll'){
-    html+=`<button class="btn-sm warn" onclick="payJail()">⛓️ Payer la caution (${MONEY_ICON}50)</button>`;
-    if(p.getOutCards>0) html+=`<button class="btn-sm green" onclick="useGetOutCard()">🔑 Carte sortie de prison</button>`;
-  }
-  if(G.phase==='action'){
-    html+=`<button class="btn-sm" onclick="endTurn()">⏭ Fin de tour</button>`;
-    html+=`<button class="btn-sm red" onclick="declareBankrupt()">🏳️ Déclarer faillite</button>`;
-  }
-  return html?`<div class="quick-actions">${html}</div>`:'';
-}
-
-function opponentRowHtml(o){
-  return `<div class="opp-row${o.bankrupt?' bankrupt':''}">
-    <span class="opp-pawn">${pawnIconHtml(o.pawn)}</span>
-    <span class="opp-name">${o.name}${o.inJail?' ⛓️':''}${o.bankrupt?' (faillite)':''}</span>
-    <span class="opp-props">${o.properties.length} biens</span>
-    <span class="opp-money">${MONEY_ICON}${o.money.toLocaleString()}</span>
-  </div>`;
-}
-
-function bankStatsHtml(){
-  const dealCells = G.board.filter(c=>['property','station','utility'].includes(c.type));
-  const owned = dealCells.filter(c=>isOwned(c.pos)).length;
-  const available = dealCells.length-owned;
-  const circulating = G.players.filter(p=>!p.bankrupt).reduce((s,p)=>s+p.money,0);
-  let houses=0, hotels=0;
-  Object.values(G.propertyBuildings).forEach(b=>{houses+=b.houses||0; if(b.hotel) hotels++;});
-  return `
-    <div class="info-row"><span class="lbl">Propriétés disponibles</span><span class="val">${available} / ${dealCells.length}</span></div>
-    <div class="info-row"><span class="lbl">Argent en circulation</span><span class="val">${MONEY_ICON}${circulating.toLocaleString()}</span></div>
-    <div class="info-row"><span class="lbl">${ALERTE_ICON} Alertes en jeu</span><span class="val">${houses}</span></div>
-    <div class="info-row"><span class="lbl">${ALERTEPRISON_ICON} Alertesprison en jeu</span><span class="val">${hotels}</span></div>
-  `;
-}
-
-function toggleOpponents(){ G.ui.opponentsOpen=!G.ui.opponentsOpen; renderSidebarPanels(); }
-function toggleBank(){ G.ui.bankOpen=!G.ui.bankOpen; renderSidebarPanels(); }
-
-function renderSidebarPanels(){
-  const el=document.getElementById('sidebarPanels');
-  const p=G.players[G.currentPlayer];
-  const others=G.players.filter(pl=>pl.id!==p.id);
-
-  el.innerHTML = `
-    <div class="panel panel-active">
-      <div class="pa-top">
-        <span class="pa-pawn">${pawnIconHtml(p.pawn)}</span>
-        <span class="pa-name">${p.name}${p.inJail?' <span class="jail-badge">⛓️ prison</span>':''}</span>
-        <span class="pa-money">${MONEY_ICON}${p.money.toLocaleString()}</span>
-      </div>
-      ${groupPipsHtml(p)}
-      ${renderQuickActions(p)}
-    </div>
-
-    <div class="panel">
-      <div class="panel-header" onclick="toggleOpponents()">
-        <span>Adversaires (${others.length})</span>
-        <span class="chevron">${G.ui.opponentsOpen?'▾':'▸'}</span>
-      </div>
-      ${G.ui.opponentsOpen?`<div class="panel-content">${others.length?others.map(opponentRowHtml).join(''):'<div class="empty-note">Aucun autre joueur.</div>'}</div>`:''}
-    </div>
-
-    <div class="panel">
-      <div class="panel-header" onclick="toggleBank()">
-        <span>🏦 Banque</span>
-        <span class="chevron">${G.ui.bankOpen?'▾':'▸'}</span>
-      </div>
-      ${G.ui.bankOpen?`<div class="panel-content">${bankStatsHtml()}</div>`:''}
-    </div>
-  `;
-}
-
-function renderConsoleBar(){
-  const p=G.players[G.currentPlayer];
-  const inAction = G.phase==='action';
-  const ownsBuildable = p.properties.some(pos=>{
-    const cell=G.board[pos]; if(!cell||cell.type!=='property') return false;
-    const group=G.board.filter(c=>c.group===cell.group&&c.type==='property');
-    return group.every(c=>p.properties.includes(c.pos));
-  });
-  const ownsBuildings = p.properties.some(pos=>{const b=G.propertyBuildings[pos]; return b&&(b.houses>0||b.hotel);});
-  const ownsMortgageable = p.properties.some(pos=>!G.mortgaged.has(pos));
-  const ownsMortgaged = p.properties.some(pos=>G.mortgaged.has(pos));
-
-  document.getElementById('btnConsoleBuild').disabled = !(inAction&&ownsBuildable);
-  document.getElementById('btnConsoleSell').disabled = !(inAction&&ownsBuildings);
-  document.getElementById('btnConsoleMortgage').disabled = !(inAction&&ownsMortgageable);
-  document.getElementById('btnConsoleUnmortgage').disabled = !(inAction&&ownsMortgaged);
-  document.getElementById('btnRoll').disabled = G.phase!=='roll';
-}
-
-// Draws the alertes (up to 4) or the alerteprison of each property inside the
-// color band of its board cell. Cheap: only touches a band if its content changed.
-function renderCellAlerts(){
-  G.board.forEach(c=>{
+// Alertes (up to 4) or the alerteprison of each property inside the color band
+// of its board cell, plus the owner's pawn badge and the mortgage lock.
+// Cheap: only touches a cell if what it shows changed.
+function renderCellState(){
+  const pd=S.pending;
+  S.board.forEach(c=>{
+    const cellEl=document.getElementById(`cell-${c.pos}`);
+    if(!cellEl) return;
+    cellEl.classList.toggle('pending-sale', !!pd && (pd.type==='buy'||pd.type==='auction') && pd.pos===c.pos);
+    if(!E.BUYABLE.includes(c.type)) return;
+    const owner=E.ownerOf(S, c.pos);
+    const ownerKey = owner ? String(owner.id) : '';
+    if(cellEl.dataset.owner!==ownerKey){
+      cellEl.dataset.owner=ownerKey;
+      let badge=cellEl.querySelector('.cell-owner');
+      if(owner){
+        if(!badge){ badge=document.createElement('div'); badge.className='cell-owner'; cellEl.appendChild(badge); }
+        badge.innerHTML=pawnIconHtml(owner.pawn);
+        badge.title='Propriétaire : '+owner.name;
+      } else if(badge) badge.remove();
+    }
+    cellEl.classList.toggle('mortgaged', E.isMortgaged(S, c.pos));
     if(c.type!=='property') return;
-    const band=document.querySelector(`#cell-${c.pos} .cell-color`);
+    const band=cellEl.querySelector('.cell-color');
     if(!band) return;
-    const b=G.propertyBuildings[c.pos]||{houses:0,hotel:0};
+    const b=E.bld(S, c.pos);
     let html='';
     if(b.hotel) html=`<img class="cell-alert prison" src="${ALERTEPRISON_SRC}" alt="alerteprison">`;
     else if(b.houses>0) html=`<img class="cell-alert" src="${ALERTE_SRC}" alt="alerte">`.repeat(b.houses);
@@ -1135,24 +1312,344 @@ function renderCellAlerts(){
   });
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// SIDEBAR PANELS (Joueur / Joueurs / Banque)
+// ══════════════════════════════════════════════════════════════════════════════
+
+function groupPipsHtml(player){
+  const order=['brown','lblue','pink','orange','red','yellow','green','blue'];
+  let html='<div class="grp-grid">';
+  order.forEach(g=>{
+    const cells=S.board.filter(c=>c.group===g && c.type==='property');
+    if(!cells.length) return;
+    html+='<div class="grp-row">'+cells.map(c=>{
+      const owned=player.properties.includes(c.pos);
+      return `<span class="grp-pip${owned?' filled':''}" style="--pc:${GROUP_COLORS[g]}" title="${esc(c.name)}"></span>`;
+    }).join('')+'</div>';
+  });
+  const stations=S.board.filter(c=>c.type==='station');
+  if(stations.length){
+    html+='<div class="grp-row">'+stations.map(c=>`<span class="grp-pip${player.properties.includes(c.pos)?' filled':''}" style="--pc:#4a5a56" title="${esc(c.name)}"></span>`).join('')+'</div>';
+  }
+  const utilities=S.board.filter(c=>c.type==='utility');
+  if(utilities.length){
+    html+='<div class="grp-row">'+utilities.map(c=>`<span class="grp-pip${player.properties.includes(c.pos)?' filled':''}" style="--pc:#2f7ab8" title="${esc(c.name)}"></span>`).join('')+'</div>';
+  }
+  html+='</div>';
+  return html;
+}
+
+// Boutons rapides du panneau principal (prison).
+function renderQuickActions(p){
+  let html='';
+  if(p.inJail && S.phase==='roll' && S.current===p.id && isMe(p.id) && !S.pending && !S.debts.length){
+    html+=`<button class="btn-sm warn" onclick="doAction({type:'pay_jail'})">⛓️ Payer la caution (${MONEY_ICON}${E.JAIL_FINE})</button>`;
+    if(p.getOut.length) html+=`<button class="btn-sm green" onclick="doAction({type:'use_get_out'})">🔑 Carte sortie de prison</button>`;
+  }
+  return html?`<div class="quick-actions">${html}</div>`:'';
+}
+
+// Pastille de présence d'un joueur en ligne.
+function presenceOf(pid){
+  if(!MODE.online || !NET.meta) return null;
+  const m=NET.meta.seats[pid];
+  if(!m) return null;
+  if(m.removed) return {dot:'gone', label:'retiré'};
+  if(!m.connected) return {dot:'off', label:m.auto?'déconnecté · joué en auto':'déconnecté'};
+  if(m.auto) return {dot:'auto', label:'joué en auto'};
+  if(m.away) return {dot:'away', label:'absent'};
+  return {dot:'', label:'en ligne'};
+}
+
+function opponentRowHtml(o){
+  const pr=presenceOf(o.id);
+  const isCur=S.current===o.id && S.phase!=='ended';
+  return `<div class="opp-row${o.bankrupt?' bankrupt':''}${isCur?' current':''}">
+    ${pr?`<span class="dot ${pr.dot}" title="${pr.label}"></span>`:''}
+    <span class="opp-pawn">${pawnIconHtml(o.pawn)}</span>
+    <span class="opp-name">${esc(o.name)}${isMe(o.id)&&MODE.online?' <span class="me-tag">vous</span>':''}${o.inJail?' ⛓️':''}${o.bankrupt?' (faillite)':''}${isCur?' 🎲':''}
+      ${pr&&pr.label!=='en ligne'?`<div class="opp-status">${pr.label}</div>`:''}</span>
+    <span class="opp-props">${o.properties.length} biens</span>
+    <span class="opp-money">${money(o.money)}</span>
+  </div>`;
+}
+
+function bankStatsHtml(){
+  const dealCells = S.board.filter(c=>E.BUYABLE.includes(c.type));
+  const owned = dealCells.filter(c=>E.ownerOf(S,c.pos)).length;
+  const circulating = S.players.filter(p=>!p.bankrupt).reduce((s,p)=>s+p.money,0);
+  let houses=0, hotels=0;
+  Object.values(S.buildings).forEach(b=>{houses+=b.houses||0; if(b.hotel) hotels++;});
+  const lim=S.config.buildingLimit;
+  return `
+    <div class="info-row"><span class="lbl">Propriétés disponibles</span><span class="val">${dealCells.length-owned} / ${dealCells.length}</span></div>
+    <div class="info-row"><span class="lbl">Argent en circulation</span><span class="val">${money(circulating)}</span></div>
+    <div class="info-row"><span class="lbl">${ALERTE_ICON} Alertes en jeu</span><span class="val">${houses}${lim?' / '+S.config.houses:''}</span></div>
+    <div class="info-row"><span class="lbl">${ALERTEPRISON_ICON} Alertesprison en jeu</span><span class="val">${hotels}${lim?' / '+S.config.hotels:''}</span></div>
+    <div class="info-row"><span class="lbl">Règles</span><span class="val" style="font-family:inherit;font-size:11.5px">${S.config.auctions?'enchères':'sans enchères'} · ${S.config.evenBuild?'homogène':'libre'}${lim?' · pénurie':''}</span></div>
+  `;
+}
+
+function toggleOpponents(){ UI.opponentsOpen=!UI.opponentsOpen; renderSidebarPanels(); }
+function toggleBank(){ UI.bankOpen=!UI.bankOpen; renderSidebarPanels(); }
+
+function renderSidebarPanels(){
+  const el=document.getElementById('sidebarPanels');
+  const p=S.players[viewerId()] || S.players[S.current];
+  el.innerHTML = `
+    <div class="panel panel-active">
+      <div class="pa-top">
+        <span class="pa-pawn">${pawnIconHtml(p.pawn)}</span>
+        <span class="pa-name">${esc(p.name)}${MODE.online?' <span class="me-tag">vous</span>':''}${p.inJail?' <span class="jail-badge">⛓️ enfermé</span>':''}${p.bankrupt?' <span class="jail-badge">faillite</span>':''}</span>
+        <span class="pa-money">${money(p.money)}</span>
+      </div>
+      ${groupPipsHtml(p)}
+      ${p.getOut.length?`<div class="hint" style="margin-bottom:4px">🔑 ${p.getOut.length} carte(s) « sortie de prison »</div>`:''}
+      ${renderQuickActions(p)}
+    </div>
+
+    <div class="panel">
+      <div class="panel-header" onclick="toggleOpponents()">
+        <span>Joueurs (${S.players.length})</span>
+        <span class="chevron">${UI.opponentsOpen?'▾':'▸'}</span>
+      </div>
+      ${UI.opponentsOpen?`<div class="panel-content">${S.players.map(opponentRowHtml).join('')}</div>`:''}
+    </div>
+
+    <div class="panel">
+      <div class="panel-header" onclick="toggleBank()">
+        <span>🏦 Banque</span>
+        <span class="chevron">${UI.bankOpen?'▾':'▸'}</span>
+      </div>
+      ${UI.bankOpen?`<div class="panel-content">${bankStatsHtml()}</div>`:''}
+    </div>
+  `;
+}
+
+// Phrase « qui fait quoi » sous le titre de la barre latérale.
+function renderTurnLine(){
+  const el=document.getElementById('turnLine');
+  if(!S || S.phase==='ended'){ el.innerHTML=''; return; }
+  const cur=S.players[S.current];
+  const me=pid=>MODE.online && pid===NET.seat;
+  const name=pid=>`<b>${pname(S.players[pid])}</b>`;
+  let what;
+  const pd=S.pending, d0=S.debts[0];
+  if(d0) what = me(d0.from) ? `<b>À vous</b> : réglez une dette de ${money(d0.amount)}` : `${name(d0.from)} doit régler une dette de ${money(d0.amount)}`;
+  else if(pd&&pd.type==='buy') what = `${me(pd.player)?'<b>À vous</b>':name(pd.player)} : acheter ${esc(S.board[pd.pos].name)} ?`;
+  else if(pd&&pd.type==='auction') what=`🔨 Enchères sur <b>${esc(S.board[pd.pos].name)}</b> <span class="timer-chip" id="auctionChip"></span>`;
+  else if(pd&&pd.type==='card_choice') what = `${me(pd.player)?'<b>À vous</b>':name(pd.player)} : payer ou tirer une carte ?`;
+  else if(me(cur.id)) what = S.phase==='roll' ? '<b>À vous de jouer</b> — lancez les dés' : '<b>À vous</b> — terminez votre tour';
+  else what=`Au tour de ${name(cur.id)}`+(S.phase==='roll'?' — lancer les dés':'');
+  const showTimer = MODE.online && NET.meta && NET.meta.timerSec>0 && !(pd&&pd.type==='auction');
+  el.innerHTML = what + (showTimer?` <span class="timer-chip" id="timerChip"></span>`:'');
+  tickTimers();
+}
+
+// Compte à rebours affiché (minuteur de décision, enchère).
+function tickTimers(){
+  const m=NET.meta; if(!m) return;
+  const since=Date.now()-(NET.metaAt||Date.now());
+  const fmt=ms=>{ const s=Math.max(0,Math.ceil(ms/1000)); return s>=60?`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`:`${s} s`; };
+  const t=document.getElementById('timerChip');
+  if(t){
+    if(m.paused){ t.textContent='⏸'; t.classList.remove('urgent'); }
+    else if(m.timerLeft==null){ t.textContent=''; }
+    else { const left=m.timerLeft-since; t.textContent='⏱ '+fmt(left); t.classList.toggle('urgent', left<15000);
+      if(left<10000 && left>9400 && S && E.awaiting(S).includes(NET.seat)) sfx('tick'); }
+  }
+  const a=document.getElementById('auctionChip');
+  if(a && m.auctionLeft!=null){ const left=m.auctionLeft-since; a.textContent='⏱ '+fmt(left); a.classList.toggle('urgent', left<5000); }
+  const a2=document.getElementById('auctionChipModal');
+  if(a2 && m.auctionLeft!=null){ const left=m.auctionLeft-since; a2.textContent='⏱ '+fmt(left)+' avant adjudication'; }
+  // compte à rebours de reconnexion dans les bandeaux
+  document.querySelectorAll('[data-grace]').forEach(el=>{ el.textContent=fmt(Number(el.dataset.grace)-since); });
+}
+
+// Acteur des boutons de la barre du bas : en ligne, moi ; en local, le joueur
+// qui a la main.
+function consoleActor(){ return MODE.online ? NET.seat : E.manager(S); }
+
+function anyOwned(pid, check){
+  const p=S.players[pid];
+  return !!p && p.properties.some(pos=>check(S,pid,pos)===null);
+}
+
+function renderConsoleBar(){
+  const busy = UI.processing || UI.inflight || (MODE.online && (!NET.connected || (NET.meta&&NET.meta.paused)));
+  const a = consoleActor();
+  const can = (x)=>!busy && a!==null && a!==undefined && x;
+  const myTurn = S.current===(MODE.online?NET.seat:S.current);
+  document.getElementById('btnRoll').disabled = !can(myTurn && S.phase==='roll' && !S.pending && !S.debts.length);
+  document.getElementById('btnConsoleBuild').disabled = !can(anyOwned(a,E.canBuild)||anyOwned(a,E.canUpgrade));
+  document.getElementById('btnConsoleSell').disabled = !can(anyOwned(a,E.canSellHouse)||anyOwned(a,E.canSellHotel));
+  document.getElementById('btnConsoleMortgage').disabled = !can(anyOwned(a,E.canMortgage));
+  document.getElementById('btnConsoleUnmortgage').disabled = !can(anyOwned(a,E.canUnmortgage));
+  const me = MODE.online ? S.players[NET.seat] : S.players[S.current];
+  document.getElementById('btnConsoleTrade').disabled = busy || !me || me.bankrupt || !!S.trade || (S.pending&&S.pending.type==='auction') || S.phase==='ended';
+  document.getElementById('btnConsoleEnd').disabled = !can(myTurn && S.phase==='action' && !S.pending && !S.debts.length);
+  if(MODE.online && NET.meta){
+    const m=NET.meta.seats[NET.seat];
+    document.getElementById('btnAway').textContent = m&&m.away ? '👋 Je suis là' : '💤 Je m\'absente';
+  }
+  document.getElementById('btnSound').textContent = UI.sound?'🔊':'🔇';
+}
+
+// Bandeaux au-dessus du plateau.
+function renderBanners(){
+  const el=document.getElementById('banners');
+  let html='';
+  const boardWrap=document.querySelector('.board-wrap');
+  let veil=document.getElementById('pauseVeil');
+  if(MODE.online){
+    const m=NET.meta;
+    const iAmHost = m && m.hostSeat===NET.seat;
+    if(!NET.connected) html+=`<div class="banner danger">📡 Connexion perdue — reconnexion en cours…</div>`;
+    if(m){
+      const me=m.seats[NET.seat];
+      if(me && me.away && !me.removed) html+=`<div class="banner info">💤 Vous êtes absent : vos tours sont joués prudemment. <button class="btn-sm green" onclick="toggleAway()">Je suis là</button></div>`;
+      const awaited=S?E.awaiting(S):[];
+      m.seats.forEach(s=>{
+        if(s.removed || s.seat===NET.seat) return;
+        if(s.needsDecision){
+          html+= iAmHost
+            ? `<div class="banner warn">⚠️ ${pname(s)} est déconnecté depuis plus de 2 min.
+                <button class="btn-sm" onclick="hostCmd('wait',${s.seat})">Attendre</button>
+                <button class="btn-sm green" onclick="hostCmd('auto',${s.seat})">Jouer pour lui</button>
+                <button class="btn-sm red" onclick="if(confirm('Retirer ce joueur ? Ses biens retourneront à la banque.')) hostCmd('remove',${s.seat})">Retirer</button></div>`
+            : `<div class="banner warn">⚠️ ${pname(s)} est déconnecté : l'hôte décide de la suite.</div>`;
+        } else if(!s.connected && !s.auto && awaited.includes(s.seat)){
+          html+=`<div class="banner warn">⏳ En attente de ${pname(s)} (reconnexion${s.waitForever?'':', <span data-grace="'+(s.graceLeft||0)+'"></span>'})…</div>`;
+        }
+      });
+      if(!veil && m.paused){
+        veil=document.createElement('div'); veil.id='pauseVeil'; veil.className='pause-veil';
+        boardWrap.appendChild(veil);
+      }
+      if(veil){
+        if(m.paused) veil.innerHTML=`<div class="banner">⏸️ Partie en pause ${iAmHost?'<button class="btn-roll" onclick="hostCmd(\'resume\')">▶ Reprendre</button>':'(l\'hôte la reprendra)'}</div>`;
+        else veil.remove();
+      }
+    }
+  }
+  if(S && S.trade && isMe(S.trade.from) && MODE.online){
+    html+=`<div class="banner info">🔁 Proposition envoyée à ${pname(S.players[S.trade.to])}… <button class="btn-sm" onclick="doAction({type:'trade_cancel'})">Annuler</button></div>`;
+  }
+  if(S && S.debts.length && MODE.online && !isMe(S.debts[0].from)){
+    html+=`<div class="banner">💸 ${pname(S.players[S.debts[0].from])} cherche de quoi payer ${money(S.debts[0].amount)}…</div>`;
+  }
+  el.innerHTML=html;
+  tickTimers();
+}
+
 function renderAll(){
+  if(!S) return;
   renderPawns();
-  renderCellAlerts();
+  renderCellState();
   renderSidebarPanels();
+  renderTurnLine();
   renderConsoleBar();
-  document.getElementById('turnNum').textContent=G.turn;
+  renderBanners();
+  document.getElementById('turnNum').textContent=S.turn;
+}
+
+function setSmallDice(d){
+  document.getElementById('dice1').textContent=DICE_FACES[d[0]-1];
+  document.getElementById('dice2').textContent=DICE_FACES[d[1]-1];
+  document.getElementById('diceTotal').textContent=d[0]+d[1];
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// DICE & MOVEMENT
+// ACTIONS → MOTEUR (local) ou SERVEUR (en ligne)
 // ══════════════════════════════════════════════════════════════════════════════
 
-const PAWN_HOP_MS = 140;            // duration of one cell-to-cell hop
-const PAWN_HOP_MAX_TOTAL_MS = 1400; // cap on a whole walk's duration, however many hops
+// En local, qui fait l'action ? (tout le monde joue sur le même écran)
+function defaultActor(a){
+  if(['build','upgrade','sell_house','sell_hotel','mortgage','unmortgage'].includes(a.type)) return E.manager(S);
+  if(a.type==='trade_accept'||a.type==='trade_reject') return S.trade?S.trade.to:null;
+  if(a.type==='trade_cancel') return S.trade?S.trade.from:null;
+  if(a.type==='bankrupt') return S.debts[0]?S.debts[0].from:null;
+  if(S.pending && S.pending.player!==undefined && ['buy','decline','choose_pay','choose_draw'].includes(a.type)) return S.pending.player;
+  return S.current;
+}
+
+function doAction(action, actor){
+  if(!S || S.phase==='ended') return;
+  if(MODE.online){
+    if(!NET.connected){ toast('Connexion perdue : action impossible pour le moment.'); return; }
+    if(UI.inflight) return;
+    UI.inflight=true;
+    clearTimeout(UI.inflightTimer);
+    UI.inflightTimer=setTimeout(()=>{ UI.inflight=false; renderConsoleBar(); }, 6000);
+    NET.send({type:'act', action});
+    renderConsoleBar();
+    return;
+  }
+  if(UI.processing) return;
+  if(actor===undefined) actor=defaultActor(action);
+  const r=E.apply(S, actor, action);
+  if(!r.ok){ toast(r.error); sfx('error'); return; }
+  enqueue({events:r.events, state:r.state});
+}
+
+function rollDice(){ doAction({type:'roll'}); }
+function endTurn(){ doAction({type:'end_turn'}); }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FILE D'ÉVÉNEMENTS : chaque mise à jour est animée dans l'ordre
+// ══════════════════════════════════════════════════════════════════════════════
+
+function enqueue(u){ UI.queue.push(u); if(!UI.processing) processQueue(); }
+
+async function processQueue(){
+  UI.processing=true;
+  renderConsoleBar();
+  while(UI.queue.length){
+    const u=UI.queue.shift();
+    // Si on a pris du retard (reconnexion, onglet en arrière-plan), on saute les animations.
+    const fast = UI.queue.length>1 || document.hidden;
+    for(const ev of (u.events||[])){
+      try{ await playEvent(ev, fast); }catch(e){ console.error(e); }
+    }
+    S=u.state;
+    S.players.forEach(p=>UI.pos[p.id]=p.pos);
+    if(UI.modal && UI.modal.refresh){ try{ UI.modal.refresh(); }catch(e){ console.error(e); } }
+    renderAll();
+  }
+  UI.processing=false;
+  renderConsoleBar();
+  saveSolo();
+  if(S.phase==='ended'){ closeModal(true); showWin(); return; }
+  syncDecisionUI();
+}
+
+async function playEvent(ev, fast){
+  switch(ev.t){
+    case 'log': appendLog(ev.msg, ev.kind); break;
+    case 'dice':
+      sfx('dice');
+      if(fast) setSmallDice(ev.d); else await animateDiceRoll(ev.d[0], ev.d[1]);
+      break;
+    case 'move': {
+      const end=ev.path[ev.path.length-1];
+      if(ev.kind==='walk' && !fast) await walkPawn(ev.player, ev.path);
+      UI.pos[ev.player]=end;
+      positionAllPawnTokens();
+      if(ev.kind==='teleport' && !fast){ sfx('whoosh'); await delay(250); }
+      break;
+    }
+    case 'card': sfx('card'); await showCardEvent(ev, fast); break;
+    case 'turn': if(MODE.online && ev.player===NET.seat) sfx('myturn'); break;
+    case 'auction': sfx('gavel'); break;
+    case 'trade': if(isMe(ev.to)) sfx('notify'); break;
+    case 'bankrupt': sfx('bankrupt'); break;
+    case 'end': sfx('win'); break;
+  }
+}
 
 // Flash both the small console dice and the big center-screen dice through
 // random faces, then settle on d1/d2 and hold briefly before fading the
-// center overlay out. Returns a promise so rollDice() can wait for the
+// center overlay out. Returns a promise so the queue can wait for the
 // "drama" to finish before the pawn actually starts moving.
 function animateDiceRoll(d1, d2){
   return new Promise(resolve=>{
@@ -1191,365 +1688,125 @@ function animateDiceRoll(d1, d2){
   });
 }
 
-async function rollDice(){
-  if(G.phase!=='roll' || G.animating) return;
-  G.animating=true;
-  document.getElementById('btnRoll').disabled=true;
+// ══════════════════════════════════════════════════════════════════════════════
+// FENÊTRES (modales)
+// ══════════════════════════════════════════════════════════════════════════════
+// Trois sortes :
+//   • 'decision' : ce que le jeu attend (achat, enchère, dette, échange reçu...).
+//     Elle découle de l'état : syncDecisionUI() l'ouvre / la ferme toute seule.
+//   • 'card'     : une carte tirée, pendant l'animation.
+//   • 'user'     : ouverte par un bouton (alertes, hypothèques, infos, menu...).
+//     Quand on la ferme, la décision en attente éventuelle revient.
 
-  const p=G.players[G.currentPlayer];
-  const d1=Math.ceil(Math.random()*6), d2=Math.ceil(Math.random()*6);
-  const total=d1+d2;
-  const doubles=d1===d2;
+function openModal(o){
+  document.getElementById('modalTitle').innerHTML=o.title||'';
+  document.getElementById('modalBody').innerHTML=o.body||'';
+  document.getElementById('modalFooter').innerHTML=o.footer||'';
+  document.getElementById('modalClose').style.display = o.closable===false ? 'none' : '';
+  document.getElementById('modalBox').classList.toggle('wide', !!o.wide);
+  document.getElementById('modalOverlay').classList.remove('hidden');
+  UI.modal={kind:o.kind||'user', key:o.key||null, refresh:o.refresh||null};
+}
 
-  await animateDiceRoll(d1,d2);
+function closeModal(silent){
+  document.getElementById('modalOverlay').classList.add('hidden');
+  const was=UI.modal;
+  UI.modal=null;
+  if(!silent && was && was.kind==='user') syncDecisionUI();
+}
 
-  G.diceRoll=[d1,d2];
-  log(`${pawnLogChar(p)} ${p.name} lance : ${DICE_FACES[d1-1]}+${DICE_FACES[d2-1]} = ${total}${doubles?' (doubles!)':''}`, 'move');
-
-  if(p.inJail){
-    if(doubles){p.inJail=false;p.jailTurns=0;log(`${pawnLogChar(p)} Sort de prison grâce aux doubles !`,'gain');}
-    else{
-      p.jailTurns++;
-      if(p.jailTurns>=3){p.inJail=false;p.jailTurns=0;p.money-=50;log(`${pawnLogChar(p)} Sort de prison après 3 tours. Paye 50 oufingoufs.`,'loss');}
-      else{
-        log(`${pawnLogChar(p)} En prison — tour ${p.jailTurns}/3.`);
-        G.phase='action';
-        G.animating=false;
-        renderAll();
-        return;
-      }
+// Quelle décision afficher sur CET écran ?
+function currentDecision(){
+  if(!S || S.phase==='ended') return null;
+  const mine = pid => !MODE.online || pid===NET.seat;
+  const d0=S.debts[0];
+  if(d0) return mine(d0.from) ? {key:'debt:'+d0.from, live:true, show:()=>renderDebtModal()} : null;
+  const pd=S.pending;
+  if(pd){
+    if(pd.type==='auction'){
+      if(!MODE.online || pd.participants.includes(NET.seat)) return {key:'auction:'+pd.pos, live:true, show:()=>renderAuctionModal()};
+    } else if(mine(pd.player)){
+      if(pd.type==='buy') return {key:'buy:'+pd.player+':'+pd.pos, live:true, show:()=>renderBuyModal()};
+      if(pd.type==='card_choice') return {key:'choice:'+pd.player, show:()=>renderChoiceModal()};
     }
   }
-
-  if(doubles){
-    G.doublesCount++;
-    if(G.doublesCount>=3){
-      goToJail(p);
-      G.phase='action';
-      G.animating=false;
-      renderAll();
-      return;
-    }
-  } else {
-    G.doublesCount=0;
-  }
-
-  await movePlayer(p, total);
-  G.animating=false;
+  if(S.trade && mine(S.trade.to)) return {key:'trade:'+S.seq, show:()=>renderTradeOfferModal()};
+  return null;
 }
 
-// Walks the pawn cell-by-cell to its new position (see walkPawn()), then
-// applies the "passed Go" bonus and hands off to landOn(). Awaited by
-// rollDice() for a normal roll, but also called fire-and-forget by card
-// effects (move_to/move_by) — either way the animation still plays.
-async function movePlayer(p, steps){
-  const oldPos=p.pos;
-  const path=pathForSteps(oldPos, steps);
-  const newPos=path.length?path[path.length-1]:oldPos;
-  G.phase='action';
-  renderSidebarPanels();
-  renderConsoleBar();
-  await walkPawn(p, path);
-  p.pos=newPos;
-  // newPos!==0 excludes landing *exactly* on the Départ cell: that case is
-  // handled by landOn()'s own 'go' branch below, which also grants 200 oufingoufs —
-  // without this guard, a move that lands precisely on 0 would pay the
-  // bonus twice (once here for "passed through 0", once for "arrived on
-  // the Départ cell"). Only an actual pass-through (0 crossed mid-path,
-  // final position elsewhere) should trigger this bonus.
-  if(steps>0 && newPos!==0 && path.includes(0)){
-    p.money+=200;
-    log(`${pawnLogChar(p)} Passe par la case Départ → reçoit 200 oufingoufs`,'gain');
-  }
-  renderAll();
-  await delay(150);
-  landOn(p);
+function syncDecisionUI(){
+  if(UI.processing || !S) return;
+  const d=currentDecision();
+  const m=UI.modal;
+  if(!d){ if(m && m.kind==='decision') closeModal(true); return; }
+  if(m && m.kind==='user') return;                 // la décision reviendra à la fermeture
+  if(m && m.kind==='decision' && m.key===d.key){ if(d.live) d.show(); return; }
+  d.show();
 }
 
-function landOn(p){
-  const cell=G.board[p.pos];
-  if(!cell) return;
-  log(`${pawnLogChar(p)} arrive sur : ${cell.name}`,'move');
-
-  switch(cell.type){
-    case 'go':
-      p.money+=200;
-      log(`${pawnLogChar(p)} Case Départ → reçoit 200 oufingoufs`,'gain');
-      break;
-    case 'tax':
-      p.money-=cell.price;
-      log(`${pawnLogChar(p)} Taxe : paye ${cell.price} oufingoufs`,'loss');
-      break;
-    case 'goto_jail':
-      goToJail(p);
-      break;
-    case 'jail': case 'free':
-      log(`${pawnLogChar(p)} Simple visite.`);
-      break;
-    case 'chance':
-      drawCard(p,'chance');
-      break;
-    case 'community':
-      drawCard(p,'community');
-      break;
-    case 'property': case 'station': case 'utility':
-      handlePropertyLanding(p,cell);
-      break;
-  }
-  renderAll();
+// ── Carte tirée ──────────────────────────────────────────────────────────
+function cardIconHtml(icon){
+  if(icon && /^(https?:\/\/|data:image)/i.test(icon)) return `<img src="${esc(icon)}" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:10px">`;
+  return esc(icon||'🃏');
 }
-
-function goToJail(p){
-  p.pos=10; p.inJail=true; p.jailTurns=0;
-  log(`⛓️ ${pawnLogChar(p)} ${p.name} est envoyé en prison !`,'loss');
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// CARDS
-// ══════════════════════════════════════════════════════════════════════════════
-
-function drawCard(p,deck){
-  const cards=deck==='chance'?G.chanceCards:G.communityCards;
-  if(!cards||cards.length===0){log('Paquet vide.');return;}
-  const idx=deck==='chance'?G.chanceIdx:G.communityIdx;
-  const card=cards[idx%cards.length];
-  if(deck==='chance') G.chanceIdx++;
-  else G.communityIdx++;
-
-  log(`${pawnLogChar(p)} Tire une carte ${deck==='chance'?'Chance':'Communauté'} : "${card.text}"`, 'chance');
-  applyCard(p, card, deck);
-}
-
-function applyCard(p, card, deck){
-  const others=G.players.filter(pl=>!pl.bankrupt&&pl.id!==p.id);
-  let amountBadge='';
-  let applyFn=()=>{};
-
+function cardBadgeHtml(card){
   switch(card.effect){
-    case 'gain':
-      applyFn=()=>{p.money+=card.amount;log(`${pawnLogChar(p)} Reçoit ${card.amount} oufingoufs`,'gain');};
-      amountBadge=`<div class="card-display-amount pos">+ ${MONEY_ICON}${card.amount}</div>`;
-      break;
-    case 'lose':
-      applyFn=()=>{p.money-=card.amount;log(`${pawnLogChar(p)} Paie ${card.amount} oufingoufs`,'loss');};
-      amountBadge=`<div class="card-display-amount neg">- ${MONEY_ICON}${card.amount}</div>`;
-      break;
-    case 'goto_jail':
-      applyFn=()=>goToJail(p);
-      amountBadge=`<div style="font-size:30px">⛓️</div>`;
-      break;
-    case 'goto_direct':
-      // Instant reposition to an arbitrary cell, no walk animation and no
-      // "passed Go" bonus even if the straight-line path would have crossed
-      // position 0 — same convention as goto_jail above (a direct send is
-      // not a real board movement), but the destination is whatever
-      // card.targetPos says instead of being hardcoded to the jail cell.
-      applyFn=()=>{
-        const target=card.targetPos||0;
-        p.pos=target;
-        log(`${pawnLogChar(p)} Est envoyé directement case ${target} : ${G.board[target]?.name}`,'move');
-        landOn(p);
-      };
-      amountBadge=`<div style="font-size:22px">⇢ case ${card.targetPos}</div>`;
-      break;
-    case 'get_out':
-      applyFn=()=>{p.getOutCards++;log(`${pawnLogChar(p)} Obtient une carte sortie de prison.`,'gain');};
-      amountBadge=`<div style="font-size:30px">🔑</div>`;
-      break;
-    case 'move_to':
-      applyFn=()=>{
-        const target=card.targetPos||0;
-        // card.moveBackward marks a "return to a previous cell" card (e.g.
-        // Redoublement): it should never pay the "passed Départ" bonus, so
-        // whenever the forward route would have to wrap around through 0 to
-        // reach the target (i.e. the pawn is currently past it), send it
-        // backward instead — movePlayer()'s passing bonus only fires for
-        // steps>0, so a backward move never triggers it. When the pawn is
-        // already before the target, forward is already safe (no wrap
-        // through 0) and stays the natural, shorter route either way.
-        const wrapsThroughDepart = p.pos > target;
-        const goBackward = !!card.moveBackward && wrapsThroughDepart;
-        const steps = goBackward ? -(p.pos-target) : (target-p.pos+40)%40;
-        log(`${pawnLogChar(p)} ${goBackward?'Recule jusqu\'à la':'Se déplace'} case ${target} : ${G.board[target]?.name}`,'move');
-        movePlayer(p,steps);
-      };
-      amountBadge=`<div style="font-size:24px">${card.moveBackward?'←':'→'} case ${card.targetPos}</div>`;
-      break;
-    case 'move_by':
-      applyFn=()=>{
-        const steps=card.moveSteps||0;
-        movePlayer(p,steps);
-        log(`${pawnLogChar(p)} Avance de ${steps} cases`,'move');
-      };
-      amountBadge=`<div style="font-size:20px">${card.moveSteps>0?'+':''}${card.moveSteps} cases</div>`;
-      break;
-    case 'repairs':
-      applyFn=()=>{
-        let total=0;
-        p.properties.forEach(pos=>{
-          const b=G.propertyBuildings[pos]||{houses:0,hotel:0};
-          total+=b.houses*card.perHouse+b.hotel*card.perHotel;
-        });
-        p.money-=total;
-        log(`${pawnLogChar(p)} Réparations : paye ${total} oufingoufs`,'loss');
-      };
-      amountBadge=`<div style="font-size:13px;color:#888">${ALERTE_ICON} ${MONEY_ICON}${card.perHouse}/alerte<br>${ALERTEPRISON_ICON} ${MONEY_ICON}${card.perHotel}/alerteprison</div>`;
-      break;
-    case 'birthday': case 'collect_all':
-      applyFn=()=>{
-        const amt=card.collectAmount||card.amount||0;
-        others.forEach(o=>{o.money-=amt;});
-        p.money+=amt*others.length;
-        log(`${pawnLogChar(p)} Collecte ${amt} oufingoufs de chaque joueur → total ${amt*others.length} oufingoufs`,'gain');
-      };
-      amountBadge=`<div class="card-display-amount pos">+ ${MONEY_ICON}${card.collectAmount||card.amount} × joueurs</div>`;
-      break;
-    case 'pay_all':
-      applyFn=()=>{
-        const amt=card.amount||0;
-        others.forEach(o=>{o.money+=amt;});
-        p.money-=amt*others.length;
-        log(`${pawnLogChar(p)} Verse ${amt} oufingoufs à chaque joueur`,'loss');
-      };
-      amountBadge=`<div class="card-display-amount neg">- ${MONEY_ICON}${card.amount} × joueurs</div>`;
-      break;
-    case 'pay_or_chance':
-      // The only card effect that isn't a single deterministic outcome: the
-      // player picks between paying a fixed fine or drawing a Chance card
-      // instead. showCardModal()'s single "OK" button can't express a
-      // choice, so this bypasses it entirely and shows its own two-button
-      // modal (see showChoiceModal below), then returns immediately.
-      showChoiceModal(p, card, deck);
-      return;
-    default:
-      applyFn=()=>{log(`${pawnLogChar(p)} Carte spéciale : ${card.text}`,'chance');};
+    case 'gain': return `<div class="card-display-amount pos">+ ${money(card.amount)}</div>`;
+    case 'lose': return `<div class="card-display-amount neg">- ${money(card.amount)}</div>`;
+    case 'goto_jail': return `<div style="font-size:30px">⛓️</div>`;
+    case 'goto_direct': return `<div style="font-size:22px">⇢ ${esc(S.board[card.targetPos]?S.board[card.targetPos].name:'case '+card.targetPos)}</div>`;
+    case 'get_out': return `<div style="font-size:30px">🔑</div>`;
+    case 'move_to': return `<div style="font-size:22px">${card.moveBackward?'←':'→'} ${esc(S.board[card.targetPos]?S.board[card.targetPos].name:'case '+card.targetPos)}</div>`;
+    case 'move_by': return `<div style="font-size:20px">${card.moveSteps>0?'+':''}${card.moveSteps} cases</div>`;
+    case 'repairs': return `<div style="font-size:13px;color:#888">${ALERTE_ICON} ${money(card.perHouse)}/alerte<br>${ALERTEPRISON_ICON} ${money(card.perHotel)}/alerteprison</div>`;
+    case 'birthday': case 'collect_all': return `<div class="card-display-amount pos">+ ${money(card.collectAmount||card.amount)} × joueurs</div>`;
+    case 'pay_all': return `<div class="card-display-amount neg">- ${money(card.amount)} × joueurs</div>`;
+    case 'pay_or_chance': return `<div class="card-display-amount neg">- ${money(card.amount)} <span style="opacity:.6;font-size:.7em">ou tirer Chance</span></div>`;
+    default: return '';
   }
-
-  showCardModal(card, deck, amountBadge, applyFn);
 }
-
-function showCardModal(card, deck, amountBadge, applyFn){
-  const isChance=deck==='chance';
-  document.getElementById('modalTitle').textContent=isChance?'🃏 Chance':'🏘️ Communauté';
-  document.getElementById('modalBody').innerHTML=`
-    <div class="card-display ${deck}">
-      <div class="card-display-deck">${isChance?'CHANCE':'COMMUNAUTÉ'}</div>
-      <div class="card-display-icon">${card.icon||'🃏'}</div>
+function cardHtml(deck, card){
+  return `<div class="card-display ${deck==='chance'?'chance':'community'}">
+      <div class="card-display-deck">${deck==='chance'?'CHANCE':'COMMUNAUTÉ'}</div>
+      <div class="card-display-icon">${cardIconHtml(card.icon)}</div>
       <div class="card-display-text">${fmtM(card.text)}</div>
-      ${amountBadge}
+      ${cardBadgeHtml(card)}
       ${card.flavor?`<div class="card-display-flavor">${fmtM(card.flavor)}</div>`:''}
-    </div>
-  `;
-  document.getElementById('modalFooter').innerHTML=`
-    <button class="btn-roll" style="font-size:16px;padding:10px 28px" onclick="confirmCard()">OK</button>
-  `;
-  G.pendingCard=applyFn;
-  document.getElementById('modalOverlay').classList.remove('hidden');
+    </div>`;
 }
 
-function confirmCard(){
-  if(G.pendingCard){G.pendingCard();G.pendingCard=null;}
-  closeModal();
-  renderAll();
+// Affiche la carte à tout le monde. Le joueur qui l'a tirée clique OK ; les
+// autres la voient passer quelques secondes.
+function showCardEvent(ev, fast){
+  return new Promise(resolve=>{
+    const mine=isMe(ev.player);
+    let done=false;
+    const finish=()=>{ if(done) return; done=true; UI.cardFinish=null; closeModal(true); resolve(); };
+    UI.cardFinish=finish;
+    const who = (!mine || !MODE.online) ? `<div class="hint" style="text-align:center">${pname(S.players[ev.player])} tire une carte :</div>` : '';
+    openModal({ kind:'card', closable:false, title: ev.deck==='chance'?'🃏 Chance':'🏘️ Communauté',
+      body: who+cardHtml(ev.deck, ev.card),
+      footer: `<button class="btn-roll" style="font-size:16px;padding:10px 28px" onclick="UI.cardFinish&&UI.cardFinish()">OK</button>` });
+    if(fast) setTimeout(finish, 500);
+    else if(!mine || ev.card.effect==='pay_or_chance') setTimeout(finish, mine?900:3200);
+  });
 }
 
-// Two-button variant of showCardModal(), used only by the 'pay_or_chance'
-// effect: the player explicitly picks "Payer" or "Tirer une carte Chance"
-// instead of a single "OK" confirming one predetermined outcome. Player id
-// (not the player object) is threaded through the onclick handlers since
-// they're serialized into HTML strings.
-function showChoiceModal(p, card, deck){
-  const isChance=deck==='chance';
-  document.getElementById('modalTitle').textContent=isChance?'🃏 Chance':'🏘️ Communauté';
-  document.getElementById('modalBody').innerHTML=`
-    <div class="card-display ${deck}">
-      <div class="card-display-deck">${isChance?'CHANCE':'COMMUNAUTÉ'}</div>
-      <div class="card-display-icon">${card.icon||'🃏'}</div>
-      <div class="card-display-text">${fmtM(card.text)}</div>
-      <div class="card-display-amount neg">- ${MONEY_ICON}${card.amount} <span style="opacity:.6;font-size:.7em">ou tirer Chance</span></div>
-      ${card.flavor?`<div class="card-display-flavor">${fmtM(card.flavor)}</div>`:''}
-    </div>
-  `;
-  document.getElementById('modalFooter').innerHTML=`
-    <button class="btn-roll" style="font-size:14px;padding:9px 18px" onclick="resolveChoicePay(${p.id},${card.amount})">Payer ${MONEY_ICON}${card.amount}</button>
-    <button class="btn-roll" style="font-size:14px;padding:9px 18px;background:#e8a830" onclick="resolveChoiceDraw(${p.id})">🃏 Tirer une carte Chance</button>
-  `;
-  document.getElementById('modalOverlay').classList.remove('hidden');
-}
-
-function resolveChoicePay(playerId, amount){
-  const p = G.players.find(pl=>pl.id===playerId);
-  if(!p) return;
-  p.money -= amount;
-  log(`${pawnLogChar(p)} Choisit de payer ${amount} oufingoufs`,'loss');
-  closeModal();
-  renderAll();
-}
-
-function resolveChoiceDraw(playerId){
-  const p = G.players.find(pl=>pl.id===playerId);
-  if(!p) return;
-  log(`${pawnLogChar(p)} Choisit de tirer une carte Chance plutôt que payer`,'chance');
-  closeModal();
-  drawCard(p,'chance');
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// PROPERTIES
-// ══════════════════════════════════════════════════════════════════════════════
-
-function isOwned(pos){return G.players.some(p=>p.properties.includes(pos));}
-function ownerOf(pos){return G.players.find(p=>p.properties.includes(pos));}
-
-function handlePropertyLanding(p, cell){
-  const owner=ownerOf(cell.pos);
-  if(!owner){
-    showBuyModal(p, cell);
-    return;
-  }
-  if(owner.id===p.id){log(`${pawnLogChar(p)} C'est votre propriété.`);return;}
-  if(G.mortgaged.has(cell.pos)){log(`${cell.name} est hypothéquée, pas de loyer.`);return;}
-
-  const rent=calcRent(cell, owner);
-  p.money-=rent;
-  owner.money+=rent;
-  log(`${pawnLogChar(p)} Paye loyer ${rent} oufingoufs à ${pawnLogChar(owner)} ${owner.name} pour ${cell.name}`,'loss');
-  renderSidebarPanels();
-}
-
-function calcRent(cell, owner){
-  if(cell.type==='station'){
-    const stationsOwned=owner.properties.filter(pos=>G.board[pos]?.type==='station').length;
-    return cell.rents[Math.min(stationsOwned-1,3)]||25;
-  }
-  if(cell.type==='utility'){
-    const utilitiesOwned=owner.properties.filter(pos=>G.board[pos]?.type==='utility').length;
-    const diceTotal=G.diceRoll?G.diceRoll[0]+G.diceRoll[1]:7;
-    return utilitiesOwned>=2?diceTotal*10:diceTotal*4;
-  }
-  const b=G.propertyBuildings[cell.pos]||{houses:0,hotel:0};
-  if(b.hotel) return cell.rents[5];
-  if(b.houses>0) return cell.rents[b.houses];
-  // Terrain nu : loyer doublé si le joueur possède tout le groupe
-  const groupProps=G.board.filter(c=>c.group===cell.group&&c.type==='property');
-  const ownsAll=groupProps.every(c=>owner.properties.includes(c.pos));
-  return ownsAll?cell.rents[0]*2:cell.rents[0];
-}
-
+// ── Achat ─────────────────────────────────────────────────────────────────
 function titleDeedHtml(cell, color){
   const rentRows = cell.type==='property' ? `
-      <tr><td>Loyer nu</td><td>${MONEY_ICON}${cell.rents[0]}</td></tr>
-      <tr><td>Groupe complet (nu ×2)</td><td>${MONEY_ICON}${cell.rents[0]*2}</td></tr>
-      <tr><td>${ALERTE_ICON} Avec 1 alerte</td><td>${MONEY_ICON}${cell.rents[1]}</td></tr>
-      <tr><td>${ALERTE_ICON} Avec 2 alertes</td><td>${MONEY_ICON}${cell.rents[2]}</td></tr>
-      <tr><td>${ALERTE_ICON} Avec 3 alertes</td><td>${MONEY_ICON}${cell.rents[3]}</td></tr>
-      <tr><td>${ALERTE_ICON} Avec 4 alertes</td><td>${MONEY_ICON}${cell.rents[4]}</td></tr>
-      <tr><td>${ALERTEPRISON_ICON} Avec alerteprison</td><td>${MONEY_ICON}${cell.rents[5]}</td></tr>
+      <tr><td>Loyer nu</td><td>${money(cell.rents[0])}</td></tr>
+      <tr><td>Groupe complet (nu ×2)</td><td>${money(cell.rents[0]*2)}</td></tr>
+      <tr><td>${ALERTE_ICON} Avec 1 alerte</td><td>${money(cell.rents[1])}</td></tr>
+      <tr><td>${ALERTE_ICON} Avec 2 alertes</td><td>${money(cell.rents[2])}</td></tr>
+      <tr><td>${ALERTE_ICON} Avec 3 alertes</td><td>${money(cell.rents[3])}</td></tr>
+      <tr><td>${ALERTE_ICON} Avec 4 alertes</td><td>${money(cell.rents[4])}</td></tr>
+      <tr><td>${ALERTEPRISON_ICON} Avec alerteprison</td><td>${money(cell.rents[5])}</td></tr>
     ` : cell.type==='station' ? `
-      <tr><td>1 gare</td><td>${MONEY_ICON}${cell.rents[0]}</td></tr>
-      <tr><td>2 gares</td><td>${MONEY_ICON}${cell.rents[1]}</td></tr>
-      <tr><td>3 gares</td><td>${MONEY_ICON}${cell.rents[2]}</td></tr>
-      <tr><td>4 gares</td><td>${MONEY_ICON}${cell.rents[3]}</td></tr>
+      <tr><td>1 gare</td><td>${money(cell.rents[0])}</td></tr>
+      <tr><td>2 gares</td><td>${money(cell.rents[1])}</td></tr>
+      <tr><td>3 gares</td><td>${money(cell.rents[2])}</td></tr>
+      <tr><td>4 gares</td><td>${money(cell.rents[3])}</td></tr>
     ` : `<tr><td colspan="2">Loyer = dés × 4 (1 compagnie possédée) ou × 10 (2 compagnies)</td></tr>`;
 
   return `
@@ -1557,308 +1814,813 @@ function titleDeedHtml(cell, color){
       <div class="td-band" style="background:${color}"></div>
       <div class="td-body">
         <div class="td-kicker">Titre de propriété</div>
-        <div class="td-name">${cell.name}</div>
+        <div class="td-name">${esc(cell.name)}</div>
         <table class="prop-table">${rentRows}</table>
-        ${cell.price?`<div class="td-foot">Hypothèque ${MONEY_ICON}${cell.mortgage}${cell.buildCost?` · Alerte ${MONEY_ICON}${cell.buildCost}`:''}</div>`:''}
+        ${cell.price?`<div class="td-foot">Hypothèque ${money(cell.mortgage)}${cell.buildCost?` · Alerte ${money(cell.buildCost)}`:''}</div>`:''}
       </div>
     </div>`;
 }
 
-function showBuyModal(p, cell){
-  const color=GROUP_COLORS[cell.group]||'#888';
-  const canAfford = p.money>=cell.price;
-  document.getElementById('modalTitle').textContent='À vendre';
-  document.getElementById('modalBody').innerHTML=`
-    <div class="buy-price">${MONEY_ICON}${cell.price}</div>
-    ${titleDeedHtml(cell, color)}
-  `;
-  document.getElementById('modalFooter').innerHTML=`
-    <button class="btn-sm" onclick="closeModal()">Passer</button>
-    <button class="btn-roll" style="flex:1" ${canAfford?'':'disabled'} onclick="buyProperty();closeModal()">Acheter</button>
-  `;
-  document.getElementById('modalOverlay').classList.remove('hidden');
+function renderBuyModal(){
+  const pd=S.pending, p=S.players[pd.player], cell=S.board[pd.pos];
+  const canAfford=p.money>=cell.price;
+  const canRaise=anyOwned(p.id,E.canMortgage)||anyOwned(p.id,E.canSellHouse)||anyOwned(p.id,E.canSellHotel);
+  openModal({ kind:'decision', key:'buy:'+pd.player+':'+pd.pos, closable:false,
+    title:`À vendre${!MODE.online?' — '+pname(p):''}`,
+    body:`<div class="buy-price">${money(cell.price)}</div>
+      ${titleDeedHtml(cell, GROUP_COLORS[cell.group]||'#888')}
+      <div class="hint">Vous avez ${money(p.money)}.${canAfford?'':' Pas assez pour acheter'+(canRaise?' : hypothéquez d\'abord, ou passez.':'.')}
+      ${S.config.auctions?' Si vous passez, le terrain est mis aux enchères.':''}</div>`,
+    footer:`${canRaise?`<button class="btn-sm" onclick="showMortgageModal('mortgage')">🏦 Hypothéquer…</button>`:''}
+      <button class="btn-sm" onclick="doAction({type:'decline'})">${S.config.auctions?'Passer (enchères)':'Passer'}</button>
+      <button class="btn-roll" style="flex:1" ${canAfford?'':'disabled'} onclick="doAction({type:'buy'})">Acheter</button>` });
 }
 
-function buyProperty(){
-  const p=G.players[G.currentPlayer];
-  const cell=G.board[p.pos];
-  if(!cell||p.money<cell.price) return;
-  p.money-=cell.price;
-  p.properties.push(cell.pos);
-  log(`${pawnLogChar(p)} ${p.name} achète ${cell.name} pour ${cell.price} oufingoufs`,'gain');
-  renderAll();
+// ── Payer ou tirer une carte ───────────────────────────────────────────────
+function renderChoiceModal(){
+  const pd=S.pending, p=S.players[pd.player];
+  openModal({ kind:'decision', key:'choice:'+pd.player, closable:false,
+    title:`🏘️ Votre choix${!MODE.online?' — '+pname(p):''}`,
+    body:`<div class="card-display community"><div class="card-display-text">Payer l'amende de ${money(pd.amount)}, ou tenter sa chance avec une carte Chance ?</div></div>`,
+    footer:`<button class="btn-roll" style="font-size:14px;padding:9px 18px" onclick="doAction({type:'choose_pay'})">Payer ${money(pd.amount)}</button>
+      <button class="btn-roll" style="font-size:14px;padding:9px 18px;background:#e8a830" onclick="doAction({type:'choose_draw'})">🃏 Tirer une carte Chance</button>` });
 }
+
+// ── Enchères ───────────────────────────────────────────────────────────────
+function auctionRowHtml(pid){
+  const pd=S.pending, p=S.players[pid];
+  const passed=pd.passed.includes(pid), leader=pd.highBidder===pid;
+  const act = MODE.online ? '' : `,${pid}`;
+  const btn=(inc)=>{ const v=pd.highBid+inc; return `<button class="btn-sm green" ${v>p.money||passed?'disabled':''} onclick="doAction({type:'bid',amount:${v}}${act})">${v}</button>`; };
+  return `<div class="auction-row${passed?' passed':''}${leader?' leader':''}">
+    <span class="grow">${pname(p)} <span class="hint">(${money(p.money)})</span>${leader?' 🏆':''}${passed?' — a passé':''}</span>
+    ${passed?'':`${btn(1)}${btn(10)}${btn(50)}${btn(100)}
+      <input class="bid-input" type="number" id="bidInput${pid}" min="${pd.highBid+1}" max="${p.money}" placeholder="${pd.highBid+1}">
+      <button class="btn-sm" onclick="customBid(${pid})">Offrir</button>
+      <button class="btn-sm red" ${leader?'disabled title="Vous menez l\'enchère"':''} onclick="doAction({type:'pass'}${act})">Passer</button>`}
+  </div>`;
+}
+function customBid(pid){
+  const v=parseInt(document.getElementById('bidInput'+pid).value,10);
+  if(!Number.isInteger(v)){ toast('Indiquez un montant.'); return; }
+  doAction({type:'bid', amount:v}, MODE.online?undefined:pid);
+}
+function renderAuctionModal(){
+  const pd=S.pending, cell=S.board[pd.pos];
+  // On garde ce qui est en train d'être tapé dans les champs de montant.
+  const typed={}; document.querySelectorAll('.bid-input').forEach(i=>{ typed[i.id]=i.value; });
+  const focused=document.activeElement&&document.activeElement.id;
+  const leader=pd.highBidder!==null?S.players[pd.highBidder]:null;
+  const rows = MODE.online
+    ? auctionRowHtml(NET.seat) + `<div class="hint">Participants : ${pd.participants.map(id=>`${pname(S.players[id])}${pd.passed.includes(id)?' (passe)':''}`).join(' · ')}</div>`
+    : pd.participants.map(auctionRowHtml).join('');
+  openModal({ kind:'decision', key:'auction:'+pd.pos, closable:false, wide:true, title:'🔨 Enchères',
+    body:`<div class="auction-top">
+        <div><div class="td-kicker">${esc(cell.name)}</div><div class="hint">Prix normal ${money(cell.price)}</div></div>
+        <div style="text-align:right"><div class="auction-bid">${pd.highBid?money(pd.highBid):'Aucune offre'}</div>
+        <div class="hint">${leader?'par '+pname(leader):'Ouvert à tous'}</div></div>
+      </div>
+      ${MODE.online?'<div class="hint" id="auctionChipModal"></div>':''}
+      <div class="auction-rows">${rows}</div>
+      <details><summary class="hint" style="cursor:pointer">Voir le titre de propriété</summary>${titleDeedHtml(cell, GROUP_COLORS[cell.group]||'#888')}</details>`,
+    footer:`<span class="hint">Chacun peut enchérir ; le terrain va au dernier enchérisseur quand tous les autres ont passé${MODE.online?' ou après 15 s sans nouvelle offre':''}.</span>` });
+  Object.entries(typed).forEach(([id,v])=>{ const i=document.getElementById(id); if(i) i.value=v; });
+  if(focused){ const f=document.getElementById(focused); if(f) f.focus(); }
+  tickTimers();
+}
+
+// ── Dette ──────────────────────────────────────────────────────────────────
+function renderDebtModal(){
+  const d=S.debts[0], p=S.players[d.from];
+  const to=d.to===null?'la banque':pname(S.players[d.to]);
+  const act = MODE.online?'':`,${p.id}`;
+  const rows=p.properties.map(pos=>{
+    const c=S.board[pos], b=E.bld(S,pos);
+    const btns=[];
+    if(E.canSellHotel(S,p.id,pos)===null) btns.push(`<button class="btn-sm red" onclick="doAction({type:'sell_hotel',pos:${pos}}${act})">Vendre l'alerteprison</button>`);
+    if(E.canSellHouse(S,p.id,pos)===null) btns.push(`<button class="btn-sm red" onclick="doAction({type:'sell_house',pos:${pos}}${act})">Vendre 1 alerte (+${money(Math.floor(c.buildCost/2))})</button>`);
+    if(E.canMortgage(S,p.id,pos)===null) btns.push(`<button class="btn-sm warn" onclick="doAction({type:'mortgage',pos:${pos}}${act})">Hypothéquer (+${money(c.mortgage)})</button>`);
+    const state=b.hotel?` ${ALERTEPRISON_ICON}`:b.houses?` ${ALERTE_ICON}×${b.houses}`:'';
+    return btns.length?`<div class="info-row"><span class="lbl"><span class="swatch" style="background:${GROUP_COLORS[c.group]||'#888'}"></span> ${esc(c.name)}${state}</span><span style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">${btns.join('')}</span></div>`:'';
+  }).join('');
+  openModal({ kind:'decision', key:'debt:'+d.from, closable:false, title:`💸 Dette${!MODE.online?' — '+pname(p):''}`,
+    body:`<div class="debt-box">${MODE.online?'Vous devez':pname(p)+' doit'} <b>${money(d.amount)}</b> à ${to}${d.why?' ('+esc(d.why)+')':''}.<br>
+      Argent disponible : <b>${money(p.money)}</b> — il manque <b>${money(d.amount-p.money)}</b>.<br>
+      <span class="hint">La dette est réglée automatiquement dès que vous avez assez.</span></div>
+      ${rows||'<div class="hint">Plus rien à vendre ni à hypothéquer.</div>'}
+      <div class="hint">Vous pouvez aussi proposer un échange à un autre joueur (bouton 🔁 Échange).</div>`,
+    footer:`<button class="btn-sm" onclick="showTradeComposer()">🔁 Échange…</button>
+      <button class="btn-sm red" onclick="if(confirm('Déclarer faillite ? Vous quitterez la partie.')) doAction({type:'bankrupt'}${act})">🏳️ Déclarer faillite</button>` });
+}
+
+// ── Échanges ───────────────────────────────────────────────────────────────
+function sideHtml(side){
+  const parts=[];
+  if(side.money) parts.push(money(side.money));
+  side.props.forEach(pos=>{ const c=S.board[pos]; parts.push(`<span class="swatch" style="background:${GROUP_COLORS[c.group]||'#888'}"></span> ${esc(c.name)}${E.isMortgaged(S,pos)?' (hypothéquée)':''}`); });
+  if(side.getOut) parts.push(`🔑 ${side.getOut} carte(s) sortie de prison`);
+  return parts.length?parts.map(x=>`<div>${x}</div>`).join(''):'<div class="hint">rien</div>';
+}
+function renderTradeOfferModal(){
+  const t=S.trade, from=S.players[t.from], to=S.players[t.to];
+  const act = MODE.online?'':`,${t.to}`;
+  openModal({ kind:'decision', key:'trade:'+S.seq, closable:false, wide:true,
+    title:`🔁 Proposition d'échange${!MODE.online?' pour '+pname(to):''}`,
+    body:`<div>${pname(from)} vous propose :</div>
+      <div class="trade-cols">
+        <div class="trade-col"><h4>Vous recevez</h4>${sideHtml(t.give)}</div>
+        <div class="trade-col"><h4>Vous donnez</h4>${sideHtml(t.get)}</div>
+      </div>`,
+    footer:`<button class="btn-sm red" onclick="doAction({type:'trade_reject'}${act})">Refuser</button>
+      <button class="btn-sm" onclick="counterTrade()">Contre-proposer…</button>
+      <button class="btn-roll" onclick="doAction({type:'trade_accept'}${act})">Accepter</button>` });
+}
+function counterTrade(){
+  const t=S.trade;
+  doAction({type:'trade_reject'}, MODE.online?undefined:t.to);
+  // Le composeur s'ouvre pré-rempli, dans l'autre sens.
+  setTimeout(()=>showTradeComposer({from:t.to, to:t.from, give:t.get, get:t.give}), MODE.online?150:50);
+}
+
+// Composeur d'échange : choisir le partenaire, ce qu'on donne, ce qu'on demande.
+function showTradeComposer(pre){
+  const from = pre&&pre.from!==undefined ? pre.from : (MODE.online?NET.seat:(E.manager(S)??S.current));
+  const others=S.players.filter(p=>!p.bankrupt&&p.id!==from);
+  if(!others.length){ toast('Personne avec qui échanger.'); return; }
+  UI.trade={ from, to: pre&&pre.to!==undefined?pre.to:others[0].id,
+    give:{money:pre?pre.give.money:0, props:new Set(pre?pre.give.props:[]), getOut:pre?pre.give.getOut:0},
+    get:{money:pre?pre.get.money:0, props:new Set(pre?pre.get.props:[]), getOut:pre?pre.get.getOut:0} };
+  renderTradeComposer();
+}
+function tradePropsHtml(pid, side){
+  const p=S.players[pid];
+  if(!p.properties.length) return '<div class="hint">Aucun bien.</div>';
+  return p.properties.slice().sort((a,b)=>a-b).map(pos=>{
+    const c=S.board[pos];
+    const locked = c.type==='property' && E.groupCells(S,c.group).some(g=>E.level(S,g.pos)>0);
+    return `<label class="trade-prop${locked?' disabled':''}" title="${locked?'Vendez d\'abord les alertes du groupe':''}">
+      <input type="checkbox" ${UI.trade[side].props.has(pos)?'checked':''} ${locked?'disabled':''} onchange="toggleTradeProp('${side}',${pos},this.checked)">
+      <span class="swatch" style="background:${GROUP_COLORS[c.group]||'#888'}"></span>${esc(c.name)}${E.isMortgaged(S,pos)?' 🔒':''}</label>`;
+  }).join('');
+}
+function toggleTradeProp(side,pos,on){ if(on) UI.trade[side].props.add(pos); else UI.trade[side].props.delete(pos); }
+function renderTradeComposer(){
+  const T=UI.trade, me=S.players[T.from], them=S.players[T.to];
+  const others=S.players.filter(p=>!p.bankrupt&&p.id!==T.from);
+  openModal({ kind:'user', wide:true, title:`🔁 Proposer un échange${!MODE.online?' — '+pname(me):''}`,
+    body:`<div class="row"><span>Avec :</span>
+        <select class="text-input" style="width:auto" onchange="UI.trade.to=Number(this.value);UI.trade.get={money:0,props:new Set(),getOut:0};renderTradeComposer()">
+          ${others.map(o=>`<option value="${o.id}" ${o.id===T.to?'selected':''}>${esc(o.name)}</option>`).join('')}
+        </select></div>
+      <div class="trade-cols">
+        <div class="trade-col"><h4>Je donne</h4>
+          ${tradePropsHtml(T.from,'give')}
+          <label class="trade-prop">${MONEY_ICON}<input class="bid-input" type="number" min="0" max="${me.money}" value="${T.give.money||''}" placeholder="0" oninput="UI.trade.give.money=Number(this.value)||0"> / ${me.money}</label>
+          ${me.getOut.length?`<label class="trade-prop">🔑 <input class="bid-input" type="number" min="0" max="${me.getOut.length}" value="${T.give.getOut||''}" placeholder="0" oninput="UI.trade.give.getOut=Number(this.value)||0"> carte(s) prison</label>`:''}
+        </div>
+        <div class="trade-col"><h4>Je demande à ${esc(them.name)}</h4>
+          ${tradePropsHtml(T.to,'get')}
+          <label class="trade-prop">${MONEY_ICON}<input class="bid-input" type="number" min="0" max="${them.money}" value="${T.get.money||''}" placeholder="0" oninput="UI.trade.get.money=Number(this.value)||0"> / ${them.money}</label>
+          ${them.getOut.length?`<label class="trade-prop">🔑 <input class="bid-input" type="number" min="0" max="${them.getOut.length}" value="${T.get.getOut||''}" placeholder="0" oninput="UI.trade.get.getOut=Number(this.value)||0"> carte(s) prison</label>`:''}
+        </div>
+      </div>
+      <div class="hint">Les biens d'un groupe qui a des alertes ne peuvent pas être échangés. Les biens hypothéqués restent hypothéqués.</div>`,
+    footer:`<button class="btn-sm" onclick="closeModal()">Annuler</button><button class="btn-roll" onclick="submitTrade()">Proposer</button>` });
+}
+function submitTrade(){
+  const T=UI.trade;
+  const side=x=>({money:x.money||0, props:[...x.props], getOut:x.getOut||0});
+  const action={type:'trade_propose', to:T.to, give:side(T.give), get:side(T.get)};
+  if(!MODE.online){ const r=E.apply(S,T.from,action); if(!r.ok){ toast(r.error); return; } closeModal(true); enqueue({events:r.events,state:r.state}); return; }
+  closeModal(true);
+  doAction(action);
+}
+
+// ── Gestion des biens (alertes, ventes, hypothèques) ───────────────────────
+function mgmtActor(){ return consoleActor(); }
+function mgmtAct(type,pos){ doAction({type,pos}, MODE.online?undefined:mgmtActor()); }
 
 function showBuildModal(){
-  const p=G.players[G.currentPlayer];
-  const buildable=p.properties.filter(pos=>{
-    const cell=G.board[pos];
-    if(!cell||cell.type!=='property') return false;
-    const group=G.board.filter(c=>c.group===cell.group&&c.type==='property');
-    return group.every(c=>p.properties.includes(c.pos));
-  });
-  if(buildable.length===0){
-    showInfo('Alertes','Vous devez posséder toutes les propriétés d\'une même couleur pour acheter des alertes.');
-    return;
-  }
-  const rows=buildable.map(pos=>{
-    const cell=G.board[pos];
-    const b=G.propertyBuildings[pos]||{houses:0,hotel:0};
-    const current=b.hotel?`${ALERTEPRISON_ICON} Alerteprison`:b.houses>0?`${ALERTE_ICON}×${b.houses}`:'Aucune alerte';
-    const canBuild=!b.hotel&&b.houses<4?`<button class="btn-sm green" onclick="buildHouse(${pos})">+ ${ALERTE_ICON} Alerte (${MONEY_ICON}${cell.buildCost})</button>`:'';
-    const canHotel=b.houses>=4&&!b.hotel?`<button class="btn-sm warn" onclick="buildHotel(${pos})">${ALERTEPRISON_ICON} Convertir en alerteprison (${MONEY_ICON}${cell.buildCost})</button>`:'';
-    return `<div class="info-row"><span class="lbl">${cell.name}</span><span style="display:flex;align-items:center;gap:6px">${current} ${canBuild}${canHotel}</span></div>`;
-  }).join('');
-  document.getElementById('modalTitle').innerHTML=`${ALERTE_ICON} Alertes`;
-  document.getElementById('modalBody').innerHTML=rows;
-  document.getElementById('modalFooter').innerHTML=`<button class="btn-sm" onclick="closeModal()">Fermer</button>`;
-  document.getElementById('modalOverlay').classList.remove('hidden');
+  const a=mgmtActor(); if(a===null||a===undefined) return;
+  const render=()=>{
+    const p=S.players[a];
+    const buildable=p.properties.filter(pos=>{ const c=S.board[pos]; return c.type==='property' && E.ownsGroup(S,a,c.group); }).sort((x,y)=>x-y);
+    const rows=buildable.map(pos=>{
+      const cell=S.board[pos], b=E.bld(S,pos);
+      const current=b.hotel?`${ALERTEPRISON_ICON} Alerteprison`:b.houses>0?`${ALERTE_ICON}×${b.houses}`:'Aucune alerte';
+      const eb=E.canBuild(S,a,pos), eu=E.canUpgrade(S,a,pos);
+      const canBuild=!b.hotel&&b.houses<4?`<button class="btn-sm green" ${eb?`disabled title="${esc(eb)}"`:''} onclick="mgmtAct('build',${pos})">+ ${ALERTE_ICON} (${money(cell.buildCost)})</button>`:'';
+      const canHotel=b.houses>=4&&!b.hotel?`<button class="btn-sm warn" ${eu?`disabled title="${esc(eu)}"`:''} onclick="mgmtAct('upgrade',${pos})">${ALERTEPRISON_ICON} Convertir (${money(cell.buildCost)})</button>`:'';
+      return `<div class="info-row"><span class="lbl"><span class="swatch" style="background:${GROUP_COLORS[cell.group]}"></span> ${esc(cell.name)}</span><span style="display:flex;align-items:center;gap:6px">${current} ${canBuild}${canHotel}</span></div>`;
+    }).join('');
+    document.getElementById('modalBody').innerHTML = rows
+      ? rows+`<div class="hint">Argent : ${money(p.money)}${S.config.evenBuild?' · construction homogène : un terrain ne peut pas avoir 2 alertes de plus qu\'un autre du même groupe':''}${S.config.buildingLimit?` · stock : ${E.housesLeft(S)} alertes, ${E.hotelsLeft(S)} alerteprisons`:''}</div>`
+      : `<div class="hint">Vous devez posséder toutes les propriétés d'une même couleur pour acheter des alertes.</div>`;
+  };
+  openModal({ kind:'user', title:`${ALERTE_ICON} Alertes`, footer:`<button class="btn-sm" onclick="closeModal()">Fermer</button>`, refresh:render });
+  render();
 }
 
-function buildHouse(pos){
-  const p=G.players[G.currentPlayer];
-  const cell=G.board[pos];
-  if(p.money<cell.buildCost){toast('Fonds insuffisants.');return;}
-  if(!G.propertyBuildings[pos]) G.propertyBuildings[pos]={houses:0,hotel:0};
-  if(G.propertyBuildings[pos].houses>=4) return;
-  p.money-=cell.buildCost;
-  G.propertyBuildings[pos].houses++;
-  log(`${pawnLogChar(p)} Achète une alerte sur ${cell.name}`,'gain');
-  renderAll(); showBuildModal();
-}
-
-function buildHotel(pos){
-  const p=G.players[G.currentPlayer];
-  const cell=G.board[pos];
-  if(p.money<cell.buildCost){toast('Fonds insuffisants.');return;}
-  p.money-=cell.buildCost;
-  G.propertyBuildings[pos]={houses:0,hotel:1};
-  log(`${pawnLogChar(p)} Convertit ses 4 alertes en alerteprison sur ${cell.name}`,'gain');
-  renderAll(); showBuildModal();
-}
-
-// Sell alertes/alerteprison (houses/hotels) back to the bank at half of their build cost — the
-// official Monopoly rule for the "Vendre" button (there is no rule for
-// selling a property title itself back to the bank, only mortgaging it).
+// Sell alertes/alerteprison back to the bank at half of their build cost — the
+// official Monopoly rule for the "Vendre" button.
 function showSellModal(){
-  const p=G.players[G.currentPlayer];
-  const rows=p.properties.filter(pos=>{
-    const b=G.propertyBuildings[pos]; return b&&(b.houses>0||b.hotel);
-  }).map(pos=>{
-    const cell=G.board[pos];
-    const b=G.propertyBuildings[pos];
-    const refund=Math.round(cell.buildCost/2);
-    const btn = b.hotel
-      ? `<button class="btn-sm red" onclick="sellHotel(${pos})">Vendre l'alerteprison (+${MONEY_ICON}${refund})</button>`
-      : `<button class="btn-sm red" onclick="sellHouse(${pos})">Vendre 1 alerte (+${MONEY_ICON}${refund})</button>`;
-    const state = b.hotel?`${ALERTEPRISON_ICON} Alerteprison`:`${ALERTE_ICON}×${b.houses}`;
-    return `<div class="info-row"><span class="lbl">${cell.name} <span style="color:var(--text3)">(${state})</span></span><span>${btn}</span></div>`;
-  }).join('');
-  document.getElementById('modalTitle').textContent='💰 Vendre des alertes';
-  document.getElementById('modalBody').innerHTML=rows||'<div style="color:var(--text3);font-size:13px">Aucune alerte à vendre. Il faut posséder des alertes ou une alerteprison.</div>';
-  document.getElementById('modalFooter').innerHTML=`<button class="btn-sm" onclick="closeModal()">Fermer</button>`;
-  document.getElementById('modalOverlay').classList.remove('hidden');
-}
-
-function sellHouse(pos){
-  const p=G.players[G.currentPlayer];
-  const cell=G.board[pos];
-  const b=G.propertyBuildings[pos];
-  if(!b||b.houses<=0) return;
-  const refund=Math.round(cell.buildCost/2);
-  b.houses--; p.money+=refund;
-  log(`${pawnLogChar(p)} Vend une alerte sur ${cell.name} (+${refund} oufingoufs)`,'gain');
-  renderAll(); showSellModal();
-}
-
-function sellHotel(pos){
-  const p=G.players[G.currentPlayer];
-  const cell=G.board[pos];
-  const b=G.propertyBuildings[pos];
-  if(!b||!b.hotel) return;
-  const refund=Math.round(cell.buildCost/2);
-  b.hotel=0; b.houses=4; p.money+=refund;
-  log(`${pawnLogChar(p)} Vend l'alerteprison sur ${cell.name} (revient à 4 alertes) (+${refund} oufingoufs)`,'gain');
-  renderAll(); showSellModal();
+  const a=mgmtActor(); if(a===null||a===undefined) return;
+  const render=()=>{
+    const p=S.players[a];
+    const rows=p.properties.filter(pos=>E.level(S,pos)>0).map(pos=>{
+      const cell=S.board[pos], b=E.bld(S,pos), refund=Math.floor(cell.buildCost/2);
+      const e = b.hotel ? E.canSellHotel(S,a,pos) : E.canSellHouse(S,a,pos);
+      const btn = b.hotel
+        ? `<button class="btn-sm red" ${e?`disabled title="${esc(e)}"`:''} onclick="mgmtAct('sell_hotel',${pos})">Vendre l'alerteprison (+${money(refund)})</button>`
+        : `<button class="btn-sm red" ${e?`disabled title="${esc(e)}"`:''} onclick="mgmtAct('sell_house',${pos})">Vendre 1 alerte (+${money(refund)})</button>`;
+      const state = b.hotel?`${ALERTEPRISON_ICON} Alerteprison`:`${ALERTE_ICON}×${b.houses}`;
+      return `<div class="info-row"><span class="lbl">${esc(cell.name)} <span style="color:var(--text3)">(${state})</span></span><span>${btn}</span></div>`;
+    }).join('');
+    document.getElementById('modalBody').innerHTML=rows||'<div style="color:var(--text3);font-size:13px">Aucune alerte à vendre.</div>';
+  };
+  openModal({ kind:'user', title:'💰 Vendre des alertes', footer:`<button class="btn-sm" onclick="closeModal()">Fermer</button>`, refresh:render });
+  render();
 }
 
 function showMortgageModal(mode){
   mode = mode||'mortgage';
-  const p=G.players[G.currentPlayer];
-  const list=p.properties.filter(pos=> mode==='unmortgage' ? G.mortgaged.has(pos) : !G.mortgaged.has(pos));
-  const rows=list.map(pos=>{
-    const cell=G.board[pos];
-    const btn = mode==='unmortgage'
-      ? `<button class="btn-sm green" onclick="unmortgage(${pos})">Lever (${MONEY_ICON}${Math.round(cell.mortgage*1.1)})</button>`
-      : `<button class="btn-sm red" onclick="mortgage(${pos})">Hypothéquer (+${MONEY_ICON}${cell.mortgage})</button>`;
-    return `<div class="info-row"><span class="lbl">${cell.name}</span><span>${btn}</span></div>`;
-  }).join('');
-  document.getElementById('modalTitle').textContent = mode==='unmortgage' ? "🔓 Lever l'hypothèque" : '🏦 Hypothéquer';
-  document.getElementById('modalBody').innerHTML=rows||`<div style="color:var(--text3);font-size:13px">Aucune propriété concernée.</div>`;
-  document.getElementById('modalFooter').innerHTML=`<button class="btn-sm" onclick="closeModal()">Fermer</button>`;
-  document.getElementById('modalOverlay').classList.remove('hidden');
+  const a=mgmtActor(); if(a===null||a===undefined) return;
+  const render=()=>{
+    const p=S.players[a];
+    const list=p.properties.filter(pos=> mode==='unmortgage' ? E.isMortgaged(S,pos) : !E.isMortgaged(S,pos)).sort((x,y)=>x-y);
+    const rows=list.map(pos=>{
+      const cell=S.board[pos];
+      const e = mode==='unmortgage' ? E.canUnmortgage(S,a,pos) : E.canMortgage(S,a,pos);
+      const btn = mode==='unmortgage'
+        ? `<button class="btn-sm green" ${e?`disabled title="${esc(e)}"`:''} onclick="mgmtAct('unmortgage',${pos})">Lever (${money(E.unmortgageCost(cell))})</button>`
+        : `<button class="btn-sm red" ${e?`disabled title="${esc(e)}"`:''} onclick="mgmtAct('mortgage',${pos})">Hypothéquer (+${money(cell.mortgage)})</button>`;
+      return `<div class="info-row"><span class="lbl"><span class="swatch" style="background:${GROUP_COLORS[cell.group]||'#888'}"></span> ${esc(cell.name)}</span><span>${btn}</span></div>`;
+    }).join('');
+    document.getElementById('modalBody').innerHTML=(rows||`<div style="color:var(--text3);font-size:13px">Aucune propriété concernée.</div>`)+`<div class="hint">Argent : ${money(p.money)}</div>`;
+  };
+  openModal({ kind:'user', title: mode==='unmortgage' ? "🔓 Lever l'hypothèque" : '🏦 Hypothéquer', footer:`<button class="btn-sm" onclick="closeModal()">Fermer</button>`, refresh:render });
+  render();
 }
 
-function mortgage(pos){
-  const p=G.players[G.currentPlayer];
-  G.mortgaged.add(pos);
-  p.money+=G.board[pos].mortgage;
-  log(`${pawnLogChar(p)} Hypothèque ${G.board[pos].name} → reçoit ${G.board[pos].mortgage} oufingoufs`,'gain');
-  renderAll(); showMortgageModal('mortgage');
-}
-function unmortgage(pos){
-  const p=G.players[G.currentPlayer];
-  const cost=Math.round(G.board[pos].mortgage*1.1);
-  if(p.money<cost){toast('Fonds insuffisants.');return;}
-  G.mortgaged.delete(pos);
-  p.money-=cost;
-  log(`${pawnLogChar(p)} Lève hypothèque ${G.board[pos].name} → paye ${cost} oufingoufs`,'loss');
-  renderAll(); showMortgageModal('unmortgage');
-}
-
-function showTradeSoon(){
-  toast("Échange entre joueurs : bientôt disponible !");
-}
-
-function showMenuModal(){
-  document.getElementById('modalTitle').textContent='Menu';
-  document.getElementById('modalBody').innerHTML=`
-    <div style="font-size:13px;color:var(--text2);line-height:1.6">
-      Partie en cours — ${G.players.length} joueurs, tour ${G.turn}.<br>
-      ${G.players.map(pl=>`${pawnIconHtml(pl.pawn)} ${pl.name} : ${MONEY_ICON}${pl.money.toLocaleString()}`).join('<br>')}
-    </div>
-  `;
-  document.getElementById('modalFooter').innerHTML=`
-    <button class="btn-sm" onclick="closeModal()">Fermer</button>
-    <button class="btn-sm red" onclick="if(confirm('Recommencer une nouvelle partie ?')) location.reload()">Nouvelle partie</button>
-  `;
-  document.getElementById('modalOverlay').classList.remove('hidden');
-}
-
-function payJail(){
-  const p=G.players[G.currentPlayer];
-  if(p.money<50){toast('Fonds insuffisants.');return;}
-  p.money-=50; p.inJail=false; p.jailTurns=0;
-  log(`${pawnLogChar(p)} Paye 50 oufingoufs pour sortir de prison.`,'loss');
-  renderAll();
-}
-function useGetOutCard(){
-  const p=G.players[G.currentPlayer];
-  if(p.getOutCards<=0) return;
-  p.getOutCards--; p.inJail=false; p.jailTurns=0;
-  log(`${pawnLogChar(p)} Utilise sa carte sortie de prison.`,'gain');
-  renderAll();
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// TURN MANAGEMENT
-// ══════════════════════════════════════════════════════════════════════════════
-
-function endTurn(){
-  const p=G.players[G.currentPlayer];
-  const rolledDoubles=G.diceRoll&&G.diceRoll[0]===G.diceRoll[1]&&G.doublesCount>0;
-  if(rolledDoubles&&!p.inJail){
-    log(`${pawnLogChar(p)} Doubles — rejoue !`,'chance');
-    G.phase='roll';
-    G.diceRoll=null;
-    renderAll();
-    return;
-  }
-  nextPlayer();
-}
-
-function nextPlayer(){
-  G.doublesCount=0;
-  G.diceRoll=null;
-  let next=G.currentPlayer;
-  for(let i=0;i<G.players.length;i++){
-    next=(next+1)%G.players.length;
-    if(!G.players[next].bankrupt) break;
-  }
-  G.currentPlayer=next;
-  if(next<=G.currentPlayer-1) G.turn++;
-  G.phase='roll';
-  const p=G.players[next];
-  log(`--- Tour de ${pawnLogChar(p)} ${p.name} ---`,'system');
-  renderAll();
-}
-
-function declareBankrupt(){
-  const p=G.players[G.currentPlayer];
-  if(!confirm(`${p.name} déclare faillite ?`)) return;
-  p.bankrupt=true;
-  p.properties.forEach(pos=>{G.board[pos].owner=null; delete G.propertyBuildings[pos];});
-  p.properties=[];
-  log(`🏳️ ${pawnLogChar(p)} ${p.name} est en faillite !`,'loss');
-  const alive=G.players.filter(pl=>!pl.bankrupt);
-  if(alive.length===1){
-    endGame(alive[0]);
-    return;
-  }
-  nextPlayer();
-}
-
-function endGame(winner){
-  document.getElementById('winPawn').innerHTML=pawnIconHtml(winner.pawn);
-  document.getElementById('winSub').textContent=`${winner.name} remporte la partie avec ${winner.money.toLocaleString()} oufingoufs et ${winner.properties.length} propriétés !`;
-  document.getElementById('gameScreen').classList.add('hidden');
-  document.getElementById('winScreen').classList.remove('hidden');
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// CELL INFO MODAL
-// ══════════════════════════════════════════════════════════════════════════════
-
+// ── Infos d'une case ───────────────────────────────────────────────────────
 function showCellInfo(pos){
-  const cell=G.board[pos];
+  const cell=S.board[pos];
   if(!cell) return;
-  const owner=ownerOf(pos);
-  const b=G.propertyBuildings[pos]||{houses:0,hotel:0};
+  const owner=E.ownerOf(S,pos);
+  const b=E.bld(S,pos);
   const color=GROUP_COLORS[cell.group]||'#444';
-
   let body='';
-  if(['property','station','utility'].includes(cell.type)){
+  if(E.BUYABLE.includes(cell.type)){
+    const rent = owner && !E.isMortgaged(S,pos) && cell.type!=='utility' ? E.rentFor(S,pos) : null;
     body=`
-      <div class="owner-line">${owner?`Propriétaire : ${pawnIconHtml(owner.pawn)} ${owner.name}`:'Disponible à l’achat'}</div>
+      <div class="owner-line">${owner?`Propriétaire : ${pname(owner)}${rent!==null?` — loyer actuel ${money(rent)}`:''}`:'Disponible à l’achat'}</div>
       ${b.hotel?`<div class="build-line">${ALERTEPRISON_ICON} Alerteprison</div>`:b.houses>0?`<div class="build-line">${ALERTE_ICON} × ${b.houses}</div>`:''}
-      ${G.mortgaged.has(pos)?'<div class="mortgaged-line">🔒 Hypothéquée</div>':''}
-      ${titleDeedHtml(cell, color)}
-    `;
+      ${E.isMortgaged(S,pos)?'<div class="mortgaged-line">🔒 Hypothéquée</div>':''}
+      ${titleDeedHtml(cell, color)}`;
   } else {
     body=`<div style="color:var(--text2);font-size:14px">${fmtM(cell.desc||'Case spéciale.')}</div>`;
   }
-
-  showInfo(cell.name, body, cell.icon);
+  const iconHtml = cell.icon ? renderCellIconHtml(cell.icon, false) + ' ' : '';
+  openModal({ kind:'user', title: iconHtml+esc(cell.name), body, footer:`<button class="btn-sm" onclick="closeModal()">Fermer</button>` });
 }
 
-function showInfo(title, bodyHtml, icon){
-  const iconHtml = icon ? renderCellIconHtml(icon, false) + ' ' : '';
-  document.getElementById('modalTitle').innerHTML = iconHtml + title;
-  document.getElementById('modalBody').innerHTML=bodyHtml;
-  document.getElementById('modalFooter').innerHTML=`<button class="btn-sm" onclick="closeModal()">Fermer</button>`;
-  document.getElementById('modalOverlay').classList.remove('hidden');
+function showInfo(title, bodyHtml){
+  openModal({ kind:'user', title:esc(title), body:bodyHtml, footer:`<button class="btn-sm" onclick="closeModal()">Fermer</button>` });
 }
 
-function closeModal(){document.getElementById('modalOverlay').classList.add('hidden');}
+// ── Menu ───────────────────────────────────────────────────────────────────
+function showMenuModal(){
+  const summary=`<div style="font-size:13px;color:var(--text2);line-height:1.7">
+      ${MODE.online?`Salon <b>${esc(NET.code)}</b> — `:''}${S.players.length} joueurs, tour ${S.turn}.<br>
+      ${S.players.map(pl=>`${pname(pl)} : ${pl.bankrupt?'faillite':money(pl.money)+' · patrimoine '+money(E.netWorth(S,pl.id))}`).join('<br>')}
+    </div>`;
+  if(!MODE.online){
+    openModal({ kind:'user', title:'Menu', body:summary,
+      footer:`<button class="btn-sm" onclick="closeModal()">Fermer</button>
+        <button class="btn-sm warn" onclick="if(confirm('Terminer maintenant ? Le plus gros patrimoine gagne.')) soloEndByWorth()">⏹ Terminer (patrimoine)</button>
+        <button class="btn-sm red" onclick="if(confirm('Abandonner cette partie et revenir à l\\'accueil ?')){store('mkj.solo');location.reload()}">Nouvelle partie</button>` });
+    return;
+  }
+  const m=NET.meta||{seats:[]};
+  const iAmHost=m.hostSeat===NET.seat;
+  let host='';
+  if(iAmHost){
+    const seatRow=s=>{
+      if(s.seat===NET.seat || s.removed) return '';
+      const btns=[];
+      if(!s.connected){
+        if(!s.waitForever) btns.push(`<button class="btn-sm" onclick="hostCmd('wait',${s.seat})">Attendre</button>`);
+        btns.push(`<button class="btn-sm" onclick="hostCmd('free_seat',${s.seat})" title="Permet de reprendre cette place depuis un autre appareil, avec le code du salon">Libérer sa place</button>`);
+      }
+      btns.push(s.auto?`<button class="btn-sm" onclick="hostCmd('unauto',${s.seat})">Arrêter l'auto</button>`:`<button class="btn-sm" onclick="hostCmd('auto',${s.seat})">Jouer pour lui</button>`);
+      if(!S.players[s.seat].bankrupt) btns.push(`<button class="btn-sm red" onclick="if(confirm('Retirer ce joueur ? Ses biens retourneront à la banque.')) hostCmd('remove',${s.seat})">Retirer</button>`);
+      const pr=presenceOf(s.seat);
+      return `<div class="info-row"><span class="lbl">${pname(s)} <span class="hint">${pr?pr.label:''}</span></span><span style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">${btns.join('')}</span></div>`;
+    };
+    host=`<div class="setup-label" style="margin-top:6px">Hôte</div>
+      <div class="row" style="flex-wrap:wrap">
+        ${m.paused?`<button class="btn-sm green" onclick="hostCmd('resume')">▶ Reprendre</button>`:`<button class="btn-sm warn" onclick="hostCmd('pause')">⏸ Pause</button>`}
+        <label class="hint">Temps par décision
+          <select onchange="hostCmd('timer',null,Number(this.value))">
+            ${[0,30,60,90,120,180,300].map(v=>`<option value="${v}" ${m.timerSec===v?'selected':''}>${v?(v<60?v+' s':(v/60)+' min'):'illimité'}</option>`).join('')}
+          </select></label>
+        <button class="btn-sm red" onclick="if(confirm('Terminer la partie maintenant ? Le plus gros patrimoine gagne.')) hostCmd('end_by_worth')">⏹ Terminer (patrimoine)</button>
+      </div>
+      ${m.seats.map(seatRow).join('')}`;
+  }
+  openModal({ kind:'user', title:'Menu', wide:iAmHost, body:summary+host+
+      `<div class="hint" style="margin-top:8px">La partie est sauvegardée automatiquement dans votre navigateur. Le fichier de sauvegarde permet de la reprendre depuis un autre appareil ou après un long moment.</div>`,
+    footer:`<button class="btn-sm" onclick="downloadSave()">💾 Télécharger la sauvegarde</button>
+      ${S.players[NET.seat]&&!S.players[NET.seat].bankrupt?`<button class="btn-sm red" onclick="if(confirm('Abandonner ? Vos biens retourneront à la banque.')) doAction({type:'resign'})">🏳️ Abandonner</button>`:''}
+      <button class="btn-sm" onclick="if(confirm('Quitter l\\'écran ? Votre place est gardée : vous pourrez revenir.')) leaveOnline(true)">🚪 Quitter</button>
+      <button class="btn-sm" onclick="closeModal()">Fermer</button>` });
+}
+function soloEndByWorth(){
+  const r=E.apply(S,'system',{type:'end_by_worth'});
+  if(!r.ok){ toast(r.error); return; }
+  closeModal(true);
+  enqueue({events:r.events,state:r.state});
+}
+
+// ── Victoire ───────────────────────────────────────────────────────────────
+function showWin(){
+  const winner=S.players[S.winner]||S.players[0];
+  document.getElementById('winPawn').innerHTML=pawnIconHtml(winner.pawn);
+  document.getElementById('winSub').textContent = S.endReason==='net_worth'
+    ? `${winner.name} a le plus gros patrimoine : ${E.netWorth(S,winner.id).toLocaleString('fr-FR')} oufingoufs !`
+    : `${winner.name} remporte la partie avec ${winner.money.toLocaleString('fr-FR')} oufingoufs et ${winner.properties.length} propriétés !`;
+  const ranking=S.players.slice().sort((a,b)=>(a.bankrupt-b.bankrupt)||(E.netWorth(S,b.id)-E.netWorth(S,a.id)));
+  document.getElementById('winRank').innerHTML=ranking.map((p,i)=>`<div class="info-row"><span class="lbl">${i+1}. ${pname(p)}</span><span class="val">${p.bankrupt?'faillite':money(E.netWorth(S,p.id))}</span></div>`).join('');
+  showScreen('winScreen');
+  if(!MODE.online) store('mkj.solo');
+}
+function backHome(){ if(MODE.online) leaveOnline(true); else location.reload(); }
 
 // ══════════════════════════════════════════════════════════════════════════════
 // LOG & HELPERS
 // ══════════════════════════════════════════════════════════════════════════════
 
-function log(msg, type=''){
+// log uses textContent, never innerHTML, so freely-typed player names can't
+// inject markup.
+function appendLog(msg, type=''){
   const area=document.getElementById('logArea');
   const div=document.createElement('div');
   div.className='log-entry'+(type?' '+type:'');
   div.textContent=msg;
   area.appendChild(div);
+  while(area.children.length>300) area.removeChild(area.firstChild);
   area.scrollTop=area.scrollHeight;
 }
 
 function toast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2500);
+  clearTimeout(t._h);
+  t._h=setTimeout(()=>t.classList.remove('show'),3000);
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// EN LIGNE — CONNEXION AU SERVEUR (protocole : monopoly-server/protocol.md)
+// ══════════════════════════════════════════════════════════════════════════════
+
+const NET = {
+  ws:null, url:null, connected:false,
+  code:null, seat:null, token:null,   // ma place : le jeton secret prouve qu'elle est à moi
+  meta:null, metaAt:0,                // présence, pause, minuteurs (envoyés par le serveur)
+  board:null, cards:null, pawns:null, // envoyés une seule fois, au début de la partie
+  lobby:null, retry:0, retryTimer:null, pingTimer:null, lastPong:0,
+  leaving:false, onOpen:null,
+  send(msg){ if(this.ws && this.ws.readyState===1){ this.ws.send(JSON.stringify(msg)); return true; } return false; },
+};
+
+// Adresse du serveur : si la page est servie par le serveur lui-même, c'est la
+// même adresse. Si elle est ouverte depuis un fichier, on utilise le champ.
+function serverUrl(){
+  if(location.protocol==='http:'||location.protocol==='https:') return (location.protocol==='https:'?'wss://':'ws://')+location.host;
+  let v=(document.getElementById('serverUrl').value||'').trim();
+  if(!v) return null;
+  v=v.replace(/^http(s?):\/\//i,'ws$1://');
+  if(!/^wss?:\/\//i.test(v)) v='wss://'+v;
+  store('mkj.serverUrl', v);
+  return v.replace(/\/+$/,'');
+}
+
+function connect(url, onOpen){
+  if(!url){ toast("Indiquez l'adresse du serveur."); return; }
+  clearTimeout(NET.retryTimer);
+  if(NET.ws){ try{ NET.ws.onclose=null; NET.ws.close(); }catch(e){} }
+  NET.url=url; NET.onOpen=onOpen||null; NET.leaving=false;
+  setOnlineStatus('Connexion au serveur… (le premier accès peut prendre jusqu\'à une minute si le serveur était en veille)');
+  let ws;
+  try{ ws=new WebSocket(url); }catch(e){ setOnlineStatus('Adresse de serveur invalide.'); return; }
+  NET.ws=ws;
+  ws.onopen=()=>{
+    NET.connected=true; NET.retry=0; NET.lastPong=Date.now();
+    setOnlineStatus('');
+    clearInterval(NET.pingTimer);
+    // Un petit message toutes les 25 s : garde le serveur Render éveillé et
+    // détecte une connexion morte (pas de réponse depuis 70 s → on se reconnecte).
+    NET.pingTimer=setInterval(()=>{
+      if(Date.now()-NET.lastPong>70000){ try{ ws.close(); }catch(e){} return; }
+      NET.send({type:'ping', t:Date.now()});
+    }, 25000);
+    const f=NET.onOpen; NET.onOpen=null;
+    if(f) f();
+    else if(NET.code && NET.token) NET.send({type:'resume', code:NET.code, token:NET.token});
+    if(S && MODE.online) renderAll();
+  };
+  ws.onmessage=e=>{ let m; try{ m=JSON.parse(e.data); }catch(x){ return; } try{ handleNet(m); }catch(x){ console.error(x); } };
+  ws.onclose=()=>{
+    NET.connected=false; clearInterval(NET.pingTimer);
+    if(S && MODE.online){ renderAll(); }
+    if(NET.leaving) return;
+    if(NET.code && NET.token){
+      const wait=Math.min(10000, 1000*Math.pow(2, NET.retry++));
+      NET.retryTimer=setTimeout(()=>connect(NET.url), wait);
+    } else setOnlineStatus('Impossible de joindre le serveur. Vérifiez l\'adresse ou réessayez dans un instant.');
+  };
+}
+document.addEventListener('visibilitychange', ()=>{
+  if(!document.hidden && NET.code && NET.token && !NET.connected && !NET.leaving){ NET.retry=0; connect(NET.url); }
+});
+
+function setOnlineStatus(t){ const el=document.getElementById('onlineStatus'); if(el) el.textContent=t||''; }
+
+function handleNet(m){
+  switch(m.type){
+    case 'hello': break;
+    case 'pong': NET.lastPong=Date.now(); break;
+
+    case 'joined':
+      MODE.online=true;
+      NET.code=m.code; NET.seat=m.seat; NET.token=m.token;
+      sessionSet({code:m.code, seat:m.seat, token:m.token, url:NET.url, at:Date.now()});
+      rememberSave(m.code, {code:m.code, seat:m.seat, token:m.token, url:NET.url});
+      if(m.ephemeralSaves && m.host) console.warn('Le serveur n\'a pas de SNAPSHOT_SECRET : les sauvegardes ne survivront pas à un redémarrage.');
+      history.replaceState(null,'',location.pathname+'?salon='+m.code);
+      break;
+
+    case 'lobby':
+      NET.lobby=m;
+      if(document.getElementById('gameScreen').classList.contains('hidden')) showScreen('lobbyScreen');
+      renderLobby();
+      break;
+
+    case 'game':
+      MODE.online=true;
+      NET.board=m.board; NET.cards=m.cards; NET.pawns=m.pawns||[];
+      store('mkj.data.'+m.code, {board:m.board, cards:m.cards, pawns:m.pawns||null});
+      NET.meta=m.meta; NET.metaAt=Date.now();
+      UI.inflight=false;
+      document.getElementById('chatArea').innerHTML='';
+      (m.chat||[]).forEach(c=>addChatMsg(c, true));
+      enterGame(Object.assign({}, m.state, {board:NET.board, cards:NET.cards}));
+      break;
+
+    case 'update':
+      NET.meta=m.meta; NET.metaAt=Date.now();
+      if(m.by===NET.seat){ UI.inflight=false; clearTimeout(UI.inflightTimer); }
+      if(!S || !NET.board){ NET.send({type:'sync'}); break; }
+      if(m.v<=S.seq && !UI.queue.length){ renderAll(); break; }
+      enqueue({events:m.events, state:Object.assign({}, m.state, {board:NET.board, cards:NET.cards})});
+      break;
+
+    case 'meta':
+      NET.meta=m.meta; NET.metaAt=Date.now();
+      if(S) renderAll();
+      break;
+
+    case 'snapshot':
+      rememberSave(m.code, {blob:m.blob, v:m.v, savedAt:Date.now(), ended:!!m.ended,
+        names:S?S.players.map(p=>p.name):undefined});
+      break;
+
+    case 'chat': addChatMsg(m.msg); break;
+
+    case 'error':
+      UI.inflight=false; clearTimeout(UI.inflightTimer);
+      toast(m.message); sfx('error');
+      if(S) renderConsoleBar();
+      if(m.code==='bad_snapshot'){ setOnlineStatus(m.message); }
+      break;
+
+    case 'resume_failed': {
+      // Le serveur ne connaît pas (ou plus) ce salon : on tente de le recréer
+      // avec la dernière sauvegarde gardée par ce navigateur.
+      const code=String(m.code||NET.code).toUpperCase();
+      if(m.reason==='unknown_room' && tryRestore(code)) break;
+      sessionSet();
+      NET.code=null; NET.token=null;
+      setOnlineStatus(m.reason==='unknown_room' ? `Le salon ${code} n'existe plus sur le serveur et aucune sauvegarde n'a été trouvée.` : 'Votre place dans ce salon n\'est plus reconnue.');
+      if(!document.getElementById('gameScreen').classList.contains('hidden')){ showScreen('setupScreen'); setHomeTab('online'); }
+      break;
+    }
+    case 'restored':
+      NET.send({type:'resume', code:m.code, token:NET.token});
+      break;
+
+    case 'claim_list':
+      openModal({ kind:'user', title:'Reprendre une place',
+        body:`<div class="hint">La partie a commencé. L'hôte a libéré ces places : choisissez la vôtre.</div>`+
+          m.seats.map(s=>`<button class="btn-secondary" style="margin-top:6px" onclick="claimSeat('${esc(m.code)}',${s.seat})">${pname(s)}</button>`).join(''),
+        footer:`<button class="btn-sm" onclick="closeModal()">Annuler</button>` });
+      break;
+
+    case 'kicked':
+      sessionSet(); NET.leaving=true; NET.code=null; NET.token=null;
+      try{ NET.ws.close(); }catch(e){}
+      showScreen('setupScreen'); setHomeTab('online'); setOnlineStatus("L'hôte vous a retiré du salon.");
+      break;
+
+    case 'replaced':
+      NET.leaving=true;
+      toast('Cette partie a été ouverte dans un autre onglet ou appareil.');
+      break;
+  }
+}
+
+function claimSeat(code, seat){
+  closeModal(true);
+  const prof=load('mkj.profile')||{};
+  NET.send({type:'join_room', code, name:prof.name, pawn:prof.pawn, claim:seat});
+}
+
+// ── Accueil en ligne ───────────────────────────────────────────────────────
+function profile(){ const p=load('mkj.profile')||{}; return {name:p.name||'', pawn:p.pawn||PAWN_EMOJIS[0]}; }
+function saveProfile(p){ store('mkj.profile', p); }
+function pickOnlinePawn(pawn){ const p=profile(); p.pawn=pawn; saveProfile(p); renderOnlineHome(); }
+
+function renderOnlineHome(){
+  const p=profile();
+  const nameEl=document.getElementById('onlineName');
+  if(document.activeElement!==nameEl) nameEl.value=p.name;
+  document.getElementById('onlinePawnPick').innerHTML=pawnPickerHtml(p.pawn, 'pickOnlinePawn', 'onlinePawnFile');
+  const fileMode=!(location.protocol==='http:'||location.protocol==='https:');
+  document.getElementById('serverUrlBox').classList.toggle('hidden', !fileMode);
+  if(fileMode && !document.getElementById('serverUrl').value) document.getElementById('serverUrl').value=load('mkj.serverUrl')||'';
+  renderSaveList();
+}
+
+function onlineIdentity(){
+  const name=document.getElementById('onlineName').value.trim();
+  if(!name){ toast('Choisissez un pseudo.'); document.getElementById('onlineName').focus(); return null; }
+  const p=profile(); p.name=name; saveProfile(p);
+  return p;
+}
+function onlineCreate(){
+  const p=onlineIdentity(); if(!p) return;
+  const url=serverUrl(); if(!url){ toast("Indiquez l'adresse du serveur."); return; }
+  NET.code=null; NET.token=null;
+  connect(url, ()=>NET.send({type:'create_room', name:p.name, pawn:p.pawn}));
+}
+function onlineJoin(){
+  const p=onlineIdentity(); if(!p) return;
+  const code=document.getElementById('joinCode').value.trim().toUpperCase();
+  if(code.length!==5){ toast('Le code du salon fait 5 caractères.'); return; }
+  const url=serverUrl(); if(!url){ toast("Indiquez l'adresse du serveur."); return; }
+  NET.code=null; NET.token=null;
+  connect(url, ()=>NET.send({type:'join_room', code, name:p.name, pawn:p.pawn}));
+}
+
+// ── Sauvegardes (instantanés chiffrés envoyés par le serveur) ─────────────
+function rememberSave(code, patch){
+  const all=load('mkj.saves')||{};
+  all[code]=Object.assign(all[code]||{code}, patch);
+  // ménage : on garde les 12 parties les plus récentes
+  const keys=Object.keys(all).sort((a,b)=>(all[b].savedAt||0)-(all[a].savedAt||0));
+  keys.slice(12).forEach(k=>{ delete all[k]; store('mkj.data.'+k); });
+  store('mkj.saves', all);
+}
+function forgetSave(code){
+  const all=load('mkj.saves')||{}; delete all[code]; store('mkj.saves', all); store('mkj.data.'+code);
+  renderSaveList();
+}
+function renderSaveList(){
+  const all=load('mkj.saves')||{};
+  const list=Object.values(all).filter(s=>s.blob && !s.ended).sort((a,b)=>(b.savedAt||0)-(a.savedAt||0));
+  const el=document.getElementById('saveList');
+  el.innerHTML = list.length ? list.map(s=>{
+    const ago=s.savedAt?Math.round((Date.now()-s.savedAt)/60000):null;
+    const when=ago===null?'':ago<60?`il y a ${ago} min`:ago<1440?`il y a ${Math.round(ago/60)} h`:`il y a ${Math.round(ago/1440)} j`;
+    return `<div class="save-item"><div class="grow"><b>Salon ${esc(s.code)}</b><div class="sub">${esc((s.names||[]).join(', '))} · ${when}</div></div>
+      <button class="btn-sm green" onclick="resumeSaved('${esc(s.code)}')">Reprendre</button>
+      <button class="btn-sm" title="Oublier" onclick="forgetSave('${esc(s.code)}')">✕</button></div>`;
+  }).join('') : '<div class="hint">Aucune partie en ligne en cours dans ce navigateur.</div>';
+}
+function resumeSaved(code){
+  const sv=(load('mkj.saves')||{})[code];
+  if(!sv||!sv.token){ toast('Sauvegarde introuvable.'); return; }
+  NET.code=code; NET.seat=sv.seat; NET.token=sv.token;
+  const url = (location.protocol.startsWith('http') ? serverUrl() : (sv.url||serverUrl()));
+  connect(url, ()=>NET.send({type:'resume', code, token:sv.token}));
+}
+function tryRestore(code){
+  const sv=(load('mkj.saves')||{})[code], data=load('mkj.data.'+code);
+  if(!sv||!sv.blob||!data||!data.board){ return false; }
+  setOnlineStatus('Le serveur a redémarré : restauration de la partie…');
+  toast('Restauration de la partie depuis la dernière sauvegarde…');
+  NET.send({type:'restore', snapshot:sv.blob, board:data.board, cards:data.cards, pawns:data.pawns||null});
+  return true;
+}
+function downloadSave(){
+  const sv=(load('mkj.saves')||{})[NET.code], data=load('mkj.data.'+NET.code);
+  if(!sv||!sv.blob||!data){ toast('Pas encore de sauvegarde (elle arrive après le premier tour).'); return; }
+  const file={kind:'mkj-save', version:1, code:sv.code, seat:sv.seat, token:sv.token, url:sv.url, blob:sv.blob, v:sv.v, savedAt:sv.savedAt, names:sv.names, board:data.board, cards:data.cards, pawns:data.pawns||null};
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(file)],{type:'application/json'}));
+  a.download=`monopoly-kj-${sv.code}-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+}
+document.getElementById('saveFileInput').addEventListener('change', function(){
+  readJsonFile(this, f=>{
+    if(!f || f.kind!=='mkj-save' || !f.blob || !f.token){ toast("Ce fichier n'est pas une sauvegarde Monopoly KJ."); return; }
+    store('mkj.data.'+f.code, {board:f.board, cards:f.cards, pawns:f.pawns||null});
+    rememberSave(f.code, {code:f.code, seat:f.seat, token:f.token, url:f.url, blob:f.blob, v:f.v, savedAt:f.savedAt||Date.now(), names:f.names, ended:false});
+    resumeSaved(f.code);
+  });
+});
+
+// ── Salon d'attente ────────────────────────────────────────────────────────
+function renderLobby(){
+  const L=NET.lobby; if(!L) return;
+  const iAmHost=L.hostSeat===NET.seat;
+  document.getElementById('lobbyCode').textContent=L.code;
+  document.getElementById('lobbyCount').textContent=L.seats.length;
+  document.getElementById('lobbyPlayers').innerHTML=L.seats.map(s=>`
+    <div class="lobby-player${s.seat===NET.seat?' me':''}">
+      <span class="dot${s.connected?'':' off'}" title="${s.connected?'connecté':'déconnecté'}"></span>
+      <span class="pawn">${pawnIconHtml(s.pawn)}</span>
+      <span class="grow">${esc(s.name)}${s.seat===NET.seat?' <span class="me-tag">vous</span>':''}${s.seat===L.hostSeat?' 👑':''}</span>
+      ${iAmHost&&s.seat!==NET.seat?`<button class="btn-sm red" title="Retirer" onclick="NET.send({type:'kick_lobby',seat:${s.seat}})">✕</button>`:''}
+    </div>`).join('');
+  const me=L.seats.find(s=>s.seat===NET.seat);
+  const nameEl=document.getElementById('lobbyName');
+  if(me && document.activeElement!==nameEl) nameEl.value=me.name;
+  document.getElementById('lobbyPawnPick').innerHTML=pawnPickerHtml(me?me.pawn:'', 'pickLobbyPawn', 'lobbyPawnFile', L.seats.filter(s=>s.seat!==NET.seat).map(s=>s.pawn));
+  const set=(id,prop,val)=>{ const el=document.getElementById(id); if(document.activeElement!==el) el[prop]=val; el.disabled=!iAmHost; };
+  set('cfgMoney','value',L.config.startMoney);
+  set('cfgAuctions','checked',L.config.auctions);
+  set('cfgEven','checked',L.config.evenBuild);
+  set('cfgLimit','checked',L.config.buildingLimit);
+  set('cfgTimer','value',String(L.timerSec));
+  document.getElementById('lobbyHostOnly').classList.toggle('hidden', iAmHost);
+  document.querySelectorAll('.hostonly').forEach(el=>el.classList.toggle('hidden', !iAmHost));
+  document.getElementById('btnLobbyOfficial').classList.toggle('hidden', !(L.customBoard||L.customCards));
+  document.getElementById('lobbyDataLine').textContent =
+    (L.customBoard?'Plateau importé par l\'hôte':'Plateau officiel du jeu') + ' · ' + (L.customCards?'cartes importées par l\'hôte.':'cartes officielles.');
+  const btn=document.getElementById('btnLobbyStart');
+  btn.classList.toggle('hidden', !iAmHost);
+  btn.disabled=L.seats.length<2;
+  btn.textContent=L.seats.length<2?'EN ATTENTE D\'UN 2e JOUEUR…':'LANCER LA PARTIE';
+  document.getElementById('lobbyWaitHost').classList.toggle('hidden', iAmHost);
+  document.getElementById('btnCopyLink').classList.toggle('hidden', !location.protocol.startsWith('http'));
+}
+function pickLobbyPawn(pawn){ NET.send({type:'lobby_me', pawn}); const p=profile(); p.pawn=pawn; saveProfile(p); }
+function sendLobbyConfig(){
+  NET.send({type:'lobby_config', config:{
+    startMoney:Number(document.getElementById('cfgMoney').value)||1500,
+    auctions:document.getElementById('cfgAuctions').checked,
+    evenBuild:document.getElementById('cfgEven').checked,
+    buildingLimit:document.getElementById('cfgLimit').checked,
+    timerSec:Number(document.getElementById('cfgTimer').value),
+  }});
+}
+['cfgMoney','cfgAuctions','cfgEven','cfgLimit','cfgTimer'].forEach(id=>document.getElementById(id).addEventListener('change', sendLobbyConfig));
+let lobbyNameTimer=null;
+document.getElementById('lobbyName').addEventListener('input', function(){
+  clearTimeout(lobbyNameTimer);
+  const v=this.value;
+  lobbyNameTimer=setTimeout(()=>{ if(v.trim()){ NET.send({type:'lobby_me', name:v}); const p=profile(); p.name=v.trim(); saveProfile(p); } }, 400);
+});
+document.getElementById('lobbyPawnFile').addEventListener('change', function(){ readPawnImage(this, url=>pickLobbyPawn(url)); });
+document.getElementById('onlinePawnFile').addEventListener('change', function(){ readPawnImage(this, url=>pickOnlinePawn(url)); });
+function sendLobbyData(kind, d){
+  const payload = kind==='board' ? {type:'lobby_data', board:d.board||d} : {type:'lobby_data', cards:d};
+  if(JSON.stringify(payload).length>2.8e6){ toast('Fichier trop lourd (images trop grandes ?).'); return; }
+  NET.send(payload);
+}
+document.getElementById('lobbyPlateauFile').addEventListener('change', function(){ readJsonFile(this, d=>{ const err=E.validateBoard(d.board||d); if(err){ toast('Plateau invalide : '+err); return; } sendLobbyData('board', d); }); });
+document.getElementById('lobbyCartesFile').addEventListener('change', function(){ readJsonFile(this, d=>sendLobbyData('cards', E.normalizeCards(d))); });
+function lobbyOfficialData(){ NET.send({type:'lobby_data', board:null, cards:null}); }
+
+function copyInvite(kind){
+  const L=NET.lobby; if(!L) return;
+  const text = kind==='link' ? `${location.origin}${location.pathname}?salon=${L.code}` : L.code;
+  (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(()=>toast(kind==='link'?'Lien copié !':'Code copié !'), ()=>toast(text));
+}
+
+// Quitter : dans le salon d'attente, on libère sa place ; en partie, la place
+// est gardée (on pourra revenir via « Reprendre une partie »).
+function leaveOnline(){
+  const inLobby=!document.getElementById('lobbyScreen').classList.contains('hidden');
+  if(inLobby){ NET.send({type:'leave'}); forgetSave(NET.code); }
+  sessionSet();
+  NET.leaving=true;
+  setTimeout(()=>{ try{ NET.ws&&NET.ws.close(); }catch(e){} location.href=location.pathname; }, 150);
+}
+
+// ── Présence et commandes de l'hôte ────────────────────────────────────────
+function toggleAway(){
+  const m=NET.meta&&NET.meta.seats[NET.seat];
+  NET.send({type:'presence', away:!(m&&m.away)});
+}
+function hostCmd(cmd, seat, value){ NET.send({type:'host', cmd, seat, value}); if(UI.modal&&UI.modal.kind==='user'&&cmd!=='timer') closeModal(); }
+
+// ── Chat ───────────────────────────────────────────────────────────────────
+function setLogTab(t){
+  UI.logTab=t;
+  document.getElementById('tabLog').classList.toggle('sel', t==='log');
+  document.getElementById('tabChat').classList.toggle('sel', t==='chat');
+  document.getElementById('logArea').classList.toggle('hidden', t!=='log');
+  document.getElementById('chatArea').classList.toggle('hidden', t!=='chat');
+  document.getElementById('chatForm').classList.toggle('hidden', t!=='chat');
+  if(t==='chat'){ UI.unread=0; updateUnread(); document.getElementById('chatInput').focus(); const a=document.getElementById('chatArea'); a.scrollTop=a.scrollHeight; }
+}
+function updateUnread(){ const el=document.getElementById('chatUnread'); el.textContent=UI.unread; el.classList.toggle('hidden', !UI.unread); }
+function addChatMsg(m, silent){
+  const area=document.getElementById('chatArea');
+  const div=document.createElement('div');
+  div.className='chat-msg'+(m.seat===null?' system':'');
+  if(m.seat===null) div.textContent=m.text;
+  else {
+    const who=document.createElement('span'); who.className='who';
+    who.textContent=(m.pawn?m.pawn+' ':'')+m.name+' : ';
+    div.appendChild(who); div.appendChild(document.createTextNode(m.text));
+  }
+  area.appendChild(div);
+  while(area.children.length>150) area.removeChild(area.firstChild);
+  area.scrollTop=area.scrollHeight;
+  if(!silent && UI.logTab!=='chat' && m.seat!==NET.seat){ UI.unread++; updateUnread(); }
+  if(!silent && m.seat!==null && m.seat!==NET.seat) sfx('chat');
+}
+function sendChat(e){
+  e.preventDefault();
+  const i=document.getElementById('chatInput');
+  const t=i.value.trim(); if(!t) return;
+  NET.send({type:'chat', text:t}); i.value='';
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SONS (synthétisés : aucun fichier à télécharger)
+// ══════════════════════════════════════════════════════════════════════════════
+let AC=null;
+function toggleSound(){ UI.sound=!UI.sound; store('mkj.sound', UI.sound); if(UI.sound) sfx('notify'); if(S) renderConsoleBar(); }
+function sfx(name){
+  if(!UI.sound) return;
+  try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended') AC.resume(); }catch(e){ return; }
+  const t0=AC.currentTime+0.01;
+  const tone=(f,start,dur,type='sine',vol=0.07,f2)=>{
+    const o=AC.createOscillator(), g=AC.createGain();
+    o.type=type; o.frequency.setValueAtTime(f,t0+start);
+    if(f2) o.frequency.exponentialRampToValueAtTime(f2,t0+start+dur);
+    g.gain.setValueAtTime(0.0001,t0+start);
+    g.gain.exponentialRampToValueAtTime(vol,t0+start+0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001,t0+start+dur);
+    o.connect(g).connect(AC.destination); o.start(t0+start); o.stop(t0+start+dur+0.03);
+  };
+  const noise=(start,dur,vol=0.05)=>{
+    const len=Math.floor(AC.sampleRate*dur), buf=AC.createBuffer(1,len,AC.sampleRate), d=buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*(1-i/len);
+    const src=AC.createBufferSource(), g=AC.createGain(), bp=AC.createBiquadFilter();
+    bp.type='bandpass'; bp.frequency.value=2200; g.gain.value=vol;
+    src.buffer=buf; src.connect(bp).connect(g).connect(AC.destination); src.start(t0+start);
+  };
+  switch(name){
+    case 'dice': for(let i=0;i<7;i++) noise(i*0.075, 0.045, 0.12); break;
+    case 'card': tone(500,0,0.16,'triangle',0.05,1100); break;
+    case 'whoosh': tone(900,0,0.2,'sine',0.04,250); break;
+    case 'myturn': tone(660,0,0.12); tone(880,0.13,0.2); break;
+    case 'notify': tone(988,0,0.1); tone(1319,0.11,0.14); break;
+    case 'chat': tone(1046,0,0.07,'sine',0.035); break;
+    case 'gavel': tone(190,0,0.07,'square',0.05); tone(190,0.13,0.07,'square',0.05); break;
+    case 'bankrupt': tone(392,0,0.22,'sawtooth',0.035); tone(294,0.22,0.35,'sawtooth',0.035); break;
+    case 'win': [523,659,784,1047].forEach((f,i)=>tone(f,i*0.13,0.3,'triangle',0.07)); break;
+    case 'error': tone(220,0,0.12,'square',0.03); break;
+    case 'tick': tone(1250,0,0.05,'square',0.025); break;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DÉMARRAGE
+// ══════════════════════════════════════════════════════════════════════════════
+autoLoadDefaultFiles();
+addPlayerRow('Joueur 1','🎩');
+addPlayerRow('Joueur 2','🚂');
+if(load('mkj.solo')) document.getElementById('soloResumeBox').classList.remove('hidden');
+(function init(){
+  const params=new URLSearchParams(location.search);
+  const code=(params.get('salon')||'').toUpperCase();
+  if(code){ setHomeTab('online'); document.getElementById('joinCode').value=code; }
+  // Rafraîchir la page en pleine partie ramène directement dans la partie.
+  const ses=sessionGet();
+  if(ses && ses.code && ses.token && Date.now()-(ses.at||0) < 7*24*3600*1000 && (!code || code===ses.code)){
+    setHomeTab('online');
+    NET.code=ses.code; NET.seat=ses.seat; NET.token=ses.token;
+    const url = location.protocol.startsWith('http') ? serverUrl() : ses.url;
+    if(url) connect(url, ()=>NET.send({type:'resume', code:ses.code, token:ses.token}));
+  }
+})();
 </script>
 </body>
 </html>

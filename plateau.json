@@ -94,7 +94,7 @@
     },
     {
       "pos": 5,
-      "name": "Stand Touhou",
+      "name": "Tokisaki",
       "type": "station",
       "group": "none",
       "price": 200,
@@ -275,7 +275,7 @@
     },
     {
       "pos": 15,
-      "name": "Banana Café",
+      "name": "Scarlet",
       "type": "station",
       "group": "none",
       "price": 200,
@@ -421,7 +421,7 @@
     },
     {
       "pos": 23,
-      "name": "Case 23",
+      "name": "Douarnenez",
       "type": "property",
       "group": "red",
       "price": 220,
@@ -439,7 +439,7 @@
     },
     {
       "pos": 24,
-      "name": "Case 24",
+      "name": "Tassili Snack",
       "type": "property",
       "group": "red",
       "price": 240,
@@ -457,7 +457,7 @@
     },
     {
       "pos": 25,
-      "name": "Tassili Snack",
+      "name": "Aniki",
       "type": "station",
       "group": "none",
       "price": 200,
@@ -493,7 +493,7 @@
     },
     {
       "pos": 27,
-      "name": "Case 27",
+      "name": "Banana Café",
       "type": "property",
       "group": "yellow",
       "price": 260,
@@ -529,7 +529,7 @@
     },
     {
       "pos": 29,
-      "name": "Douarnenez",
+      "name": "Extra Life Café",
       "type": "property",
       "group": "yellow",
       "price": 280,
@@ -566,7 +566,7 @@
     },
     {
       "pos": 31,
-      "name": "Case 31",
+      "name": "Geek Room",
       "type": "property",
       "group": "green",
       "price": 300,
@@ -620,7 +620,7 @@
     },
     {
       "pos": 34,
-      "name": "Geek Room",
+      "name": "Stand Touhou",
       "type": "property",
       "group": "green",
       "price": 320,
@@ -638,7 +638,7 @@
     },
     {
       "pos": 35,
-      "name": "Extra Life Café",
+      "name": "Banque Populaire KJ",
       "type": "station",
       "group": "none",
       "price": 200,

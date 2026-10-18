@@ -94,7 +94,7 @@
     },
     {
       "pos": 5,
-      "name": "Tokisaki",
+      "name": "Clan Tokisaki",
       "type": "station",
       "group": "none",
       "price": 200,
@@ -112,7 +112,7 @@
     },
     {
       "pos": 6,
-      "name": "Case 6",
+      "name": "BK de Barbès",
       "type": "property",
       "group": "lblue",
       "price": 100,
@@ -149,7 +149,7 @@
     },
     {
       "pos": 8,
-      "name": "BK de Barbès",
+      "name": "Bar à putes de Pigalle",
       "type": "property",
       "group": "lblue",
       "price": 100,
@@ -167,7 +167,7 @@
     },
     {
       "pos": 9,
-      "name": "Auchan de Nancy",
+      "name": "Caesar Palace",
       "type": "property",
       "group": "lblue",
       "price": 120,
@@ -203,7 +203,7 @@
     },
     {
       "pos": 11,
-      "name": "Case 11",
+      "name": "Cadeau de l'Ange",
       "type": "property",
       "group": "pink",
       "price": 140,
@@ -239,7 +239,7 @@
     },
     {
       "pos": 13,
-      "name": "Case 13",
+      "name": "Académie du Pic de l'Espoir",
       "type": "property",
       "group": "pink",
       "price": 140,
@@ -257,7 +257,7 @@
     },
     {
       "pos": 14,
-      "name": "Case 14",
+      "name": "Auchan de Nancy",
       "type": "property",
       "group": "pink",
       "price": 160,
@@ -275,7 +275,7 @@
     },
     {
       "pos": 15,
-      "name": "Scarlet",
+      "name": "Clan Scarlet",
       "type": "station",
       "group": "none",
       "price": 200,
@@ -293,7 +293,7 @@
     },
     {
       "pos": 16,
-      "name": "Case 16",
+      "name": "Hinamizawa",
       "type": "property",
       "group": "orange",
       "price": 180,
@@ -329,7 +329,7 @@
     },
     {
       "pos": 18,
-      "name": "Caesar Palace",
+      "name": "Manoir de Rokkenjima",
       "type": "property",
       "group": "orange",
       "price": 180,
@@ -347,7 +347,7 @@
     },
     {
       "pos": 19,
-      "name": "Bar à putes de Pigalle",
+      "name": "Café Leblanc",
       "type": "property",
       "group": "orange",
       "price": 200,
@@ -384,7 +384,7 @@
     },
     {
       "pos": 21,
-      "name": "Case 21",
+      "name": "Rhodes Island",
       "type": "property",
       "group": "red",
       "price": 220,
@@ -457,7 +457,7 @@
     },
     {
       "pos": 25,
-      "name": "Aniki",
+      "name": "Clan Aniki",
       "type": "station",
       "group": "none",
       "price": 200,
@@ -475,7 +475,7 @@
     },
     {
       "pos": 26,
-      "name": "Pamiers",
+      "name": "Alfortville",
       "type": "property",
       "group": "yellow",
       "price": 260,
@@ -584,7 +584,7 @@
     },
     {
       "pos": 32,
-      "name": "Alfortville",
+      "name": "Animest",
       "type": "property",
       "group": "green",
       "price": 300,

@@ -2088,6 +2088,20 @@ function showMortgageModal(mode){
   render();
 }
 
+// Texte par défaut d'une case spéciale sans description
+function specialCellText(cell){
+  const jail=(S.board.find(c=>c.type==='jail')||{}).name||'la prison';
+  return ({
+    go:`Recevez ${E.GO_SALARY} M$ en passant par ici.`,
+    chance:'Tirez une carte Chance.',
+    community:'Tirez une carte Caisse de communauté.',
+    jail:`Simple visite… sauf si vous y avez été envoyé. Pour sortir : un double, ${E.JAIL_FINE} M$ ou une carte.`,
+    free:'Rien ne se passe ici : profitez-en pour souffler.',
+    goto_jail:`Allez directement à : ${jail}. Ne passez pas par la case Départ.`,
+    tax:`Payez ${cell.price} M$.`,
+  })[cell.type] || 'Case spéciale.';
+}
+
 // ── Infos d'une case ───────────────────────────────────────────────────────
 function showCellInfo(pos){
   const cell=S.board[pos];
@@ -2105,14 +2119,15 @@ function showCellInfo(pos){
       ${titleDeedHtml(cell, color)}`;
   } else {
     const img=cardImageSrc(cell.cardImage);
+    const descTxt = cell.desc || specialCellText(cell);
     body = img
       ? `<div class="title-deed" style="--td:${color}">
           <div class="td-band" style="background:${color}"></div>
           <img class="td-img" src="${esc(img)}" alt="" onerror="this.remove()">
           <div class="td-body"><div class="td-name">${esc(cell.name)}</div>
-            <div class="td-desc" style="margin:0">${fmtM(cell.desc||'Case spéciale.')}</div></div>
+            <div class="td-desc" style="margin:0">${fmtM(descTxt)}</div></div>
         </div>`
-      : `<div style="color:var(--text2);font-size:14px">${fmtM(cell.desc||'Case spéciale.')}</div>`;
+      : `<div style="color:var(--text2);font-size:14px">${fmtM(descTxt)}</div>`;
   }
   const iconHtml = cell.icon ? renderCellIconHtml(cell.icon, false) + ' ' : '';
   openModal({ kind:'user', title: iconHtml+esc(cell.name), body, footer:`<button class="btn-sm" onclick="closeModal()">Fermer</button>` });

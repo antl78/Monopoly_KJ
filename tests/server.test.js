@@ -239,3 +239,21 @@ test('messages hostiles ignorés proprement', async () => {
   assert.ok(c.msg.text.length <= 300);
   a.ws.close(); b.ws.close();
 });
+
+test('lobby : chacun garde son identité quand un joueur quitte le salon (bug du 30/10)', async () => {
+  const { a, b, code } = await lobbyWithTwo();
+  const c = client(); await c.open;
+  c.send({ type: 'join_room', code, name: 'Kage', pawn: '🐉' });
+  assert.equal((await c.wait('joined')).seat, 2);
+  await c.wait(m => m.type === 'lobby' && m.seats.length === 3);
+  b.send({ type: 'leave' });                                // Bob (place 1) part : Kage devient la place 1
+  const l = await c.wait(m => m.type === 'lobby' && m.seats.length === 2);
+  assert.equal(l.you, 1);
+  assert.equal(l.seats[l.you].name, 'Kage');
+  const la = await a.wait(m => m.type === 'lobby' && m.seats.length === 2);
+  assert.equal(la.you, 0);
+  c.send({ type: 'lobby_me', name: 'Kage2' });             // et le serveur agit bien sur sa place
+  const l2 = await a.wait(m => m.type === 'lobby' && m.seats.some(s => s.name === 'Kage2'));
+  assert.equal(l2.seats[1].name, 'Kage2');
+  await a.close(); await b.close(); await c.close();
+});

@@ -239,6 +239,11 @@ input[type=file]{display:none}
 .btn-roll{padding:11px 18px;background:var(--accent);color:#fff;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:.1em;border:none;border-radius:var(--r);cursor:pointer;transition:all .15s}
 .btn-roll:hover:not(:disabled){background:#0a4a42}
 .btn-roll:disabled{opacity:.4;cursor:not-allowed}
+/* Bouton à cliquer maintenant : halo doré qui pulse. */
+@keyframes readyPulse{0%,100%{box-shadow:0 0 0 0 rgba(245,190,60,.85),0 0 10px 2px rgba(245,190,60,.55)}50%{box-shadow:0 0 0 6px rgba(245,190,60,0),0 0 18px 6px rgba(245,190,60,.8)}}
+.btn-roll.ready:not(:disabled){animation:readyPulse 1.3s ease-in-out infinite;background:#0e8a6e}
+.console-btn.ready:not(:disabled){animation:readyPulse 1.3s ease-in-out infinite;background:rgba(245,190,60,.28);border-color:#f5be3c;color:#fff}
+.jail-choice p{margin:0 0 8px}.modal.wide #modalFooter .btn-roll{white-space:nowrap}.jail-choice ul{margin:0 0 6px;padding-left:20px;line-height:1.55}
 
 /* Big centered dice, shown over the whole screen for the dramatic part of
    each roll (the small console dice next to "Lancer" keep showing the same
@@ -392,12 +397,17 @@ input[type=file]{display:none}
 .opp-status{font-size:11px;color:var(--text3)}
 
 /* Propriétaire et hypothèque sur le plateau */
-.cell-owner{position:absolute;z-index:3;font-size:clamp(9px,1.7cqw,17px);line-height:1;background:rgba(255,255,255,.88);border-radius:50%;padding:1px;box-shadow:0 1px 2px rgba(0,0,0,.3);pointer-events:none}
+/* Pastille du propriétaire : posée côté centre du plateau, juste après le bord
+   intérieur de la case (au-dessus pour la rangée du bas, à droite pour la colonne
+   de gauche, à gauche pour la colonne de droite, en dessous pour la rangée du haut).
+   Elle vit dans #ownerLayer, positionnée en % par placeOwnerBadge(). */
+#ownerLayer{position:absolute;inset:0;pointer-events:none;z-index:3}
+.cell-owner{position:absolute;font-size:clamp(9px,1.7cqw,17px);line-height:1;background:rgba(255,255,255,.92);border-radius:50%;padding:1px;box-shadow:0 1px 3px rgba(0,0,0,.35)}
 .cell-owner .pawn-img-icon{box-shadow:none}
-.cell-side-bottom .cell-owner{bottom:2px;right:2px}
-.cell-side-top .cell-owner{top:2px;left:2px}
-.cell-side-left .cell-owner{bottom:2px;left:2px}
-.cell-side-right .cell-owner{top:2px;right:2px}
+.cell-owner.side-bottom{transform:translate(-50%,calc(-100% - 2px))}
+.cell-owner.side-top{transform:translate(-50%,2px)}
+.cell-owner.side-left{transform:translate(2px,-50%)}
+.cell-owner.side-right{transform:translate(calc(-100% - 2px),-50%)}
 .cell.mortgaged .cell-content{opacity:.4;filter:grayscale(.7)}
 .cell.mortgaged::after{content:'🔒';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:clamp(10px,2cqw,20px);z-index:2;pointer-events:none}
 .cell.pending-sale{box-shadow:inset 0 0 0 3px #e8a830}
@@ -1132,6 +1142,21 @@ function cellGridPos(pos) {
   return {col:1,row:1};
 }
 
+// Bords d'une ligne/colonne de la grille, en % du plateau (pistes 1.8fr, 9×1fr, 1.8fr).
+function gridEdge(i){ return (i<=1?0:i===11?10.8:1.8+(i-2)) / 12.6 * 100; }
+function gridSpan(i){ return {a:gridEdge(i), b:gridEdge(i)+(i===1||i===11?1.8:1)/12.6*100}; }
+// Place la pastille contre le bord intérieur de la case, côté centre du plateau.
+function placeOwnerBadge(badge, pos){
+  const {col,row}=cellGridPos(pos), x=gridSpan(col), y=gridSpan(row);
+  const side = pos<10?'bottom' : pos<20?'left' : pos<30?'top' : 'right';
+  badge.className='cell-owner side-'+side;
+  const mid=(r)=>((r.a+r.b)/2).toFixed(3)+'%';
+  if(side==='bottom'){ badge.style.left=mid(x); badge.style.top=y.a.toFixed(3)+'%'; }
+  if(side==='top'){    badge.style.left=mid(x); badge.style.top=y.b.toFixed(3)+'%'; }
+  if(side==='left'){   badge.style.left=x.b.toFixed(3)+'%'; badge.style.top=mid(y); }
+  if(side==='right'){  badge.style.left=x.a.toFixed(3)+'%'; badge.style.top=mid(y); }
+}
+
 function buildBoard() {
   const board = document.getElementById('board');
   board.innerHTML = '';
@@ -1194,6 +1219,9 @@ function buildBoard() {
   // Floating layer pawns live in (see #pawnLayer / .pawn-token in CSS and
   // ensurePawnTokens()/walkPawn() below) — appended last so it's on top of
   // every cell.
+  const ownerLayer=document.createElement('div');
+  ownerLayer.id='ownerLayer';
+  board.appendChild(ownerLayer);
   const pawnLayer=document.createElement('div');
   pawnLayer.id='pawnLayer';
   board.appendChild(pawnLayer);
@@ -1302,9 +1330,9 @@ function renderCellState(){
     const ownerKey = owner ? String(owner.id) : '';
     if(cellEl.dataset.owner!==ownerKey){
       cellEl.dataset.owner=ownerKey;
-      let badge=cellEl.querySelector('.cell-owner');
+      let badge=document.getElementById('owner-'+c.pos);
       if(owner){
-        if(!badge){ badge=document.createElement('div'); badge.className='cell-owner'; cellEl.appendChild(badge); }
+        if(!badge){ badge=document.createElement('div'); badge.id='owner-'+c.pos; placeOwnerBadge(badge, c.pos); document.getElementById('ownerLayer').appendChild(badge); }
         badge.innerHTML=pawnIconHtml(owner.pawn);
         badge.title='Propriétaire : '+owner.name;
       } else if(badge) badge.remove();
@@ -1356,8 +1384,8 @@ function groupPipsHtml(player){
 function renderQuickActions(p){
   let html='';
   if(p.inJail && S.phase==='roll' && S.current===p.id && isMe(p.id) && !S.pending && !S.debts.length){
-    html+=`<button class="btn-sm warn" onclick="doAction({type:'pay_jail'})">⛓️ Payer la caution (${MONEY_ICON}${E.JAIL_FINE})</button>`;
-    if(p.getOut.length) html+=`<button class="btn-sm green" onclick="doAction({type:'use_get_out'})">🔑 Carte sortie de prison</button>`;
+    html+=`<button class="btn-sm warn" onclick="doAction({type:'pay_jail'})" ${p.money<E.JAIL_FINE?'disabled':''}>⛓️ Payer la caution (${MONEY_ICON}${E.JAIL_FINE})</button>`;
+    if(p.getOut.length) html+=`<button class="btn-sm green" onclick="doAction({type:'use_get_out'})">🔑 Carte sortie du gymnase</button>`;
   }
   return html?`<div class="quick-actions">${html}</div>`:'';
 }
@@ -1417,7 +1445,7 @@ function renderSidebarPanels(){
         <span class="pa-money">${money(p.money)}</span>
       </div>
       ${groupPipsHtml(p)}
-      ${p.getOut.length?`<div class="hint" style="margin-bottom:4px">🔑 ${p.getOut.length} carte(s) « sortie de prison »</div>`:''}
+      ${p.getOut.length?`<div class="hint" style="margin-bottom:4px">🔑 ${p.getOut.length} carte(s) « sortie du gymnase »</div>`:''}
       ${renderQuickActions(p)}
     </div>
 
@@ -1481,6 +1509,7 @@ function tickTimers(){
 
 // Acteur des boutons de la barre du bas : en ligne, moi ; en local, le joueur
 // qui a la main.
+const END_GLOW_DELAY=4000;   // ms avant que « Fin de tour » s'allume
 function consoleActor(){ return MODE.online ? NET.seat : E.manager(S); }
 
 function anyOwned(pid, check){
@@ -1500,7 +1529,16 @@ function renderConsoleBar(){
   document.getElementById('btnConsoleUnmortgage').disabled = !can(anyOwned(a,E.canUnmortgage));
   const me = MODE.online ? S.players[NET.seat] : S.players[S.current];
   document.getElementById('btnConsoleTrade').disabled = busy || !me || me.bankrupt || !!S.trade || (S.pending&&S.pending.type==='auction') || S.phase==='ended';
-  document.getElementById('btnConsoleEnd').disabled = !can(myTurn && S.phase==='action' && !S.pending && !S.debts.length);
+  const canEnd = can(myTurn && S.phase==='action' && !S.pending && !S.debts.length);
+  const rollBtn=document.getElementById('btnRoll'), endBtn=document.getElementById('btnConsoleEnd');
+  endBtn.disabled = !canEnd;
+  rollBtn.classList.toggle('ready', !rollBtn.disabled);
+  // « Fin de tour » s'allume quelques secondes après la fin de l'action (le temps d'acheter, de construire…).
+  if(!canEnd){ clearTimeout(UI.endGlowTimer); UI.endGlowTimer=null; UI.endGlowKey=null; endBtn.classList.remove('ready'); }
+  else if(UI.endGlowKey!==S.current+':'+S.seq){
+    UI.endGlowKey=S.current+':'+S.seq; clearTimeout(UI.endGlowTimer); endBtn.classList.remove('ready');
+    UI.endGlowTimer=setTimeout(()=>{ if(!endBtn.disabled) endBtn.classList.add('ready'); }, END_GLOW_DELAY);
+  }
   if(MODE.online && NET.meta){
     const m=NET.meta.seats[NET.seat];
     document.getElementById('btnAway').textContent = m&&m.away ? '👋 Je suis là' : '💤 Je m\'absente';
@@ -1593,7 +1631,7 @@ function doAction(action, actor){
     if(UI.inflight) return;
     UI.inflight=true;
     clearTimeout(UI.inflightTimer);
-    UI.inflightTimer=setTimeout(()=>{ UI.inflight=false; renderConsoleBar(); }, 6000);
+    UI.inflightTimer=setTimeout(()=>{ UI.inflight=false; renderConsoleBar(); syncDecisionUI(); }, 6000);
     NET.send({type:'act', action});
     renderConsoleBar();
     return;
@@ -1652,7 +1690,7 @@ async function playEvent(ev, fast){
       break;
     }
     case 'card': sfx('card'); await showCardEvent(ev, fast); break;
-    case 'turn': if(MODE.online && ev.player===NET.seat) sfx('myturn'); break;
+    case 'turn': UI.jailLater=null; if(MODE.online && ev.player===NET.seat) sfx('myturn'); break;
     case 'auction': sfx('gavel'); break;
     case 'trade': if(isMe(ev.to)) sfx('notify'); break;
     case 'bankrupt': sfx('bankrupt'); break;
@@ -1744,6 +1782,12 @@ function currentDecision(){
     }
   }
   if(S.trade && mine(S.trade.to)) return {key:'trade:'+S.seq, show:()=>renderTradeOfferModal()};
+  // Début de tour au gymnase : on propose clairement les trois façons d'en sortir.
+  const cur=S.players[S.current];
+  if(cur && cur.inJail && S.phase==='roll' && mine(cur.id) && !UI.inflight){
+    const key='jail:'+cur.id+':'+cur.jailTurns;
+    if(UI.jailLater!==key) return {key, live:true, show:()=>renderJailModal()};
+  }
   return null;
 }
 
@@ -1872,6 +1916,32 @@ function renderChoiceModal(){
       <button class="btn-roll" style="font-size:14px;padding:9px 18px;background:#e8a830" onclick="doAction({type:'choose_draw'})">🃏 Tirer une carte Chance</button>` });
 }
 
+// ── Gymnase : payer, utiliser sa carte ou tenter un double ────────────────
+function renderJailModal(){
+  const p=S.players[S.current];
+  const key='jail:'+p.id+':'+p.jailTurns;
+  const jail=(S.board.find(c=>c.type==='jail')||{}).name||'Gymnase';
+  const last=p.jailTurns>=2;
+  const canPay=p.money>=E.JAIL_FINE;
+  const busy=UI.processing||UI.inflight;
+  const btn='style="font-size:14px;padding:9px 16px"';
+  openModal({ kind:'decision', key, closable:false, wide:true,
+    title:`⛓️ ${esc(jail)}${!MODE.online?' — '+pname(p):''}`,
+    body:`<div class="jail-choice">
+        <p>Vous êtes enfermé (essai ${p.jailTurns+1}/3). Pour sortir :</p>
+        <ul>
+          <li><b>Payer la caution</b> de ${money(E.JAIL_FINE)}, puis lancer les dés normalement ;</li>
+          ${p.getOut.length?`<li><b>Utiliser votre carte</b> « sortie du gymnase » (vous en avez ${p.getOut.length}) ;</li>`:''}
+          <li><b>Tenter un double</b> : si vous le faites, vous sortez et avancez${last?'. <b>Dernier essai</b> : en cas d\'échec, la caution sera payée d\'office':''}.</li>
+        </ul>
+        ${!canPay?`<p class="hint">Pas assez d'argent pour la caution.</p>`:''}
+      </div>`,
+    footer:`<button class="btn-roll" ${btn} ${!canPay||busy?'disabled':''} onclick="doAction({type:'pay_jail'})">⛓️ Payer ${money(E.JAIL_FINE)}</button>
+      ${p.getOut.length?`<button class="btn-roll" ${btn} style="font-size:14px;padding:9px 16px;background:#2e8b57" ${busy?'disabled':''} onclick="doAction({type:'use_get_out'})">🔑 Utiliser ma carte</button>`:''}
+      <button class="btn-roll" style="font-size:14px;padding:9px 16px;background:#e8a830" ${busy?'disabled':''} onclick="closeModal(true);rollDice()">🎲 Tenter un double</button>
+      <button class="btn-sm" onclick="UI.jailLater='${key}';closeModal(true)" title="Fermer pour gérer vos biens ; les boutons restent dans votre panneau">Plus tard</button>` });
+}
+
 // ── Enchères ───────────────────────────────────────────────────────────────
 function auctionRowHtml(pid){
   const pd=S.pending, p=S.players[pid];
@@ -1944,7 +2014,7 @@ function sideHtml(side){
   const parts=[];
   if(side.money) parts.push(money(side.money));
   side.props.forEach(pos=>{ const c=S.board[pos]; parts.push(`<span class="swatch" style="background:${GROUP_COLORS[c.group]||'#888'}"></span> ${esc(c.name)}${E.isMortgaged(S,pos)?' (hypothéquée)':''}`); });
-  if(side.getOut) parts.push(`🔑 ${side.getOut} carte(s) sortie de prison`);
+  if(side.getOut) parts.push(`🔑 ${side.getOut} carte(s) sortie du gymnase`);
   return parts.length?parts.map(x=>`<div>${x}</div>`).join(''):'<div class="hint">rien</div>';
 }
 function renderTradeOfferModal(){
@@ -2002,12 +2072,12 @@ function renderTradeComposer(){
         <div class="trade-col"><h4>Je donne</h4>
           ${tradePropsHtml(T.from,'give')}
           <label class="trade-prop">${MONEY_ICON}<input class="bid-input" type="number" min="0" max="${me.money}" value="${T.give.money||''}" placeholder="0" oninput="UI.trade.give.money=Number(this.value)||0"> / ${me.money}</label>
-          ${me.getOut.length?`<label class="trade-prop">🔑 <input class="bid-input" type="number" min="0" max="${me.getOut.length}" value="${T.give.getOut||''}" placeholder="0" oninput="UI.trade.give.getOut=Number(this.value)||0"> carte(s) prison</label>`:''}
+          ${me.getOut.length?`<label class="trade-prop">🔑 <input class="bid-input" type="number" min="0" max="${me.getOut.length}" value="${T.give.getOut||''}" placeholder="0" oninput="UI.trade.give.getOut=Number(this.value)||0"> carte(s) sortie du gymnase</label>`:''}
         </div>
         <div class="trade-col"><h4>Je demande à ${esc(them.name)}</h4>
           ${tradePropsHtml(T.to,'get')}
           <label class="trade-prop">${MONEY_ICON}<input class="bid-input" type="number" min="0" max="${them.money}" value="${T.get.money||''}" placeholder="0" oninput="UI.trade.get.money=Number(this.value)||0"> / ${them.money}</label>
-          ${them.getOut.length?`<label class="trade-prop">🔑 <input class="bid-input" type="number" min="0" max="${them.getOut.length}" value="${T.get.getOut||''}" placeholder="0" oninput="UI.trade.get.getOut=Number(this.value)||0"> carte(s) prison</label>`:''}
+          ${them.getOut.length?`<label class="trade-prop">🔑 <input class="bid-input" type="number" min="0" max="${them.getOut.length}" value="${T.get.getOut||''}" placeholder="0" oninput="UI.trade.get.getOut=Number(this.value)||0"> carte(s) sortie du gymnase</label>`:''}
         </div>
       </div>
       <div class="hint">Les biens d'un groupe qui a des alertes ne peuvent pas être échangés. Les biens hypothéqués restent hypothéqués.</div>`,
@@ -2311,6 +2381,12 @@ function handleNet(m){
 
     case 'lobby':
       NET.lobby=m;
+      // Les places sont renumérotées quand quelqu'un quitte le salon : on recale la nôtre.
+      if(Number.isInteger(m.you) && m.you!==NET.seat){
+        NET.seat=m.you;
+        const ses=sessionGet(); if(ses && ses.code===m.code) sessionSet(Object.assign(ses,{seat:m.you}));
+        rememberSave(m.code, {seat:m.you});
+      }
       if(document.getElementById('gameScreen').classList.contains('hidden')) showScreen('lobbyScreen');
       renderLobby();
       break;
@@ -2349,7 +2425,7 @@ function handleNet(m){
     case 'error':
       UI.inflight=false; clearTimeout(UI.inflightTimer);
       toast(m.message); sfx('error');
-      if(S) renderConsoleBar();
+      if(S){ renderConsoleBar(); syncDecisionUI(); }
       if(m.code==='bad_snapshot'){ setOnlineStatus(m.message); }
       break;
 

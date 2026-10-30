@@ -355,7 +355,7 @@
       case 'get_out':
         p.getOut.push({ deck, idx });
         s.secret.decks[deck].held.push(idx);
-        log(ctx, `${who(p)} garde la carte « sortie de prison ».`, 'gain');
+        log(ctx, `${who(p)} garde la carte « sortie du gymnase ».`, 'gain');
         break;
       case 'move_to': {
         const t = clampPos(card.targetPos);
@@ -431,7 +431,7 @@
       const lv = level(s, pos);
       if (lv > 0) { bankPays(ctx, p, Math.floor(cell(s, pos).buildCost / 2) * lv); delete s.buildings[pos]; }
     });
-    // 2. Argent, titres et cartes « sortie de prison ».
+    // 2. Argent, titres et cartes « sortie du gymnase ».
     if (creditor) {
       creditor.money += p.money;
       creditor.properties.push(...p.properties);
@@ -494,7 +494,7 @@
     const p = s.players[pid];
     if (!isInt(side.money) || side.money < 0) return 'Montant invalide.';
     if (side.money > p.money) return `${p.name} n'a pas assez d'argent pour cet échange.`;
-    if (!isInt(side.getOut) || side.getOut < 0 || side.getOut > p.getOut.length) return 'Nombre de cartes « sortie de prison » invalide.';
+    if (!isInt(side.getOut) || side.getOut < 0 || side.getOut > p.getOut.length) return 'Nombre de cartes « sortie du gymnase » invalide.';
     for (const pos of side.props) {
       if (!isInt(pos) || !p.properties.includes(pos)) return `${p.name} ne possède pas ${s.board[pos] ? s.board[pos].name : 'cette case'}.`;
       const c = cell(s, pos);
@@ -513,7 +513,7 @@
     const parts = [];
     if (x.money) parts.push(`${x.money} ${CURRENCY}`);
     x.props.forEach(pos => parts.push(cell(s, pos).name));
-    if (x.getOut) parts.push(`${x.getOut} carte(s) sortie de prison`);
+    if (x.getOut) parts.push(`${x.getOut} carte(s) sortie du gymnase`);
     return parts.length ? parts.join(', ') : 'rien';
   }
 
@@ -566,10 +566,10 @@
       const s = ctx.s, p = s.players[pid];
       if (pid !== s.current || s.phase !== 'roll' || s.pending || s.debts.length) return "Ce n'est pas le moment.";
       if (!p.inJail) return "Vous n'êtes pas enfermé.";
-      if (!p.getOut.length) return "Vous n'avez pas de carte « sortie de prison ».";
+      if (!p.getOut.length) return "Vous n'avez pas de carte « sortie du gymnase ».";
       releaseGetOut(s, p.getOut.pop());
       p.inJail = false; p.jailTurns = 0;
-      log(ctx, `${who(p)} utilise sa carte « sortie de prison ».`, 'gain');
+      log(ctx, `${who(p)} utilise sa carte « sortie du gymnase ».`, 'gain');
     },
 
     buy(ctx, pid) {

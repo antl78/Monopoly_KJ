@@ -55,7 +55,7 @@ Le serveur ne contient aucune règle : il transmet les actions au moteur partag�
 |---|---|
 | `hello` | `protocol` |
 | `joined` | `code`, `seat`, `token`, `host`, `phase` |
-| `lobby` | salon d'attente : `seats`, `hostSeat`, `config`, `timerSec`, `customBoard`, `customCards` |
+| `lobby` | salon d'attente : `you` (votre place, recalée quand quelqu'un part), `seats`, `hostSeat`, `config`, `timerSec`, `customBoard`, `customCards` |
 | `game` | état complet : `board`, `cards`, `pawns`, `state`, `meta`, `chat` |
 | `update` | après chaque coup : `v`, `events`, `state`, `meta`, `by` (qui a joué), `auto` (coup joué automatiquement) |
 | `meta` | présence et minuteurs seuls (voir ci-dessous) |

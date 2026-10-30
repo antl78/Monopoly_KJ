@@ -111,7 +111,7 @@ function joinedMsg(room, seat, token) {
   return { type: 'joined', code: room.code, seat, token, host: room.hostSeat === seat, phase: room.phase, protocol: PROTOCOL, ephemeralSaves: snap.isEphemeral() };
 }
 function sendRoomState(ws, room) {
-  if (room.phase === 'lobby') send(ws, room.lobbyView());
+  if (room.phase === 'lobby') send(ws, room.lobbyView(ws.seat));
   else send(ws, room.fullGameMsg());
 }
 

@@ -105,12 +105,14 @@ class Room {
   sendTo(seat, msg) { const s = this.seats[seat]; if (s && s.ws) this.hooks.send(s.ws, msg); }
   broadcast(msg) { this.seats.forEach(s => { if (s.ws) this.hooks.send(s.ws, msg); }); }
 
-  lobbyView() {
-    return { type: 'lobby', code: this.code, hostSeat: this.hostSeat, config: this.config, timerSec: this.timerSec,
+  // `you` : la place du destinataire. Les places sont renumérotées quand quelqu'un
+  // quitte le salon d'attente : chaque client doit donc recaler son numéro.
+  lobbyView(you) {
+    return { type: 'lobby', code: this.code, you, hostSeat: this.hostSeat, config: this.config, timerSec: this.timerSec,
       customBoard: !!this.customBoard, customCards: !!this.customCards,
       seats: this.seats.map((s, i) => ({ seat: i, name: s.name, pawn: s.pawn, connected: s.connected })) };
   }
-  broadcastLobby() { this.broadcast(this.lobbyView()); }
+  broadcastLobby() { this.seats.forEach((s, i) => { if (s.ws) this.hooks.send(s.ws, this.lobbyView(i)); }); }
 
   meta(now) {
     now = now || Date.now();

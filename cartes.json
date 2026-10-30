@@ -246,7 +246,7 @@
       "id": 6,
       "deck": "community",
       "icon": "💨",
-      "text": "Poudre d'escampette : vous êtes libéré du Pocobar. Cette carte peut être conservée jusqu'à ce qu'elle soit utilisée ou vendue.",
+      "text": "Poudre d'escampette : vous êtes libéré du gymnase. Cette carte peut être conservée jusqu'à ce qu'elle soit utilisée ou vendue.",
       "flavor": "",
       "effect": "get_out",
       "amount": 0,

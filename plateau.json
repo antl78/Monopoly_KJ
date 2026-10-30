@@ -574,7 +574,7 @@
     },
     {
       "pos": 30,
-      "name": "Bannissement",
+      "name": "Ban du serveur",
       "type": "goto_jail",
       "group": "none",
       "price": 0,

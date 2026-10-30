@@ -307,6 +307,9 @@ header {
   letter-spacing: 0.05em;
 }
 .card-body { padding: 10px 12px; }
+.card-preview-img { display:block; width:100%; height:90px; object-fit:cover; }
+.cardimg-preview { width:100%; max-width:260px; height:110px; border-radius: var(--r); border:1px solid var(--border2); background: var(--surface3); overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:11px; color: var(--text3); }
+.cardimg-preview img { width:100%; height:100%; object-fit:cover; }
 .card-name { font-size: 13px; font-weight: 600; text-align: center; margin-bottom: 6px; line-height: 1.3; }
 .card-price { text-align: center; font-size: 11px; color: #444; margin-bottom: 8px; }
 .card-divider { border: none; border-top: 1px solid #ddd; margin: 6px 0; }
@@ -770,6 +773,22 @@ function renderEditor() {
         </div>
       </div>
 
+      ${true ? `
+      <div class="field field-full">
+        <hr class="section-sep">
+        <label>Image de la carte (facultatif)</label>
+        <input type="text" id="cardImageInput" placeholder="images/cases/mon-image.jpg ou https://…" value="${esc(c.cardImage && !c.cardImage.startsWith('data:') ? c.cardImage : '')}" oninput="updCardImage(this.value)" style="width:100%">
+        <div style="font-size:11px;color:var(--text3)">Conseillé : déposer l'image dans <code>images/cases/</code> et écrire son chemin ici (plateau.json reste léger). Sinon, « Uploader » l'intègre directement dans le JSON (compressée).</div>
+        <div class="img-preview-wrap" style="margin-top:6px">
+          <div class="cardimg-preview" id="cardImgPreview">${renderCardImgPreview(c.cardImage)}</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <button class="btn" onclick="document.getElementById('cardImgFile').click()">📁 Uploader…</button>
+            ${c.cardImage ? '<button class="img-clear-btn" onclick="clearCardImage()">✕ Supprimer</button>' : ''}
+          </div>
+          <input type="file" id="cardImgFile" accept="image/*" style="display:none" onchange="loadCardImageFile(this)">
+        </div>
+      </div>` : ''}
+
       <div class="field field-full">
         <label>Description / Note (facultatif)</label>
         <textarea placeholder="Ex: La case la plus chère du plateau..." oninput="upd('desc',this.value)">${esc(c.desc||'')}</textarea>
@@ -845,6 +864,9 @@ function renderPreview() {
     return `<div class="board-dot${i===currentIdx?' current':''}" style="background:${col}" title="${i}: ${cc.name}" onclick="currentIdx=${i};render()"></div>`;
   }).join('');
 
+  if(c.cardImage) {
+    cardHtml = cardHtml.replace('<div class="card-body">', `<img class="card-preview-img" src="${esc(c.cardImage)}" alt="" onerror="this.remove()"><div class="card-body">`);
+  }
   document.getElementById('previewContent').innerHTML = `
     ${cardHtml}
     <div class="preview-stats">
@@ -867,6 +889,41 @@ function upd(key, val) {
   renderPreview();
   document.getElementById('editorTitle').textContent = `Case ${currentIdx} — ${board[currentIdx].name || 'Sans nom'}`;
   if(key === 'icon') updateIconPreview(val);
+}
+
+// ─── IMAGE DE FOND DU TITRE DE PROPRIÉTÉ (champ cardImage) ─────────────────
+function renderCardImgPreview(src) {
+  return src ? `<img src="${esc(src)}" alt="" onerror="this.replaceWith('Image introuvable (normal si la page est ouverte en file://)')">` : 'Aucune image';
+}
+function updCardImage(val) {
+  val = (val || '').trim().replace(/\\/g, '/');
+  if(val) board[currentIdx].cardImage = val; else delete board[currentIdx].cardImage;
+  const box = document.getElementById('cardImgPreview');
+  if(box) box.innerHTML = renderCardImgPreview(val);
+  renderList(); renderPreview();
+}
+function clearCardImage() {
+  delete board[currentIdx].cardImage;
+  renderEditor(); renderPreview();
+}
+// Upload : redimensionne (800 px max) et compresse en JPEG pour garder plateau.json léger.
+function loadCardImageFile(input) {
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, 800 / Math.max(img.width, img.height));
+      const cv = document.createElement('canvas');
+      cv.width = Math.round(img.width * scale); cv.height = Math.round(img.height * scale);
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      board[currentIdx].cardImage = cv.toDataURL('image/jpeg', 0.8);
+      renderEditor(); renderPreview();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
 }
 
 function clearIcon() {

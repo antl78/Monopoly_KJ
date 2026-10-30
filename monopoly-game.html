@@ -283,6 +283,19 @@ input[type=file]{display:none}
 .td-kicker{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);text-align:center}
 .td-name{font-family:'Bebas Neue',sans-serif;font-size:20px;text-align:center;letter-spacing:.05em;margin:2px 0 10px;color:var(--text)}
 .td-foot{margin-top:8px;font-size:12px;color:var(--text2);text-align:center}
+/* Titre de propriété illustré (champ cardImage du plateau) : image entière en haut, fiche en dessous */
+.td-img{display:block;width:100%;height:auto;max-height:340px;object-fit:contain;background:#1b1b1b}
+/* Fond teinté à la couleur du groupe (--td), avec de grands arcs discrets façon WikiMasters */
+.title-deed{--td:#888;border-color:color-mix(in srgb,var(--td) 30%,var(--border2))}
+.title-deed .td-body{background-color:#fff;
+  background-color:color-mix(in srgb,var(--td) 12%,#fff);
+  background-image:
+    radial-gradient(circle at 112% 30%,transparent 34%,color-mix(in srgb,var(--td) 9%,transparent) 35%,color-mix(in srgb,var(--td) 9%,transparent) 44%,transparent 45%),
+    radial-gradient(circle at -15% 110%,transparent 30%,color-mix(in srgb,#fff 45%,transparent) 31%,color-mix(in srgb,#fff 45%,transparent) 40%,transparent 41%)}
+.title-deed .prop-table td{border-bottom:1px solid color-mix(in srgb,var(--td) 12%,transparent)}
+.title-deed .prop-table{border-collapse:collapse}
+.title-deed .prop-table tr:last-child td{border-bottom:none}
+.td-desc{font-size:12px;color:var(--text2);text-align:center;margin:-6px 0 10px;line-height:1.4}
 .owner-line{font-size:12px;color:var(--text2)}
 .build-line{font-size:13px;color:var(--accent)}
 .inline-alert{height:1.15em;width:1.15em;object-fit:contain;vertical-align:-0.22em;margin:0 .1em}
@@ -1809,16 +1822,29 @@ function titleDeedHtml(cell, color){
       <tr><td>4 gares</td><td>${money(cell.rents[3])}</td></tr>
     ` : `<tr><td colspan="2">Loyer = dés × 4 (1 compagnie possédée) ou × 10 (2 compagnies)</td></tr>`;
 
+  const img = cardImageSrc(cell.cardImage);
   return `
-    <div class="title-deed">
+    <div class="title-deed" style="--td:${color}">
       <div class="td-band" style="background:${color}"></div>
+      ${img?`<img class="td-img" src="${esc(img)}" alt="" onerror="this.remove()">`:''}
       <div class="td-body">
         <div class="td-kicker">Titre de propriété</div>
         <div class="td-name">${esc(cell.name)}</div>
+        ${cell.desc?`<div class="td-desc">${fmtM(cell.desc)}</div>`:''}
         <table class="prop-table">${rentRows}</table>
         ${cell.price?`<div class="td-foot">Hypothèque ${money(cell.mortgage)}${cell.buildCost?` · Alerte ${money(cell.buildCost)}`:''}</div>`:''}
       </div>
     </div>`;
+}
+
+// Image de fond d'un titre de propriété : chemin relatif sous images/,
+// URL http(s) ou data:image. Toute autre valeur est ignorée.
+function cardImageSrc(v){
+  if(typeof v!=='string' || !v.trim()) return '';
+  v=v.trim();
+  if(/^(https?:\/\/|data:image\/)/i.test(v)) return v;
+  if(/^images\/[\w\/.-]+\.(png|jpe?g|gif|webp)$/i.test(v) && !v.includes('..')) return v;
+  return '';
 }
 
 function renderBuyModal(){
@@ -2078,7 +2104,15 @@ function showCellInfo(pos){
       ${E.isMortgaged(S,pos)?'<div class="mortgaged-line">🔒 Hypothéquée</div>':''}
       ${titleDeedHtml(cell, color)}`;
   } else {
-    body=`<div style="color:var(--text2);font-size:14px">${fmtM(cell.desc||'Case spéciale.')}</div>`;
+    const img=cardImageSrc(cell.cardImage);
+    body = img
+      ? `<div class="title-deed" style="--td:${color}">
+          <div class="td-band" style="background:${color}"></div>
+          <img class="td-img" src="${esc(img)}" alt="" onerror="this.remove()">
+          <div class="td-body"><div class="td-name">${esc(cell.name)}</div>
+            <div class="td-desc" style="margin:0">${fmtM(cell.desc||'Case spéciale.')}</div></div>
+        </div>`
+      : `<div style="color:var(--text2);font-size:14px">${fmtM(cell.desc||'Case spéciale.')}</div>`;
   }
   const iconHtml = cell.icon ? renderCellIconHtml(cell.icon, false) + ' ' : '';
   openModal({ kind:'user', title: iconHtml+esc(cell.name), body, footer:`<button class="btn-sm" onclick="closeModal()">Fermer</button>` });

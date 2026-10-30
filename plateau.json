@@ -36,7 +36,8 @@
         250
       ],
       "buildCost": 50,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/hlm-de-natsume.jpg"
     },
     {
       "pos": 2,
@@ -72,7 +73,8 @@
         450
       ],
       "buildCost": 50,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/crous-d-anok.jpg"
     },
     {
       "pos": 4,
@@ -90,7 +92,8 @@
         0
       ],
       "buildCost": 0,
-      "desc": "Payez 200M$"
+      "desc": "Payez 200M$",
+      "cardImage": "images/cases/discord-nitro.jpg"
     },
     {
       "pos": 5,
@@ -108,7 +111,8 @@
         0
       ],
       "buildCost": 0,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/clan-tokisaki.jpg"
     },
     {
       "pos": 6,
@@ -126,7 +130,8 @@
         550
       ],
       "buildCost": 50,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/bk-de-barbes.jpg"
     },
     {
       "pos": 7,
@@ -163,7 +168,8 @@
         550
       ],
       "buildCost": 50,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/bar-a-putes-de-pigalle.jpg"
     },
     {
       "pos": 9,
@@ -181,7 +187,8 @@
         600
       ],
       "buildCost": 50,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/caesar-palace.jpg"
     },
     {
       "pos": 10,
@@ -217,7 +224,8 @@
         750
       ],
       "buildCost": 100,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/cadeau-de-l-ange.jpg"
     },
     {
       "pos": 12,
@@ -235,7 +243,8 @@
         0
       ],
       "buildCost": 0,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/compagnie-jvc.jpg"
     },
     {
       "pos": 13,
@@ -253,7 +262,8 @@
         750
       ],
       "buildCost": 100,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/academie-du-pic-de-l-espoir.png"
     },
     {
       "pos": 14,
@@ -271,7 +281,8 @@
         900
       ],
       "buildCost": 100,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/auchan-de-nancy.jpg"
     },
     {
       "pos": 15,
@@ -289,7 +300,8 @@
         0
       ],
       "buildCost": 0,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/clan-scarlet.jpg"
     },
     {
       "pos": 16,
@@ -307,7 +319,8 @@
         950
       ],
       "buildCost": 100,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/hinamizawa.jpg"
     },
     {
       "pos": 17,
@@ -343,7 +356,8 @@
         950
       ],
       "buildCost": 100,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/manoir-de-rokkenjima.jpg"
     },
     {
       "pos": 19,
@@ -361,7 +375,8 @@
         1000
       ],
       "buildCost": 100,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/cafe-leblanc.jpg"
     },
     {
       "pos": 20,
@@ -398,7 +413,8 @@
         1050
       ],
       "buildCost": 150,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/rhodes-island.jpg"
     },
     {
       "pos": 22,
@@ -435,7 +451,8 @@
         1050
       ],
       "buildCost": 150,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/douarnenez.jpg"
     },
     {
       "pos": 24,
@@ -453,7 +470,8 @@
         1100
       ],
       "buildCost": 150,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/tassili-snack.jpg"
     },
     {
       "pos": 25,
@@ -471,7 +489,8 @@
         0
       ],
       "buildCost": 0,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/clan-aniki.jpg"
     },
     {
       "pos": 26,
@@ -489,7 +508,8 @@
         1150
       ],
       "buildCost": 150,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/alfortville.jpg"
     },
     {
       "pos": 27,
@@ -507,7 +527,8 @@
         1150
       ],
       "buildCost": 150,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/banana-cafe.jpg"
     },
     {
       "pos": 28,
@@ -525,7 +546,8 @@
         0
       ],
       "buildCost": 0,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/compagnie-discord.jpg"
     },
     {
       "pos": 29,
@@ -543,7 +565,8 @@
         1200
       ],
       "buildCost": 150,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/extra-life-cafe.jpg"
     },
     {
       "pos": 30,
@@ -580,7 +603,8 @@
         1275
       ],
       "buildCost": 200,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/geek-room.jpg"
     },
     {
       "pos": 32,
@@ -598,7 +622,8 @@
         1275
       ],
       "buildCost": 200,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/animest.jpg"
     },
     {
       "pos": 33,
@@ -634,7 +659,8 @@
         1400
       ],
       "buildCost": 200,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/stand-touhou.jpg"
     },
     {
       "pos": 35,
@@ -652,7 +678,8 @@
         0
       ],
       "buildCost": 0,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/banque-populaire-kj.jpg"
     },
     {
       "pos": 36,
@@ -689,7 +716,8 @@
         1500
       ],
       "buildCost": 200,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/japan-expo.png"
     },
     {
       "pos": 38,
@@ -725,7 +753,8 @@
         2000
       ],
       "buildCost": 200,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/rue-de-la-paz.jpg"
     }
   ]
 }

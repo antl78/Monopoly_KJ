@@ -57,7 +57,8 @@ const server = http.createServer((req, res) => {
   let file, type, cache = 'no-cache';
   if (STATIC[url.pathname]) [file, type] = STATIC[url.pathname];
   else {
-    const m = /^\/images\/([\w.-]+)\.(\w+)$/.exec(url.pathname);
+    // images/xxx.png ou images/cases/xxx.jpg (fonds des titres de propriété)
+    const m = /^\/images\/((?:cases\/)?[\w-][\w.-]*)\.(\w+)$/.exec(url.pathname);
     if (m && IMG_TYPES[m[2].toLowerCase()]) { file = path.join('images', m[1] + '.' + m[2]); type = IMG_TYPES[m[2].toLowerCase()]; cache = 'public, max-age=86400'; }
   }
   if (!file) { res.writeHead(404, Object.assign(headers, { 'Content-Type': 'text/plain; charset=utf-8' })); res.end('Introuvable'); return; }

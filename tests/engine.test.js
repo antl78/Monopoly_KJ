@@ -342,7 +342,8 @@ test('déterministe : même graine + mêmes actions = même partie', () => {
       if (!r.ok) throw new Error(r.error);
       s = r.state;
     }
-    return JSON.stringify(s);
+    // Les horodatages des stats (début/fin réels) sont les seules différences admises.
+    return JSON.stringify(s, (k, v) => (k === 't0' || k === 't1' ? undefined : v));
   };
   assert.equal(run(), run());
 });
@@ -356,4 +357,152 @@ test('actions invalides refusées proprement', () => {
   assert.ok(refused(s, 9, { type: 'roll' }));
   assert.ok(refused(s, 0, { type: 'bid', amount: 1e9 }));
   assert.ok(refused(s, 0, {}));
+});
+
+// ── Statistiques de fin de partie ──────────────────────────────────────────
+// Un tour sans histoire : lancer, refuser l'achat, passer l'enchère, finir.
+function quietTurn(s, pid) {
+  s = act(s, pid, { type: 'roll' }, { dice: [3, 4] });
+  if (s.pending && s.pending.type === 'buy') s = act(s, pid, { type: 'decline' });
+  while (s.pending && s.pending.type === 'auction') s = act(s, E.awaiting(s)[0], { type: 'pass' });
+  while (s.debts.length) s = act(s, s.debts[0].from, E.autoAction(s, s.debts[0].from));
+  return act(s, pid, { type: 'end_turn' });
+}
+test('stats : loyers, plus gros loyer, case la plus rentable', () => {
+  let s = own(game(), 1, 39);
+  s = setup(s, c => { c.buildings[39] = { houses: 2, hotel: 0 }; });
+  s = own(s, 1, 37);
+  s = setup(s, c => { c.buildings[37] = { houses: 2, hotel: 0 }; });
+  s = at(s, 0, 35);
+  s = act(s, 0, { type: 'roll' }, { dice: [1, 3] });            // 39 : loyer
+  const rent = BOARD[39].rents[2];
+  const st = s.stats;
+  assert.equal(st.players[0].rentPaid, rent);
+  assert.equal(st.players[1].rentRecv, rent);
+  assert.deepEqual([st.players[1].maxRentRecv.amount, st.players[1].maxRentRecv.pos, st.players[1].maxRentRecv.other], [rent, 39, 0]);
+  assert.equal(st.players[0].maxRentPaid.other, 1);
+  assert.equal(st.cellRent[39][1], rent);
+  assert.equal(st.land[39], 1);
+  assert.equal(st.rolls, 1);
+  ok(s);
+});
+
+test('stats : un loyer payé plus tard (dette) est compté au règlement', () => {
+  let s = own(game(), 1, 37, 39);
+  s = setup(s, c => { c.buildings[37] = { houses: 4, hotel: 0 }; c.buildings[39] = { houses: 0, hotel: 1 }; c.players[0].money = 100; });
+  s = own(s, 0, 1);
+  s = at(s, 0, 35);
+  s = act(s, 0, { type: 'roll' }, { dice: [1, 3] });
+  assert.equal(s.debts.length, 1);
+  assert.equal(s.stats.players[1].rentRecv, 0);
+  s = setup(s, c => { c.players[0].money = 5000; });
+  s = act(s, 0, { type: 'mortgage', pos: 1 });                    // déclenche le règlement
+  assert.equal(s.stats.players[1].rentRecv, BOARD[39].rents[5]);
+  assert.equal(s.stats.players[0].mortgages, 1);
+  ok(s);
+});
+
+test('stats : achats, enchères, alertes, échanges, doubles, Départ, gymnase', () => {
+  let s = at(game(3), 0, 37);
+  s = act(s, 0, { type: 'roll' }, { dice: [1, 1] });             // 39, double
+  s = act(s, 0, { type: 'buy' });
+  s = act(s, 0, { type: 'end_turn' });                             // relance
+  s = act(s, 0, { type: 'roll' }, { dice: [1, 2] });             // 39 → 2 : passage Départ
+  assert.equal(s.stats.players[0].bought, 1);
+  assert.equal(s.stats.players[0].doubles, 1);
+  assert.equal(s.stats.players[0].goPasses, 1);
+  s = act(s, 0, { type: 'end_turn' });
+  s = at(s, 1, 0);
+  s = act(s, 1, { type: 'roll' }, { dice: [2, 4] });             // 6
+  s = act(s, 1, { type: 'decline' });
+  s = act(s, 1, { type: 'bid', amount: 40 });
+  s = act(s, 2, { type: 'bid', amount: 60 });
+  s = act(s, 0, { type: 'pass' });
+  s = act(s, 1, { type: 'pass' });
+  assert.deepEqual([s.stats.players[2].auctionsWon, s.stats.players[2].auctionSpent, s.stats.players[2].bought], [1, 60, 1]);
+  s = act(s, 1, { type: 'trade_propose', to: 0, give: { money: 10 }, get: {} });
+  s = act(s, 0, { type: 'trade_accept' });
+  assert.equal(s.stats.players[0].trades, 1);
+  assert.equal(s.stats.players[1].trades, 1);
+  s = own(s, 1, 1, 3);
+  s = act(s, 1, { type: 'build', pos: 1 });
+  assert.equal(s.stats.players[1].houses, 1);
+  s = act(s, 1, { type: 'end_turn' });
+  s = at(s, 2, 28);
+  s = act(s, 2, { type: 'roll' }, { dice: [1, 1] });             // 30 : Ban du serveur
+  assert.equal(s.stats.players[2].jailSent, 1);
+  s = act(s, 2, { type: 'end_turn' });
+  s = quietTurn(s, 0);
+  s = quietTurn(s, 1);
+  assert.equal(s.stats.players[2].jailTurns, 1);                 // son tour commence au gymnase
+  s = act(s, 2, { type: 'pay_jail' });
+  assert.equal(s.stats.players[2].bails, 1);
+  assert.ok(s.stats.worth.length >= 2);
+  ok(s);
+});
+
+test('stats : cartes, taxes', () => {
+  const cards = { chance: [card('gain', { amount: 100 })], community: [card('lose', { deck: 'community', amount: 30 })] };
+  let s = at(game(2, { cards }), 0, 0);
+  s = act(s, 0, { type: 'roll' }, { dice: [1, 3] });             // 4 : taxe
+  assert.equal(s.stats.players[0].taxes, BOARD[4].price);
+  s = act(s, 0, { type: 'end_turn' });
+  s = at(s, 1, 5);
+  s = act(s, 1, { type: 'roll' }, { dice: [1, 1] });             // 7 : Chance +100
+  s = act(s, 1, { type: 'end_turn' });
+  s = act(s, 1, { type: 'roll' }, { dice: [6, 4] });             // 17 : Communauté −30
+  const p1 = s.stats.players[1];
+  assert.deepEqual([p1.cardsChance, p1.cardsCommunity, p1.cardNet], [1, 1, 70]);
+  ok(s);
+});
+
+test('stats : faillite datée, partie finie horodatée, patrimoine record', () => {
+  let s = own(game(), 1, 37, 39);
+  s = setup(s, c => { c.buildings[37] = { houses: 4, hotel: 0 }; c.buildings[39] = { houses: 0, hotel: 1 }; c.players[0].money = 10; });
+  s = at(s, 0, 35);
+  s = act(s, 0, { type: 'roll' }, { dice: [1, 3] });
+  const r = E.apply(s, 0, { type: 'bankrupt' }, { now: 123456 });
+  s = r.state;
+  assert.equal(s.phase, 'ended');
+  assert.equal(s.stats.players[0].bankruptTurn, s.turn);
+  assert.equal(s.stats.players[0].bankruptTo, 1);
+  assert.equal(s.stats.t1, 123456);
+  assert.ok(s.stats.players[1].peak >= 1500);
+  const last = s.stats.worth[s.stats.worth.length - 1];
+  assert.equal(last[1], 0);
+  ok(s);
+});
+
+test('stats : une ancienne sauvegarde (sans stats) en reçoit à la reprise', () => {
+  let s = game(3);
+  s = setup(s, c => { delete c.stats; c.turn = 12; c.players[2].bankrupt = true; c.players[2].money = 0; });
+  s = act(s, 0, { type: 'roll' }, { dice: [3, 4] });
+  assert.equal(s.stats.since, 12);
+  assert.equal(s.stats.rolls, 1);
+  assert.equal(s.stats.players[2].bankruptTurn, 12);
+  ok(s);
+});
+
+test('stats : la courbe reste légère sur une très longue partie', () => {
+  let s = game(2);
+  for (let t = 0; t < 1200; t++) s = setup(s, c => { c.turn++; });
+  for (let i = 0; i < 2 * 700; i++) {
+    s = act(s, s.current, { type: 'roll' }, { dice: [1, 2] });
+    if (s.pending && s.pending.type === 'buy') s = act(s, s.current, { type: 'decline' });
+    while (s.pending && s.pending.type === 'auction') s = act(s, E.awaiting(s)[0], { type: 'pass' });
+    while (s.debts.length) s = act(s, s.debts[0].from, E.autoAction(s, s.debts[0].from));
+    if (s.phase === 'ended') break;
+    s = act(s, s.current, { type: 'end_turn' });
+  }
+  assert.ok(s.stats.worth.length <= E.WORTH_ROWS_MAX + 1);
+  assert.ok(JSON.stringify(s.stats).length < 20000, JSON.stringify(s.stats).length + ' octets');
+  ok(s);
+});
+
+test('jusqu\'à 8 joueurs, pas 9', () => {
+  const s = game(8);
+  assert.equal(s.players.length, 8);
+  assert.equal(s.stats.players.length, 8);
+  assert.throws(() => E.createGame({ board: BOARD, cards: { chance: [], community: [] }, players: [...Array(9).keys()].map(i => ({ name: 'J' + i })) }));
+  assert.throws(() => game(1));
 });

@@ -39,7 +39,7 @@ function randomTrade(s, pid, rng) {
 
 function playGame(seed, maxSteps) {
   const rng = mulberry(seed);
-  const n = 2 + Math.floor(rng() * 5);
+  const n = 2 + Math.floor(rng() * (E.MAX_PLAYERS - 1));   // 2 à 8 joueurs
   const config = { auctions: rng() < 0.7, evenBuild: rng() < 0.8, buildingLimit: rng() < 0.3, startMoney: rng() < 0.3 ? 500 : 1500 };
   let s = E.createGame({ board: BOARD, cards: cartes, players: [...Array(n).keys()].map(i => ({ name: 'Bot' + i, pawn: '🤖' })), config, seed });
   let steps = 0;

@@ -141,7 +141,7 @@ function handle(ws, msg) {
       const r = rooms.get(String(msg.code || '').trim().toUpperCase());
       if (!r) return err(ws, 'Salon introuvable. Vérifiez le code.', { code: 'unknown_room' });
       if (r.phase === 'lobby') {
-        if (r.seats.length >= 6) return err(ws, 'Salon complet (6 joueurs maximum).');
+        if (r.seats.length >= E.MAX_PLAYERS) return err(ws, `Salon complet (${E.MAX_PLAYERS} joueurs maximum).`);
         const { seat: s, token } = r.addSeat(msg.name, msg.pawn);
         r.attach(s, ws);
         send(ws, joinedMsg(r, s, token));

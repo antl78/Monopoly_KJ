@@ -16,6 +16,7 @@ Le serveur ne contient aucune règle : il transmet les actions au moteur partag�
 - **Vue filtrée.** Certaines données ne partent **jamais** vers les joueurs :
   - `state.secret` (graine des dés, ordre des paquets) ;
   - le plateau, les cartes et les images des pions, envoyés **une seule fois** dans `game`. Dans l'état de jeu, un pion en image devient `img:N`.
+- **Statistiques.** `state.stats` (rempli par le moteur) part avec chaque état : le bouton 📊 et le bilan de fin s'en servent. Il pèse quelques Ko au plus (la courbe du patrimoine est éclaircie au-delà de 240 points).
 
 ## Client → serveur
 

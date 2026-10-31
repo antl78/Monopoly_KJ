@@ -16,7 +16,7 @@ function card(effect, extra) {
 // les cases Chance/Communauté n'aient aucun effet parasite).
 function game(n, opts) {
   opts = opts || {};
-  const players = [...Array(n || 2).keys()].map(i => ({ name: 'J' + (i + 1), pawn: ['🎩', '🚂', '🐕', '🚗', '⛵', '👢'][i] }));
+  const players = [...Array(n || 2).keys()].map(i => ({ name: 'J' + (i + 1), pawn: ['🎩', '🚂', '🐕', '🚗', '⛵', '👢', '🎸', '🍕'][i] }));
   return E.createGame({ board: BOARD, cards: opts.cards || { chance: [], community: [] }, players, config: opts.config, seed: opts.seed || 1 });
 }
 
@@ -94,6 +94,25 @@ function checkInvariants(s) {
     s.debts.forEach(d => { if (s.players[d.from].bankrupt) errs.push('dette d\'un joueur en faillite'); });
   }
   if (s.phase === 'ended' && s.winner === null) errs.push('partie finie sans gagnant');
+  // Statistiques : cohérentes entre elles.
+  const st = s.stats;
+  if (!st || st.players.length !== n) errs.push('stats absentes ou mal dimensionnées');
+  else {
+    const sum = k => st.players.reduce((a, x) => a + x[k], 0);
+    if (sum('rentPaid') !== sum('rentRecv')) errs.push(`loyers payés (${sum('rentPaid')}) ≠ loyers touchés (${sum('rentRecv')})`);
+    let cellTotal = 0;
+    for (const pos in st.cellRent) for (const id in st.cellRent[pos]) cellTotal += st.cellRent[pos][id];
+    if (cellTotal !== sum('rentRecv')) errs.push(`loyers par case (${cellTotal}) ≠ loyers touchés (${sum('rentRecv')})`);
+    st.players.forEach((x, i) => {
+      for (const k in x) if (typeof x[k] === 'number' && x[k] < 0 && k !== 'cardNet') errs.push(`stat ${k} négative pour ${i}`);
+      if (x.maxRentRecv && x.maxRentRecv.amount > x.rentRecv) errs.push(`plus gros loyer > total pour ${i}`);
+      if (s.players[i].bankrupt !== (x.bankruptTurn !== null)) errs.push(`tour de faillite incohérent pour ${i}`);
+    });
+    if (sum('doubles') > st.rolls) errs.push('plus de doubles que de lancers');
+    if (!st.worth.length || st.worth.length > E.WORTH_ROWS_MAX + 1) errs.push(`courbe : ${st.worth.length} points`);
+    if (st.worth.some(r => r.length !== n + 1)) errs.push('courbe : ligne mal dimensionnée');
+    if (st.land.length !== 40) errs.push('compteur de cases mal dimensionné');
+  }
   return errs;
 }
 

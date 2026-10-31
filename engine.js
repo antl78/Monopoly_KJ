@@ -34,6 +34,7 @@
   const GO_SALARY = 200;
   const JAIL_FINE = 50;
   const MAX_LOG = 200;
+  const MAX_PLAYERS = 8;   // comme le Monopoly officiel
   const CURRENCY = 'oufingoufs';
   const BUYABLE = ['property', 'station', 'utility'];
 
@@ -73,11 +74,23 @@
   // jamais pendant la partie (et pèsent lourd avec les images en base64), on
   // garde donc la même référence au lieu de les recopier à chaque action.
   // Le journal est copié « en surface » : ses lignes ne sont jamais modifiées.
-  function cloneState(s) {
-    const { board, cards, log, ...rest } = s;
+  function cloneState(s, dry) {
+    const { board, cards, log, stats, ...rest } = s;
     const c = JSON.parse(JSON.stringify(rest));
     c.board = board; c.cards = cards; c.log = log.slice();
+    if (stats && !dry) c.stats = cloneStats(stats);
     return c;
+  }
+  // Les stats sont copiées vite : les lignes de la courbe ne sont jamais
+  // modifiées après coup (seulement remplacées), on recopie donc juste la liste.
+  function cloneStats(st) {
+    const cellRent = {};
+    for (const k in st.cellRent) cellRent[k] = Object.assign({}, st.cellRent[k]);
+    return Object.assign({}, st, {
+      players: st.players.map(p => Object.assign({}, p,
+        { maxRentPaid: p.maxRentPaid && Object.assign({}, p.maxRentPaid), maxRentRecv: p.maxRentRecv && Object.assign({}, p.maxRentRecv) })),
+      land: st.land.slice(), cellRent, worth: st.worth.slice(),
+    });
   }
 
   // ── Lecture de l'état (utilisées aussi par l'interface) ─────────────────
@@ -101,6 +114,74 @@
   function hotelsLeft(s) { return s.config.buildingLimit ? s.config.hotels - hotelsInPlay(s) : Infinity; }
   function hasDebt(s, pid) { return s.debts.some(d => d.from === pid); }
   function alive(s) { return s.players.filter(p => !p.bankrupt); }
+
+  // ── Statistiques (bilan de fin de partie, bouton 📊) ─────────────────────
+  // state.stats est rempli au fil de la partie. Il ne sert QU'À l'affichage :
+  // aucune règle ne le lit. Une sauvegarde d'avant les stats en reçoit des
+  // vides à la reprise (stats.since = tour de reprise).
+  const WORTH_ROWS_MAX = 240;   // au-delà, la courbe est éclaircie (1 point sur 2)
+  function emptyPlayerStats() {
+    return {
+      rentPaid: 0, rentRecv: 0, maxRentPaid: null, maxRentRecv: null,
+      bought: 0, auctionsWon: 0, auctionSpent: 0,
+      houses: 0, hotels: 0, mortgages: 0,
+      jailSent: 0, jailTurns: 0, bails: 0,
+      cardsChance: 0, cardsCommunity: 0, cardNet: 0,
+      doubles: 0, goPasses: 0, taxes: 0, trades: 0,
+      peak: 0, peakTurn: 0, bankruptTurn: null, bankruptTo: null,
+    };
+  }
+  function now(ctx) { return ctx && ctx.opts && ctx.opts.now !== undefined ? ctx.opts.now : Date.now(); }
+  function newStats(s, ctx, since) {
+    const st = {
+      v: 1, since, t0: now(ctx), t1: null, rolls: 0,
+      players: s.players.map(p => Object.assign(emptyPlayerStats(), p.bankrupt ? { bankruptTurn: since, bankruptTo: 'bank' } : {})),
+      land: Array(40).fill(0),
+      cellRent: {},          // pos → {idJoueur: total encaissé sur cette case}
+      worth: [],             // [[tour, patrimoine j0, j1, ...], ...]
+    };
+    return st;
+  }
+  // Une ligne de la courbe + mise à jour des records de patrimoine.
+  function sampleWorth(ctx) {
+    const s = ctx.s, st = s.stats;
+    if (!st) return;
+    const row = [s.turn];
+    s.players.forEach((p, i) => {
+      const w = p.bankrupt ? 0 : netWorth(s, i);
+      row.push(w);
+      const ps = st.players[i];
+      if (w > ps.peak) { ps.peak = w; ps.peakTurn = s.turn; }
+    });
+    const last = st.worth[st.worth.length - 1];
+    if (last && last[0] === row[0]) st.worth[st.worth.length - 1] = row; else st.worth.push(row);
+    if (st.worth.length > WORTH_ROWS_MAX) {
+      const keepLast = st.worth[st.worth.length - 1];
+      st.worth = st.worth.filter((r, i) => i % 2 === 0);
+      if (st.worth[st.worth.length - 1] !== keepLast) st.worth.push(keepLast);
+    }
+  }
+  // En simulation (can() / legalActions(), qui testent des coups sans les
+  // jouer), il n'y a pas de stats : ps() renvoie alors un brouillon jetable.
+  function ps(ctx, pid) { return ctx.s.stats ? ctx.s.stats.players[pid] : emptyPlayerStats(); }
+  // Enregistre un paiement effectivement fait (tag = {kind, pos}).
+  function recordPay(ctx, from, to, amount, tag) {
+    if (!tag) return;
+    const s = ctx.s;
+    if (!s.stats) return;
+    if (tag.kind === 'rent' && from && to) {
+      const a = ps(ctx, from.id), b = ps(ctx, to.id);
+      a.rentPaid += amount; b.rentRecv += amount;
+      if (!a.maxRentPaid || amount > a.maxRentPaid.amount) a.maxRentPaid = { amount, pos: tag.pos, other: to.id, turn: s.turn };
+      if (!b.maxRentRecv || amount > b.maxRentRecv.amount) b.maxRentRecv = { amount, pos: tag.pos, other: from.id, turn: s.turn };
+      const cr = s.stats.cellRent[tag.pos] || (s.stats.cellRent[tag.pos] = {});
+      cr[to.id] = (cr[to.id] || 0) + amount;
+    } else if (tag.kind === 'tax' && from) ps(ctx, from.id).taxes += amount;
+    else if (tag.kind === 'card') {
+      if (from) ps(ctx, from.id).cardNet -= amount;
+      if (to) ps(ctx, to.id).cardNet += amount;
+    } else if (tag.kind === 'bail' && from) ps(ctx, from.id).bails++;
+  }
 
   // Loyer dû par un joueur qui tombe sur `pos` (0 si pas de loyer).
   function rentFor(s, pos, diceTotal) {
@@ -184,7 +265,7 @@
     config.auctions = !!config.auctions; config.evenBuild = !!config.evenBuild; config.buildingLimit = !!config.buildingLimit;
     config.houses = DEFAULT_CONFIG.houses; config.hotels = DEFAULT_CONFIG.hotels;
     const defs = opts.players || [];
-    if (defs.length < 2 || defs.length > 6) throw new Error('Il faut entre 2 et 6 joueurs.');
+    if (defs.length < 2 || defs.length > MAX_PLAYERS) throw new Error(`Il faut entre 2 et ${MAX_PLAYERS} joueurs.`);
     const seed = (opts.seed === undefined ? Math.floor(Math.random() * 4294967296) : opts.seed) >>> 0;
     const s = {
       schema: SCHEMA,
@@ -204,10 +285,12 @@
       seq: 0, bankNet: 0,
       secret: { seed, decks: {} },
     };
-    const ctx = { s, events: [], opts: {} };
+    const ctx = { s, events: [], opts: { now: opts.now } };
     for (const deck of ['chance', 'community']) {
       s.secret.decks[deck] = { order: shuffled(ctx, cards[deck].length), idx: 0, held: [] };
     }
+    s.stats = newStats(s, ctx, 1);
+    sampleWorth(ctx);
     log(ctx, `Partie lancée avec ${s.players.length} joueurs !`, 'system');
     log(ctx, `${who(s.players[0])} commence.`, 'important');
     return s;
@@ -223,25 +306,28 @@
   function emit(ctx, ev) { ctx.events.push(ev); }
 
   // La banque verse de l'argent (bankNet garde le compte, pour les tests).
-  function bankPays(ctx, p, amount, why) {
+  function bankPays(ctx, p, amount, why, tag) {
     if (amount <= 0) return;
     p.money += amount; ctx.s.bankNet += amount;
+    if (tag === 'card') ps(ctx, p.id).cardNet += amount;
+    if (tag === 'go') ps(ctx, p.id).goPasses++;
     if (why) log(ctx, `${who(p)} reçoit ${amount} ${CURRENCY} (${why})`, 'gain');
   }
 
   // `from` paie `amount` à `to` (null = la banque). S'il n'a pas assez, ou a
   // déjà une dette en cours (pour garder l'ordre), une DETTE est créée : la
   // partie attend qu'il vende/hypothèque de quoi payer, ou qu'il fasse faillite.
-  function pay(ctx, from, to, amount, why) {
+  function pay(ctx, from, to, amount, why, tag) {
     const s = ctx.s;
     if (amount <= 0) return true;
     if (from.money >= amount && !hasDebt(s, from.id)) {
       from.money -= amount;
       if (to) to.money += amount; else s.bankNet -= amount;
+      recordPay(ctx, from, to, amount, tag);
       log(ctx, `${who(from)} paye ${amount} ${CURRENCY}${to ? ' à ' + who(to) : ''}${why ? ' (' + why + ')' : ''}`, 'loss');
       return true;
     }
-    s.debts.push({ from: from.id, to: to ? to.id : null, amount, why: why || '' });
+    s.debts.push(Object.assign({ from: from.id, to: to ? to.id : null, amount, why: why || '' }, tag ? { tag } : {}));
     log(ctx, `${who(from)} doit ${amount} ${CURRENCY}${to ? ' à ' + who(to) : ' à la banque'}${why ? ' (' + why + ')' : ''} mais n'a que ${from.money} : il doit vendre, hypothéquer ou faire faillite.`, 'loss');
     return false;
   }
@@ -258,6 +344,7 @@
         p.money -= d.amount;
         const to = d.to === null ? null : s.players[d.to];
         if (to && !to.bankrupt) to.money += d.amount; else s.bankNet -= d.amount;
+        recordPay(ctx, p, to && !to.bankrupt ? to : null, d.amount, d.tag);
         log(ctx, `${who(p)} règle sa dette de ${d.amount} ${CURRENCY}${to ? ' à ' + who(to) : ''}.`, 'loss');
         return false;
       }
@@ -283,7 +370,7 @@
     p.pos = to;
     // Atterrir PILE sur Départ est payé par landOn() (case 'go') : on ne paie
     // le « passage » que si 0 est traversé sans être la case d'arrivée.
-    if (steps > 0 && to !== 0 && path.includes(0)) bankPays(ctx, p, GO_SALARY, 'passage par la case Départ');
+    if (steps > 0 && to !== 0 && path.includes(0)) bankPays(ctx, p, GO_SALARY, 'passage par la case Départ', 'go');
     landOn(ctx, p);
   }
 
@@ -296,6 +383,7 @@
   function goToJail(ctx, p) {
     teleport(ctx, p, jailPos(ctx.s));
     p.inJail = true; p.jailTurns = 0;
+    ps(ctx, p.id).jailSent++;
     ctx.s.doublesCount = 0;
     if (p.id === ctx.s.current) ctx.s.noReroll = true;
     log(ctx, `⛓️ ${who(p)} est envoyé au ${cell(ctx.s, jailPos(ctx.s)).name} !`, 'loss');
@@ -304,10 +392,11 @@
   function landOn(ctx, p) {
     const s = ctx.s, c = cell(s, p.pos);
     if (!c) return;
+    if (s.stats) s.stats.land[p.pos]++;
     log(ctx, `${who(p)} arrive sur : ${c.name}`, 'move');
     switch (c.type) {
-      case 'go': bankPays(ctx, p, GO_SALARY, 'case Départ'); break;
-      case 'tax': pay(ctx, p, null, c.price, 'taxe ' + c.name); break;
+      case 'go': bankPays(ctx, p, GO_SALARY, 'case Départ', 'go'); break;
+      case 'tax': pay(ctx, p, null, c.price, 'taxe ' + c.name, { kind: 'tax' }); break;
       case 'goto_jail': goToJail(ctx, p); break;
       case 'chance': drawCard(ctx, p, 'chance'); break;
       case 'community': drawCard(ctx, p, 'community'); break;
@@ -316,7 +405,7 @@
         if (!owner) { s.pending = { type: 'buy', player: p.id, pos: c.pos }; break; }
         if (owner.id === p.id) { log(ctx, `${who(p)} est chez lui.`); break; }
         if (isMortgaged(s, c.pos)) { log(ctx, `${c.name} est hypothéquée : pas de loyer.`); break; }
-        pay(ctx, p, owner, rentFor(s, c.pos), 'loyer ' + c.name);
+        pay(ctx, p, owner, rentFor(s, c.pos), 'loyer ' + c.name, { kind: 'rent', pos: c.pos });
         break;
       }
       default: log(ctx, `${who(p)} Simple visite.`);
@@ -333,6 +422,7 @@
     }
     if (idx < 0) { log(ctx, 'Toutes les cartes de ce paquet sont en main.'); return; }
     const card = cards[idx];
+    if (deck === 'chance') ps(ctx, p.id).cardsChance++; else ps(ctx, p.id).cardsCommunity++;
     emit(ctx, { t: 'card', player: p.id, deck, card });
     log(ctx, `${who(p)} tire une carte ${deck === 'chance' ? 'Chance' : 'Communauté'} : « ${card.text} »`, 'chance');
     applyCard(ctx, p, card, deck, idx);
@@ -342,8 +432,8 @@
     const s = ctx.s;
     const others = alive(s).filter(o => o.id !== p.id);
     switch (card.effect) {
-      case 'gain': bankPays(ctx, p, card.amount || 0, 'carte'); break;
-      case 'lose': pay(ctx, p, null, card.amount || 0, 'carte'); break;
+      case 'gain': bankPays(ctx, p, card.amount || 0, 'carte', 'card'); break;
+      case 'lose': pay(ctx, p, null, card.amount || 0, 'carte', { kind: 'card' }); break;
       case 'goto_jail': goToJail(ctx, p); break;
       case 'goto_direct': {
         const t = clampPos(card.targetPos);
@@ -371,18 +461,18 @@
       case 'repairs': {
         let total = 0;
         p.properties.forEach(pos => { const b = bld(s, pos); total += b.houses * (card.perHouse || 0) + (b.hotel ? card.perHotel || 0 : 0); });
-        if (total > 0) pay(ctx, p, null, total, 'réparations');
+        if (total > 0) pay(ctx, p, null, total, 'réparations', { kind: 'card' });
         else log(ctx, `${who(p)} n'a aucune alerte : rien à payer.`);
         break;
       }
       case 'birthday': case 'collect_all': {
         const amt = card.collectAmount || card.amount || 0;
-        others.forEach(o => pay(ctx, o, p, amt, 'carte'));
+        others.forEach(o => pay(ctx, o, p, amt, 'carte', { kind: 'card' }));
         break;
       }
       case 'pay_all': {
         const amt = card.amount || 0;
-        others.forEach(o => pay(ctx, p, o, amt, 'carte'));
+        others.forEach(o => pay(ctx, p, o, amt, 'carte', { kind: 'card' }));
         break;
       }
       case 'pay_or_chance':
@@ -407,8 +497,9 @@
       next = (next + 1) % s.players.length;
       if (!s.players[next].bankrupt) break;
     }
-    if (next <= s.current) s.turn++;
+    if (next <= s.current) { s.turn++; sampleWorth(ctx); }
     s.current = next; s.phase = 'roll';
+    if (s.players[next].inJail) ps(ctx, next).jailTurns++;
     log(ctx, `--- Tour de ${who(s.players[next])} ---`, 'system');
     emit(ctx, { t: 'turn', player: next });
   }
@@ -417,6 +508,8 @@
     const s = ctx.s;
     s.phase = 'ended'; s.winner = winnerId; s.endReason = reason;
     s.pending = null; s.debts = []; s.trade = null;
+    if (s.stats) s.stats.t1 = now(ctx);
+    sampleWorth(ctx);
     log(ctx, `🏆 ${who(s.players[winnerId])} remporte la partie !`, 'important');
     emit(ctx, { t: 'end', winner: winnerId });
   }
@@ -444,6 +537,9 @@
       log(ctx, `🏳️ ${who(p)} fait faillite : ses biens retournent à la banque.`, 'loss');
     }
     p.money = 0; p.properties = []; p.getOut = []; p.bankrupt = true; p.inJail = false;
+    ps(ctx, p.id).bankruptTurn = s.turn;
+    ps(ctx, p.id).bankruptTo = creditor ? creditor.id : 'bank';
+    sampleWorth(ctx);
     emit(ctx, { t: 'bankrupt', player: p.id });
     // 3. Tout ce qui le concernait est annulé.
     s.debts = s.debts.filter(d => d.from !== p.id && d.to !== p.id);
@@ -476,6 +572,7 @@
       const w = s.players[pd.highBidder];
       w.money -= pd.highBid; s.bankNet -= pd.highBid;
       w.properties.push(pd.pos);
+      const ws = ps(ctx, w.id); ws.bought++; ws.auctionsWon++; ws.auctionSpent += pd.highBid;
       log(ctx, `🔨 Adjugé ! ${who(w)} remporte ${c.name} pour ${pd.highBid} ${CURRENCY}.`, 'gain');
       s.pending = null;
     } else if (active.length === 0 || (pd.highBidder === null && active.length === 0)) {
@@ -527,6 +624,8 @@
       const d = ctx.opts.dice || [1 + Math.floor(rand(ctx) * 6), 1 + Math.floor(rand(ctx) * 6)];
       const total = d[0] + d[1], doubles = d[0] === d[1];
       s.dice = [d[0], d[1]];
+      if (s.stats) s.stats.rolls++;
+      if (doubles) ps(ctx, p.id).doubles++;
       emit(ctx, { t: 'dice', player: p.id, d: s.dice });
       log(ctx, `${who(p)} lance : ${d[0]} + ${d[1]} = ${total}${doubles ? ' (doubles !)' : ''}`, 'move');
       s.phase = 'action';
@@ -539,7 +638,7 @@
           if (p.jailTurns >= 3) {
             p.inJail = false; p.jailTurns = 0;
             log(ctx, `${who(p)} sort après 3 tours et doit payer la caution.`);
-            pay(ctx, p, null, JAIL_FINE, 'caution');
+            pay(ctx, p, null, JAIL_FINE, 'caution', { kind: 'bail' });
           } else {
             log(ctx, `${who(p)} reste enfermé (tour ${p.jailTurns}/3).`);
             return;
@@ -558,6 +657,7 @@
       if (!p.inJail) return "Vous n'êtes pas enfermé.";
       if (p.money < JAIL_FINE) return 'Fonds insuffisants.';
       p.money -= JAIL_FINE; s.bankNet -= JAIL_FINE;
+      ps(ctx, pid).bails++;
       p.inJail = false; p.jailTurns = 0;
       log(ctx, `${who(p)} paye ${JAIL_FINE} ${CURRENCY} de caution et sort.`, 'loss');
     },
@@ -580,6 +680,7 @@
       if (p.money < c.price) return 'Fonds insuffisants.';
       p.money -= c.price; s.bankNet -= c.price;
       p.properties.push(c.pos);
+      ps(ctx, pid).bought++;
       s.pending = null;
       log(ctx, `${who(p)} achète ${c.name} pour ${c.price} ${CURRENCY}`, 'gain');
     },
@@ -631,7 +732,7 @@
       const s = ctx.s, pd = s.pending;
       if (!pd || pd.type !== 'card_choice' || pd.player !== pid) return 'Aucun choix en attente.';
       s.pending = null;
-      pay(ctx, s.players[pid], null, pd.amount, 'amende');
+      pay(ctx, s.players[pid], null, pd.amount, 'amende', { kind: 'card' });
     },
 
     choose_draw(ctx, pid) {
@@ -647,6 +748,7 @@
       const s = ctx.s, p = s.players[pid], c = cell(s, a.pos);
       p.money -= c.buildCost; s.bankNet -= c.buildCost;
       s.buildings[a.pos] = { houses: bld(s, a.pos).houses + 1, hotel: 0 };
+      ps(ctx, pid).houses++;
       log(ctx, `${who(p)} achète une alerte sur ${c.name}`, 'gain');
     },
 
@@ -655,6 +757,7 @@
       const s = ctx.s, p = s.players[pid], c = cell(s, a.pos);
       p.money -= c.buildCost; s.bankNet -= c.buildCost;
       s.buildings[a.pos] = { houses: 0, hotel: 1 };
+      ps(ctx, pid).hotels++;
       log(ctx, `${who(p)} convertit ses 4 alertes en alerteprison sur ${c.name}`, 'gain');
     },
 
@@ -687,6 +790,7 @@
       const err = canMortgage(ctx.s, pid, a.pos); if (err) return err;
       const s = ctx.s, p = s.players[pid], c = cell(s, a.pos);
       s.mortgaged.push(a.pos);
+      ps(ctx, pid).mortgages++;
       p.money += c.mortgage; s.bankNet += c.mortgage;
       log(ctx, `${who(p)} hypothèque ${c.name} (+${c.mortgage})`, 'gain');
     },
@@ -754,6 +858,7 @@
       for (let i = 0; i < t.give.getOut; i++) B.getOut.push(A.getOut.pop());
       for (let i = 0; i < t.get.getOut; i++) A.getOut.push(B.getOut.pop());
       s.trade = null;
+      ps(ctx, A.id).trades++; ps(ctx, B.id).trades++;
       log(ctx, `🤝 Échange conclu entre ${who(A)} et ${who(B)} !`, 'gain');
     },
 
@@ -837,8 +942,9 @@
 
   // ── Point d'entrée ───────────────────────────────────────────────────────
   // apply(state, acteur, action[, opts]) → {ok, state, events} | {ok:false, error}
-  //   acteur : id du joueur (0..5) ou 'system' (serveur / hôte).
-  //   opts   : réservé aux tests ({dice:[a,b]} ou {rng}) — le serveur n'en passe jamais.
+  //   acteur : id du joueur (0..7) ou 'system' (serveur / hôte).
+  //   opts   : {dry:true} = simple vérification, sans stats (can) ; {dice:[a,b]}, {rng}, {now} :
+  //            réservés aux tests — le serveur n'en passe jamais.
   function apply(state, actor, action, opts) {
     if (!state || !action || typeof action.type !== 'string' || !Object.prototype.hasOwnProperty.call(ACTIONS, action.type)) {
       return { ok: false, error: 'Action inconnue.' };
@@ -849,8 +955,13 @@
       if (!p) return { ok: false, error: 'Joueur inconnu.' };
       if (p.bankrupt) return { ok: false, error: 'Vous êtes en faillite.' };
     }
-    const s = cloneState(state);
+    const dry = !!(opts && opts.dry);
+    const s = cloneState(state, dry);
     const ctx = { s, events: [], opts: opts || {} };
+    if (!dry && (!s.stats || !Array.isArray(s.stats.players) || s.stats.players.length !== s.players.length)) {
+      s.stats = newStats(s, ctx, s.turn);   // sauvegarde d'avant les stats
+      sampleWorth(ctx);
+    }
     let err;
     try {
       const a = Object.assign({}, action);
@@ -868,7 +979,7 @@
   }
 
   // Le coup vaut-il la peine d'être proposé ? (utilisé pour griser des boutons)
-  function can(state, actor, action) { return apply(state, actor, action).ok; }
+  function can(state, actor, action) { return apply(state, actor, action, { dry: true }).ok; }
 
   // Action par défaut, PRUDENTE, pour un joueur absent ou dont le temps est écoulé :
   // lancer, refuser l'achat, passer aux enchères, refuser les échanges, finir le tour.
@@ -933,9 +1044,9 @@
   }
 
   return {
-    SCHEMA, GO_SALARY, JAIL_FINE, CURRENCY, BUYABLE, DEFAULT_CONFIG,
+    SCHEMA, MAX_PLAYERS, GO_SALARY, JAIL_FINE, CURRENCY, BUYABLE, DEFAULT_CONFIG,
     createGame, apply, can, autoAction, legalActions, awaiting, manager, publicView, validateBoard, normalizeCards,
-    rentFor, netWorth, ownerOf, ownsGroup, level, bld, isMortgaged, unmortgageCost, groupCells, housesLeft, hotelsLeft,
+    rentFor, netWorth, WORTH_ROWS_MAX, ownerOf, ownsGroup, level, bld, isMortgaged, unmortgageCost, groupCells, housesLeft, hotelsLeft,
     canBuild, canUpgrade, canSellHouse, canSellHotel, canMortgage, canUnmortgage, isImagePawn, pawnChar, pathFor,
   };
 });

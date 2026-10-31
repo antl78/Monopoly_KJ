@@ -78,6 +78,7 @@ test('lobby : réglages réservés à l\'hôte, lancement, plateau officiel par 
   assert.equal(g.state.players[1].money, 2000);
   assert.equal(g.state.secret, undefined);
   assert.equal(g.state.board, undefined);                  // plateau envoyé à part
+  assert.equal(g.state.stats.players.length, 2);                // stats envoyées aux joueurs (bouton 📊)
   assert.equal(room().state.config.auctions, false);
   a.ws.close(); b.ws.close();
 });
@@ -256,4 +257,22 @@ test('lobby : chacun garde son identité quand un joueur quitte le salon (bug du
   const l2 = await a.wait(m => m.type === 'lobby' && m.seats.some(s => s.name === 'Kage2'));
   assert.equal(l2.seats[1].name, 'Kage2');
   await a.close(); await b.close(); await c.close();
+});
+
+test('salon : 8 joueurs maximum', async () => {
+  const { a, code } = await lobbyWithTwo();
+  const pawns = ['🐕', '🚗', '⛵', '👢', '🎸', '🍕', '🐉'];
+  for (let i = 0; i < 6; i++) {
+    const c = client(); await c.open;
+    c.send({ type: 'join_room', code, name: 'J' + (i + 3), pawn: pawns[i] });
+    await c.wait('joined');
+  }
+  await a.wait(m => m.type === 'lobby' && m.seats.length === 8);
+  const z = client(); await z.open;
+  z.send({ type: 'join_room', code, name: 'Neuvième', pawn: pawns[6] });
+  const e = await z.wait('error');
+  assert.match(e.message || e.error || JSON.stringify(e), /8 joueurs/);
+  a.send({ type: 'start' });
+  const g = await a.wait('game');
+  assert.equal(g.state.players.length, 8);
 });

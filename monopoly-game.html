@@ -446,10 +446,72 @@ input[type=file]{display:none}
 .swatch{display:inline-block;width:10px;height:10px;border-radius:2px;flex-shrink:0}
 .modal.wide{width:620px}
 .debt-box{background:#fff4f4;border:1px solid rgba(194,59,59,.35);border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.5}
-.win-rank{margin:0 auto 1.5rem;max-width:420px;text-align:left}
 
 .toast{white-space:normal;max-width:min(90vw,560px);text-align:center}
 /* Barre du bas plus compacte sur les écrans moyens */
+/* ── STATISTIQUES (📊, bilan de fin) ─────────── */
+.modal.xwide{width:980px}
+#winScreen{overflow-y:auto;justify-content:flex-start}
+.win-card{max-width:1020px;width:100%;padding:2rem 1.5rem 3rem}
+.win-share{display:flex;gap:8px;justify-content:center;margin:-.5rem 0 1.25rem}
+.win-report{text-align:left;background:var(--surface);border:1px solid var(--border2);border-radius:var(--rl);box-shadow:var(--shadow);padding:1.25rem 1.5rem;margin-bottom:1.5rem;display:flex;flex-direction:column;gap:10px}
+.sr-head{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--text2);align-items:center}
+.sr-head span:not(.hint){font-weight:600;color:var(--text)}
+.sr-sec{border-top:1px solid var(--border);padding-top:12px;margin-top:4px}
+.sr-t{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.06em;color:var(--accent);margin-bottom:8px}
+.sr-board{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start}
+.rk-row{display:flex;align-items:center;gap:10px;padding:7px 4px;border-bottom:1px solid var(--border);font-size:14px}
+.rk-row.dead{opacity:.7}
+.rk-pos{width:28px;font-size:18px;text-align:center}
+.rk-name{font-weight:600;flex:1;min-width:0}
+.rk-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.rk-worth{font-family:'DM Mono',monospace;font-size:15px;color:var(--accent);font-weight:500}
+.rk-det{font-size:12px;color:var(--text2)}
+.rk-dead{font-size:13px;color:var(--danger)}
+.sc-key{display:inline-block;width:10px;height:10px;border-radius:3px;flex-shrink:0;vertical-align:middle;margin-right:4px}
+.sc-legend{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12px;color:var(--text2);margin-bottom:4px}
+.sc-line{display:inline-block;width:16px;height:2px;border-radius:1px;vertical-align:middle;margin-right:6px}
+.sc-wrap{position:relative}
+.sc-svg{width:100%;height:auto;display:block;font-family:'DM Sans',sans-serif}
+.sc-grid{stroke:var(--border);stroke-width:1}
+.sc-tick{font-size:11px;fill:var(--text3)}
+.sc-lab{font-size:12px;fill:var(--text);font-weight:500}
+.sc-cross{stroke:var(--text3);stroke-width:1;stroke-dasharray:3 3}
+.sc-tip{position:absolute;top:8px;background:var(--surface);border:1px solid var(--border2);border-radius:8px;box-shadow:var(--shadow);padding:6px 10px;font-size:12px;pointer-events:none;white-space:nowrap;z-index:3}
+.sc-tip.hidden{display:none}
+.sc-tip-h{color:var(--text2);margin-bottom:3px}
+.sc-tip-row{display:flex;align-items:center;gap:6px;line-height:1.6}
+.sc-tip-row .sc-key{width:12px;height:2px;border-radius:1px;margin:0}
+.sc-tip-row b{font-family:'DM Mono',monospace;font-weight:500;color:var(--text)}
+.sc-tip-row span:last-child{color:var(--text2)}
+.st-scroll{overflow-x:auto}
+.st-table{width:100%;border-collapse:collapse;font-size:13px}
+.st-table th{font-weight:600;padding:6px 8px;text-align:right;vertical-align:bottom;font-size:18px}
+.st-table th .st-name{font-size:12px;font-weight:600;color:var(--text);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:auto}
+.st-table td{padding:4px 8px;text-align:right;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;white-space:nowrap}
+.st-table td.st-l{text-align:left;font-family:'DM Sans',sans-serif;color:var(--text2);white-space:normal}
+.st-table tr.st-sub td.st-l{padding-left:22px;font-size:12px}
+.st-table tr.st-group td{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);text-align:left;padding-top:10px;border-bottom:none}
+.st-table td.st-best{font-weight:700;color:var(--accent)}
+.st-table td.st-zero{color:var(--text3)}
+.st-d{font-family:'DM Sans',sans-serif;font-size:10.5px;color:var(--text3);font-weight:400}
+.tt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:8px}
+.tt-card{display:flex;gap:10px;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px}
+.tt-ico{font-size:26px}
+.tt-name{font-weight:600;font-size:13px}
+.tt-who{font-size:13px;color:var(--accent);font-weight:500}
+.tt-val{font-size:11.5px;color:var(--text2)}
+.hm-board{display:grid;grid-template-columns:1.8fr repeat(9,1fr) 1.8fr;grid-template-rows:1.8fr repeat(9,1fr) 1.8fr;width:300px;height:300px;border:1px solid var(--border2);border-radius:6px;overflow:hidden;background:var(--surface2)}
+.hm-cell{position:relative;display:flex;align-items:center;justify-content:center;font-size:10px;font-family:'DM Mono',monospace;border:1px solid rgba(255,255,255,.6);cursor:default}
+.hm-cell:hover{outline:2px solid var(--text);z-index:2}
+.hm-cell.hm-top{outline:2px solid var(--danger);z-index:1}
+.hm-band{position:absolute;left:0;top:0;width:100%;height:3px}
+.hm-center{grid-column:2/11;grid-row:2/11;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.hm-legend{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);font-family:'DM Mono',monospace}
+.hm-ramp{width:110px;height:8px;border-radius:4px;background:linear-gradient(90deg,rgb(236,245,240),rgb(11,86,77))}
+.share-preview{width:100%;border:1px solid var(--border2);border-radius:8px}
+.share-text{width:100%;min-height:260px;font-family:'DM Mono',monospace;font-size:12px;padding:8px;border:1px solid var(--border2);border-radius:8px}
+@media (max-width:900px){ .sr-board{grid-template-columns:1fr} }
 @media (max-width:1560px){ .console-brand{display:none} .console-btn{padding:9px 12px} .console-bar{gap:8px} }
 @media (max-width:1180px){ .console-btn{font-size:11.5px;padding:8px 9px} }
 </style>
@@ -489,7 +551,7 @@ input[type=file]{display:none}
       <div class="setup-section">
         <div class="setup-label" style="display:flex;justify-content:space-between">
           Joueurs
-          <span style="font-size:10px;color:var(--text3);font-style:italic">2 à 6 joueurs</span>
+          <span style="font-size:10px;color:var(--text3);font-style:italic">2 à 8 joueurs</span>
         </div>
         <div class="player-rows" id="playerRows"></div>
         <button class="add-player-btn" id="addPlayerBtn" onclick="addPlayerRow()">+ Ajouter un joueur</button>
@@ -561,7 +623,7 @@ input[type=file]{display:none}
     </div>
 
     <div class="setup-section">
-      <div class="setup-label">Joueurs (<span id="lobbyCount">0</span>/6)</div>
+      <div class="setup-label">Joueurs (<span id="lobbyCount">0</span>/<span id="lobbyMax">8</span>)</div>
       <div class="lobby-players" id="lobbyPlayers"></div>
     </div>
 
@@ -647,6 +709,7 @@ input[type=file]{display:none}
 
   <div class="console-bar">
     <button class="console-btn" onclick="showMenuModal()">☰ Menu</button>
+    <button class="console-btn" id="btnStats" onclick="showStatsModal()" title="Statistiques de la partie">📊 Stats</button>
     <div class="console-dice">
       <div class="dice" id="dice1">🎲</div>
       <div class="dice" id="dice2">🎲</div>
@@ -671,7 +734,8 @@ input[type=file]{display:none}
     <div class="win-pawn" id="winPawn">🏆</div>
     <div class="win-title">VICTOIRE !</div>
     <div class="win-sub" id="winSub">Félicitations !</div>
-    <div class="win-rank" id="winRank"></div>
+    <div class="win-share" id="winShare"></div>
+    <div class="win-report" id="winReport"></div>
     <button class="btn-start" style="width:280px" onclick="backHome()">RETOUR À L'ACCUEIL</button>
   </div>
 </div>
@@ -916,7 +980,7 @@ function setHomeTab(tab){
 }
 
 function addPlayerRow(name='', pawn='') {
-  if(playerDefs.length >= 6) return;
+  if(playerDefs.length >= E.MAX_PLAYERS) return;
   const idx = playerDefs.length;
   const defaultPawn = PAWN_EMOJIS.find(p=>!PAWNS_USED.has(p)) || PAWN_EMOJIS[idx%12];
   const def = {name: name||`Joueur ${idx+1}`, pawn: pawn||defaultPawn};
@@ -995,7 +1059,7 @@ function renderSetup() {
       ${playerDefs.length>2?`<button class="btn-sm red" onclick="removePlayerRow(${i})" style="padding:4px 8px;flex-shrink:0">✕</button>`:''}
     </div>
   `).join('');
-  document.getElementById('addPlayerBtn').style.display = playerDefs.length>=6?'none':'';
+  document.getElementById('addPlayerBtn').style.display = playerDefs.length>=E.MAX_PLAYERS?'none':'';
   document.getElementById('btnStart').disabled = playerDefs.length < 2;
 }
 
@@ -1755,6 +1819,7 @@ function openModal(o){
   document.getElementById('modalFooter').innerHTML=o.footer||'';
   document.getElementById('modalClose').style.display = o.closable===false ? 'none' : '';
   document.getElementById('modalBox').classList.toggle('wide', !!o.wide);
+  document.getElementById('modalBox').classList.toggle('xwide', !!o.xwide);
   document.getElementById('modalOverlay').classList.remove('hidden');
   UI.modal={kind:o.kind||'user', key:o.key||null, refresh:o.refresh||null};
 }
@@ -2261,6 +2326,439 @@ function soloEndByWorth(){
   enqueue({events:r.events,state:r.state});
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// STATISTIQUES — bouton 📊 en cours de partie, bilan de fin, partage Discord
+// ──────────────────────────────────────────────────────────────────────────────
+// Le moteur remplit S.stats au fil de la partie (voir engine.js, « Statistiques »).
+// Ici on ne fait que les mettre en forme : classement, courbe du patrimoine,
+// tableau par joueur, carte de chaleur du plateau, titres pour rire, et le
+// partage (texte prêt pour Discord, ou image PNG).
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Couleur d'un joueur = sa place (0..7), jamais son rang : elle ne change pas
+// pendant la partie. Palette vérifiée daltonisme (outil de validation dataviz).
+const SERIES_COLORS=['#2a78d6','#eb6834','#1baf7a','#eda100','#e87ba4','#008300','#6250d6','#e34948'];
+function pColor(id){ return SERIES_COLORS[id%SERIES_COLORS.length]; }
+
+// Emotes du serveur Discord des KJ (texte de partage).
+const DISCORD_ALERTE='<:alerte:518180650562617363>';
+const DISCORD_ALERTEPRISON='<:alerteprison:914582275683926088>';
+
+const MEDALS=['🥇','🥈','🥉'];
+
+// Titres pour rire : chacun va au premier de sa catégorie (ex-æquo : tous).
+// Personne n'a rien fait dans la catégorie → titre non attribué.
+const FUN_TITLES=[
+  {icon:'🏠', name:"Magnat de l'immobilier", val:x=>x.s.bought,                       fmt:v=>`${v} bien${v>1?'s':''} acheté${v>1?'s':''}`},
+  {icon:'🐦', name:'Pigeon des loyers',      val:x=>x.s.rentPaid,                     fmt:v=>`${fmtN(v)} versés en loyers`, money:true},
+  {icon:'🐺', name:'Le Chacal',              val:x=>x.s.maxRentRecv?x.s.maxRentRecv.amount:0, fmt:v=>`${fmtN(v)} encaissés en un seul loyer`, money:true},
+  {icon:'🏋️', name:'Abonné du gymnase',      val:x=>x.s.jailSent,                     fmt:v=>`${v} envoi${v>1?'s':''} au gymnase`},
+  {icon:'🔨', name:'Roi des enchères',       val:x=>x.s.auctionsWon,                  fmt:v=>`${v} enchère${v>1?'s':''} gagnée${v>1?'s':''}`},
+  {icon:'🎲', name:'Chanceux des dés',       val:x=>x.s.doubles,                      fmt:v=>`${v} double${v>1?'s':''}`},
+  {icon:'🚨', name:"Lanceur d'alertes",      val:x=>x.s.houses,                       fmt:v=>`${v} alerte${v>1?'s':''} posée${v>1?'s':''}`, alerte:true},
+  {icon:'🃏', name:'Accro aux cartes',       val:x=>x.s.cardsChance+x.s.cardsCommunity, fmt:v=>`${v} carte${v>1?'s':''} tirée${v>1?'s':''}`},
+  {icon:'🤝', name:'Négociateur',            val:x=>x.s.trades,                       fmt:v=>`${v} échange${v>1?'s':''} conclu${v>1?'s':''}`},
+  {icon:'💸', name:'Mécène de Discord',      val:x=>x.s.taxes,                        fmt:v=>`${fmtN(v)} de taxes Nitro`, money:true},
+  {icon:'📉', name:'Chute libre',            val:x=>Math.max(0,x.s.peak-x.worth),     fmt:v=>`${fmtN(v)} perdus depuis son record`, money:true},
+];
+
+function fmtN(n){ return Number(n||0).toLocaleString('fr-FR'); }
+function fmtDuration(ms){
+  const m=Math.max(1,Math.round(ms/60000));
+  return m<60 ? `${m} min` : `${Math.floor(m/60)} h ${String(m%60).padStart(2,'0')}`;
+}
+// Somme des loyers encaissés sur une case (tous propriétaires confondus).
+function cellRentTotal(st,pos){ const o=st.cellRent[pos]||{}; return Object.values(o).reduce((a,b)=>a+b,0); }
+
+// Tout ce qu'il faut pour afficher ou partager le bilan, calculé une fois.
+function statsSummary(){
+  const st=S && S.stats; if(!st) return null;
+  const ended=S.phase==='ended';
+  const rows=S.players.map(p=>{
+    const lv=p.properties.map(pos=>E.bld(S,pos));
+    return { p, s:st.players[p.id], worth:p.bankrupt?0:E.netWorth(S,p.id),
+      alertes:lv.reduce((a,b)=>a+(b.houses||0),0), prisons:lv.reduce((a,b)=>a+(b.hotel?1:0),0) };
+  });
+  // Classement : vainqueur d'abord, puis patrimoine ; les faillis ensuite,
+  // le dernier tombé devant.
+  const ranking=rows.slice().sort((a,b)=>{
+    if(ended){ if(a.p.id===S.winner) return -1; if(b.p.id===S.winner) return 1; }
+    if(a.p.bankrupt!==b.p.bankrupt) return a.p.bankrupt?1:-1;
+    if(a.p.bankrupt) return (b.s.bankruptTurn||0)-(a.s.bankruptTurn||0);
+    return b.worth-a.worth;
+  });
+  const titles=FUN_TITLES.map(t=>{
+    const vals=rows.map(r=>t.val(r)); const best=Math.max(...vals);
+    if(!(best>0)) return null;
+    return {...t, value:best, winners:rows.filter((r,i)=>vals[i]===best).map(r=>r.p)};
+  }).filter(Boolean);
+  let visited=-1, rich=-1;
+  for(let pos=0;pos<40;pos++){
+    if(st.land[pos]>0 && (visited<0 || st.land[pos]>st.land[visited])) visited=pos;
+    const r=cellRentTotal(st,pos); if(r>0 && (rich<0 || r>cellRentTotal(st,rich))) rich=pos;
+  }
+  let richOwner=null;
+  if(rich>=0){ const o=st.cellRent[rich]; richOwner=Number(Object.keys(o).sort((a,b)=>o[b]-o[a])[0]); }
+  return { st, ended, rows, ranking, titles, visited, rich, richOwner,
+    duration:(st.t1||Date.now())-st.t0, turns:S.turn, rolls:st.rolls, since:st.since };
+}
+
+function endReasonText(){
+  if(S.phase!=='ended') return 'Partie en cours';
+  return S.endReason==='net_worth' ? 'Victoire au patrimoine' : 'Dernier survivant';
+}
+
+// ── Courbe du patrimoine (SVG + survol) ─────────────────────────────────────
+const CHART={W:640,H:250,L:58,R:96,T:14,B:30};
+function worthChartHtml(sm){
+  const rows=sm.st.worth; if(rows.length<2) return '<div class="hint">La courbe apparaîtra après le premier tour de table.</div>';
+  const {W,H,L,R,T,B}=CHART, n=S.players.length;
+  const t0=rows[0][0], t1=rows[rows.length-1][0];
+  const maxV=Math.max(1,...rows.flatMap(r=>r.slice(1)));
+  const step=niceStep(maxV/4), top=Math.ceil(maxV/step)*step;
+  const x=t=> L+(t1===t0?0:(t-t0)/(t1-t0))*(W-L-R);
+  const y=v=> T+(1-v/top)*(H-T-B);
+  let g='';
+  for(let v=0; v<=top; v+=step) g+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" class="sc-grid"/><text x="${L-6}" y="${y(v)+4}" class="sc-tick" text-anchor="end">${fmtN(v)}</text>`;
+  const xt=niceTicks(t0,t1,6);
+  xt.forEach(t=>{ g+=`<text x="${x(t)}" y="${H-B+18}" class="sc-tick" text-anchor="middle">${t}</text>`; });
+  g+=`<text x="${W-R}" y="${H-4}" class="sc-tick" text-anchor="end">tours</text>`;
+  let lines='', labels=[];
+  for(let i=0;i<n;i++){
+    // Un failli : la ligne s'arrête au tour de sa faillite.
+    const pts=[]; for(const r of rows){ pts.push(`${x(r[0]).toFixed(1)},${y(r[i+1]).toFixed(1)}`); if(S.players[i].bankrupt && r[i+1]===0 && pts.length>1) break; }
+    lines+=`<polyline points="${pts.join(' ')}" fill="none" stroke="${pColor(i)}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    const last=pts[pts.length-1].split(',').map(Number);
+    if(S.players[i].bankrupt) lines+=`<text x="${last[0]}" y="${last[1]-6}" text-anchor="middle" font-size="12">💀</text>`;
+    else labels.push({i, y:last[1]});
+  }
+  // Étiquettes directes en bout de ligne (≤ 4 joueurs encore en jeu), écartées pour ne pas se chevaucher.
+  let lab='';
+  if(labels.length<=4){
+    labels.sort((a,b)=>a.y-b.y);
+    for(let k=1;k<labels.length;k++) if(labels[k].y-labels[k-1].y<14) labels[k].y=labels[k-1].y+14;
+    labels.forEach(l=>{ lab+=`<line x1="${W-R+4}" x2="${W-R+14}" y1="${l.y}" y2="${l.y}" stroke="${pColor(l.i)}" stroke-width="2"/><text x="${W-R+18}" y="${l.y+4}" class="sc-lab">${esc(S.players[l.i].name.slice(0,12))}</text>`; });
+  }
+  UI.chart={rows,x,y,t0,t1};
+  return `<div class="sc-wrap" onpointerleave="chartHover(null)">
+    <svg viewBox="0 0 ${W} ${H}" class="sc-svg" role="img" aria-label="Patrimoine de chaque joueur au fil des tours">
+      ${g}${lines}${lab}
+      <line id="scCross" x1="0" x2="0" y1="${T}" y2="${H-B}" class="sc-cross" style="display:none"/>
+      <rect x="${L}" y="${T}" width="${W-L-R}" height="${H-T-B}" fill="transparent" onpointermove="chartHover(event)"/>
+    </svg>
+    <div class="sc-tip hidden" id="scTip"></div>
+  </div>`;
+}
+function niceStep(raw){ const p=Math.pow(10,Math.floor(Math.log10(Math.max(1,raw)))); const f=raw/p; return (f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*p; }
+function niceTicks(a,b,max){ const st=Math.max(1,Math.ceil(niceStep((b-a)/max))); const out=[]; for(let t=Math.ceil(a/st)*st;t<=b;t+=st) out.push(t); if(!out.length) out.push(a); return out; }
+function chartHover(ev){
+  const tip=document.getElementById('scTip'), cross=document.getElementById('scCross'), C=UI.chart;
+  if(!tip||!C) return;
+  if(!ev){ tip.classList.add('hidden'); cross.style.display='none'; return; }
+  const svg=ev.currentTarget.ownerSVGElement, box=svg.getBoundingClientRect();
+  const vx=(ev.clientX-box.left)/box.width*CHART.W;
+  let best=C.rows[0]; for(const r of C.rows) if(Math.abs(C.x(r[0])-vx)<Math.abs(C.x(best[0])-vx)) best=r;
+  const cx=C.x(best[0]);
+  cross.setAttribute('x1',cx); cross.setAttribute('x2',cx); cross.style.display='';
+  tip.textContent='';
+  const h=document.createElement('div'); h.className='sc-tip-h'; h.textContent=`Tour ${best[0]}`; tip.appendChild(h);
+  S.players.map((p,i)=>({p,i,v:best[i+1]})).sort((a,b)=>b.v-a.v).forEach(o=>{
+    const row=document.createElement('div'); row.className='sc-tip-row';
+    const k=document.createElement('span'); k.className='sc-key'; k.style.background=pColor(o.i);
+    const v=document.createElement('b'); v.textContent=fmtN(o.v);
+    const nm=document.createElement('span'); nm.textContent=' '+o.p.name;
+    row.append(k,v,nm); tip.appendChild(row);
+  });
+  tip.classList.remove('hidden');
+  const px=cx/CHART.W*box.width;
+  tip.style.left=(px>box.width/2 ? px-tip.offsetWidth-12 : px+12)+'px';
+}
+
+// ── Carte de chaleur du plateau ─────────────────────────────────────────────
+// Une seule teinte (vert du jeu), du plus clair (jamais visitée) au plus foncé.
+function heatColor(t){
+  const a=[236,245,240], b=[11,86,77];
+  return `rgb(${a.map((v,i)=>Math.round(v+(b[i]-v)*t)).join(',')})`;
+}
+function heatmapHtml(sm){
+  // Échelle étirée entre la case la moins visitée et la plus visitée, sinon
+  // tout sort foncé (sur une longue partie, chaque case est visitée souvent).
+  const land=sm.st.land, max=Math.max(1,...land), min=Math.min(...land);
+  let cells='';
+  for(let pos=0;pos<40;pos++){
+    const {col,row}=cellGridPos(pos), c=S.board[pos], n=land[pos];
+    const t=max>min?(n-min)/(max-min):(n?1:0);
+    const band=c.type==='property'?`<span class="hm-band" style="background:${GROUP_COLORS[c.group]||'#888'}"></span>`:'';
+    cells+=`<div class="hm-cell${pos===sm.visited?' hm-top':''}" style="grid-column:${col};grid-row:${row};background:${heatColor(t)};color:${t>0.55?'#fff':'var(--text)'}" title="${esc(c.name)} : ${n} passage${n>1?'s':''}">${band}<span>${n||''}</span></div>`;
+  }
+  return `<div class="hm-board">${cells}
+    <div class="hm-center"><div class="hm-legend"><span>${min}</span><span class="hm-ramp"></span><span>${max}</span></div><div class="hint">passages par case</div></div>
+  </div>`;
+}
+
+// ── Tableau des stats par joueur ────────────────────────────────────────────
+const STAT_ROWS=[
+  {g:'Loyers'},
+  {l:'Loyers touchés', v:x=>x.s.rentRecv, m:1, best:'max'},
+  {l:'Loyers payés', v:x=>x.s.rentPaid, m:1, best:'max'},
+  {l:'Plus gros loyer payé', v:x=>x.s.maxRentPaid?x.s.maxRentPaid.amount:0, m:1, best:'max',
+    d:x=>x.s.maxRentPaid?`${S.board[x.s.maxRentPaid.pos].name} → ${S.players[x.s.maxRentPaid.other].name}`:''},
+  {g:'Achats'},
+  {l:'Biens achetés', v:x=>x.s.bought, best:'max'},
+  {l:'dont aux enchères', v:x=>x.s.auctionsWon, best:'max', sub:1},
+  {l:'Dépensé aux enchères', v:x=>x.s.auctionSpent, m:1, best:'max', sub:1},
+  {g:'Alertes'},
+  {l:'Alertes posées', v:x=>x.s.houses, best:'max', icon:'alerte'},
+  {l:'Alerteprisons posées', v:x=>x.s.hotels, best:'max', icon:'prison'},
+  {l:'Hypothèques prises', v:x=>x.s.mortgages, best:'max'},
+  {g:'Gymnase'},
+  {l:'Envois au gymnase', v:x=>x.s.jailSent, best:'max'},
+  {l:'Tours passés dedans', v:x=>x.s.jailTurns, best:'max'},
+  {l:'Cautions payées', v:x=>x.s.bails, best:'max'},
+  {g:'Cartes'},
+  {l:'Chance tirées', v:x=>x.s.cardsChance, best:'max'},
+  {l:'Communauté tirées', v:x=>x.s.cardsCommunity, best:'max'},
+  {l:'Bilan des cartes', v:x=>x.s.cardNet, m:1, signed:1, best:'max'},
+  {g:'Dés et divers'},
+  {l:'Doubles', v:x=>x.s.doubles, best:'max'},
+  {l:"Passages par l'Entrée sanctuaire", v:x=>x.s.goPasses, best:'max'},
+  {l:'Taxes Discord Nitro', v:x=>x.s.taxes, m:1, best:'max'},
+  {l:'Échanges conclus', v:x=>x.s.trades, best:'max'},
+  {l:'Patrimoine record', v:x=>x.s.peak, m:1, best:'max', d:x=>x.s.peak?`tour ${x.s.peakTurn}`:''},
+];
+function statsTableHtml(sm){
+  const cols=sm.ranking;
+  const head=`<tr><th></th>${cols.map(x=>`<th><span class="sc-key" style="background:${pColor(x.p.id)}"></span>${pawnIconHtml(x.p.pawn)}<div class="st-name">${esc(x.p.name)}</div></th>`).join('')}</tr>`;
+  const body=STAT_ROWS.map(r=>{
+    if(r.g) return `<tr class="st-group"><td colspan="${cols.length+1}">${r.g}</td></tr>`;
+    const vals=cols.map(r.v), best=Math.max(...vals);
+    const icon=r.icon==='alerte'?ALERTE_ICON+' ':r.icon==='prison'?ALERTEPRISON_ICON+' ':'';
+    return `<tr${r.sub?' class="st-sub"':''}><td class="st-l">${icon}${r.l}</td>${cols.map((x,i)=>{
+      const v=vals[i], txt=(r.signed&&v>0?'+':r.signed&&v<0?'−':'')+(r.m?money(r.signed?Math.abs(v):v):fmtN(v));
+      const d=r.d?r.d(x):'';
+      return `<td class="${v===best&&best>0&&cols.length>1?'st-best':''}${v===0?' st-zero':''}"${d?` title="${esc(d)}"`:''}>${txt}${d&&v?`<div class="st-d">${esc(d)}</div>`:''}</td>`;
+    }).join('')}</tr>`;
+  }).join('');
+  return `<div class="st-scroll"><table class="st-table">${head}${body}</table></div>`;
+}
+
+function titlesHtml(sm){
+  if(!sm.titles.length) return '<div class="hint">Pas encore de titre attribué.</div>';
+  return `<div class="tt-grid">${sm.titles.map(t=>`<div class="tt-card"><div class="tt-ico">${t.icon}</div><div>
+    <div class="tt-name">${esc(t.name)}</div>
+    <div class="tt-who">${t.winners.map(p=>pname(p)).join(', ')}</div>
+    <div class="tt-val">${esc(t.fmt(t.value))}</div></div></div>`).join('')}</div>`;
+}
+
+function rankingHtml(sm){
+  return sm.ranking.map((x,i)=>{
+    const s=x.s, p=x.p;
+    const right = p.bankrupt
+      ? `<span class="rk-dead">💀 faillite au tour ${s.bankruptTurn}${typeof s.bankruptTo==='number'?' face à '+esc(S.players[s.bankruptTo].name):s.bankruptTo==='bank'?' face à la banque':''}</span>`
+      : `<span class="rk-worth">${money(x.worth)}</span><span class="rk-det">${money(p.money)} en poche · ${p.properties.length} bien${p.properties.length>1?'s':''} · ${x.alertes} ${ALERTE_ICON} ${x.prisons} ${ALERTEPRISON_ICON}</span>`;
+    return `<div class="rk-row${p.bankrupt?' dead':''}"><span class="rk-pos">${p.bankrupt?'':MEDALS[i]||(i+1)+'.'}</span>
+      <span class="sc-key" style="background:${pColor(p.id)}"></span><span class="rk-name">${pname(p)}</span><span class="rk-right">${right}</span></div>`;
+  }).join('');
+}
+
+function boardFactsHtml(sm){
+  const out=[];
+  if(sm.visited>=0) out.push(`<div class="info-row"><span class="lbl">👣 Case la plus visitée</span><span>${esc(S.board[sm.visited].name)} <span class="hint">(${sm.st.land[sm.visited]} fois)</span></span></div>`);
+  if(sm.rich>=0) out.push(`<div class="info-row"><span class="lbl">💰 Case la plus rentable</span><span>${esc(S.board[sm.rich].name)} <span class="hint">(${money(cellRentTotal(sm.st,sm.rich))}, surtout pour ${esc(S.players[sm.richOwner].name)})</span></span></div>`);
+  return out.join('')||'<div class="hint">Rien à signaler pour l\'instant.</div>';
+}
+
+// Le bilan complet (même contenu dans la fenêtre 📊 et sur l'écran de fin).
+function statsReportHtml(){
+  const sm=statsSummary();
+  if(!sm) return '<div class="hint">Pas de statistiques pour cette partie.</div>';
+  const head=`<div class="sr-head">
+    <span>⏱️ ${fmtDuration(sm.duration)}</span><span>🔄 ${sm.turns} tour${sm.turns>1?'s':''}</span><span>🎲 ${fmtN(sm.rolls)} lancers</span><span>${endReasonText()}</span>
+    ${sm.since>1?`<span class="hint">Statistiques suivies depuis le tour ${sm.since} (reprise d'une ancienne sauvegarde)</span>`:''}</div>`;
+  return `${head}
+    <div class="sr-sec"><div class="sr-t">Classement</div>${rankingHtml(sm)}</div>
+    <div class="sr-sec"><div class="sr-t">Patrimoine au fil des tours</div>
+      <div class="sc-legend">${S.players.map(p=>`<span><span class="sc-line" style="background:${pColor(p.id)}"></span>${esc(p.name)}</span>`).join('')}</div>
+      ${worthChartHtml(sm)}</div>
+    <div class="sr-sec"><div class="sr-t">Titres</div>${titlesHtml(sm)}</div>
+    <div class="sr-sec"><div class="sr-t">Stats par joueur</div>${statsTableHtml(sm)}</div>
+    <div class="sr-sec sr-board"><div><div class="sr-t">Le plateau</div>${boardFactsHtml(sm)}</div>${heatmapHtml(sm)}</div>`;
+}
+
+function shareButtonsHtml(){
+  return `<button class="btn-sm" onclick="copyStatsText()">📋 Copier le texte pour Discord</button>
+    <button class="btn-sm" onclick="showStatsImage()">🖼️ Image à partager</button>`;
+}
+
+function showStatsModal(){
+  if(!S || !S.stats){ toast('Pas de statistiques pour cette partie.'); return; }
+  openModal({kind:'user', title:'📊 Statistiques', xwide:true, body:statsReportHtml(),
+    footer:`${shareButtonsHtml()}<button class="btn-sm" onclick="closeModal()">Fermer</button>`});
+}
+
+// ── Partage : texte Discord ─────────────────────────────────────────────────
+// Discord interprète *, _, ~, `, |, > : on les neutralise dans les pseudos.
+function dEsc(s){ return String(s).replace(/([\\*_~`|>])/g,'\\$1'); }
+function dPawn(p){ return E.isImagePawn(p.pawn)?'🔹':p.pawn; }
+function dName(p){ return `${dPawn(p)} **${dEsc(p.name)}**`; }
+function statsDiscordText(){
+  const sm=statsSummary(); if(!sm) return '';
+  const L=[];
+  if(sm.ended){ const w=S.players[S.winner]; L.push(`🏆 **Monopoly KJ** — victoire de ${dName(w)} ! (${endReasonText().toLowerCase()})`); }
+  else L.push(`📊 **Monopoly KJ** — partie en cours`);
+  L.push(`⏱️ ${fmtDuration(sm.duration)} · ${sm.turns} tours · ${fmtN(sm.rolls)} lancers de dés`);
+  L.push('', '**Classement**');
+  sm.ranking.forEach((x,i)=>{
+    const p=x.p, s=x.s;
+    if(p.bankrupt) L.push(`💀 ${dName(p)} — faillite au tour ${s.bankruptTurn}${typeof s.bankruptTo==='number'?' face à '+dEsc(S.players[s.bankruptTo].name):''}`);
+    else L.push(`${MEDALS[i]||(i+1)+'.'} ${dName(p)} — ${fmtN(x.worth)} oufingoufs · ${p.properties.length} biens${x.alertes?` · ${x.alertes} ${DISCORD_ALERTE}`:''}${x.prisons?` · ${x.prisons} ${DISCORD_ALERTEPRISON}`:''}`);
+  });
+  const titles=sm.titles.map(t=>`${t.icon} ${t.name} : ${t.winners.map(p=>`**${dEsc(p.name)}**`).join(', ')} (${t.fmt(t.value)}${t.alerte?' '+DISCORD_ALERTE:''})`);
+  const board=[];
+  if(sm.visited>=0) board.push(`👣 Case la plus visitée : ${dEsc(S.board[sm.visited].name)} (${sm.st.land[sm.visited]} fois)`);
+  if(sm.rich>=0) board.push(`💰 Case la plus rentable : ${dEsc(S.board[sm.rich].name)} (${fmtN(cellRentTotal(sm.st,sm.rich))} oufingoufs, surtout pour ${dEsc(S.players[sm.richOwner].name)})`);
+  // Un message Discord fait 2000 caractères au plus : on retire des titres si besoin.
+  const build=n=>[...L, ...(n?['', '**Titres**', ...titles.slice(0,n)]:[]), ...(board.length?['', '**Plateau**', ...board]:[])].join('\n');
+  let n=titles.length, txt=build(n);
+  while(txt.length>2000 && n>0){ n--; txt=build(n); }
+  return txt.slice(0,2000);
+}
+async function copyStatsText(){
+  const txt=statsDiscordText();
+  try{ await navigator.clipboard.writeText(txt); toast('Texte copié : collez-le dans Discord (Ctrl+V).'); }
+  catch(e){
+    openModal({kind:'user', title:'Texte pour Discord', body:`<div class="hint">La copie automatique a été bloquée par le navigateur : sélectionnez le texte et copiez-le (Ctrl+C).</div><textarea class="share-text" readonly onclick="this.select()">${esc(txt)}</textarea>`,
+      footer:`<button class="btn-sm" onclick="showStatsModal()">← Retour</button>`});
+  }
+}
+
+// ── Partage : image PNG (dessinée sur un canvas) ────────────────────────────
+function loadImg(src){ return new Promise(res=>{ if(!src){ res(null); return; } const i=new Image(); i.onload=()=>res(i); i.onerror=()=>res(null); i.src=src; }); }
+function roundRect(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function fitText(ctx,txt,max){ if(ctx.measureText(txt).width<=max) return txt; while(txt.length>1 && ctx.measureText(txt+'…').width>max) txt=txt.slice(0,-1); return txt+'…'; }
+
+async function renderStatsCanvas(){
+  const sm=statsSummary(); if(!sm) return null;
+  try{ await document.fonts.ready; }catch(e){}
+  const [ouf,ale,pri]=await Promise.all([loadImg('images/oufingouf.png'),loadImg(ALERTE_SRC),loadImg(ALERTEPRISON_SRC)]);
+  const pawnImgs=await Promise.all(S.players.map(p=>E.isImagePawn(p.pawn)?loadImg(pawnSrc(p.pawn)):null));
+  const W=1200, P=40, nT=sm.titles.length;
+  const facts=[];
+  if(sm.visited>=0) facts.push(`👣 Case la plus visitée : ${S.board[sm.visited].name} (${sm.st.land[sm.visited]} fois)`);
+  if(sm.rich>=0) facts.push(`💰 Case la plus rentable : ${S.board[sm.rich].name} (${fmtN(cellRentTotal(sm.st,sm.rich))}, surtout pour ${S.players[sm.richOwner].name})`);
+  const rkH=sm.ranking.length*46, ttRows=Math.ceil(nT/3), H=110+rkH+304+(nT?40+ttRows*76:0)+(facts.length?20+facts.length*28:0)+50;
+  const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  const ctx=cv.getContext('2d');
+  const F=(w,s,f)=>`${w} ${s}px ${f||"'DM Sans', sans-serif"}`;
+  const BEBAS="'Bebas Neue', 'DM Sans', sans-serif";
+  ctx.fillStyle='#eef4ef'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#0b564d'; ctx.fillRect(0,0,W,96);
+  ctx.fillStyle='#fff'; ctx.font=F('400',52,BEBAS); ctx.textBaseline='middle';
+  ctx.fillText('MONOPOLY KJ', P, 50);
+  ctx.font=F('500',20);
+  const sub=sm.ended?`🏆 Victoire de ${S.players[S.winner].name}`:'📊 Partie en cours';
+  ctx.textAlign='right'; ctx.fillText(fitText(ctx,sub,560), W-P, 38);
+  ctx.font=F('400',16); ctx.fillStyle='#cfe9df';
+  ctx.fillText(`${fmtDuration(sm.duration)} · ${sm.turns} tours · ${fmtN(sm.rolls)} lancers · ${endReasonText()}`, W-P, 66);
+  ctx.textAlign='left';
+  let y=130;
+  const drawPawn=(p,x,cy,size)=>{
+    const im=pawnImgs[p.id];
+    if(im){ ctx.save(); ctx.beginPath(); ctx.arc(x+size/2,cy,size/2,0,Math.PI*2); ctx.clip(); ctx.drawImage(im,x,cy-size/2,size,size); ctx.restore(); }
+    else { ctx.font=F('400',size*0.85); ctx.fillText(E.isImagePawn(p.pawn)?'🔹':p.pawn, x, cy+1); }
+  };
+  // Classement
+  sm.ranking.forEach((x,i)=>{
+    const p=x.p, cy=y+i*46;
+    ctx.fillStyle='#fff'; roundRect(ctx,P,cy-20,W-2*P,40,10); ctx.fill();
+    ctx.fillStyle=pColor(p.id); roundRect(ctx,P,cy-20,8,40,4); ctx.fill();
+    ctx.fillStyle='#16241f'; ctx.font=F('400',22);
+    ctx.fillText(p.bankrupt?'💀':MEDALS[i]||`${i+1}.`, P+20, cy+1);
+    drawPawn(p,P+60,cy,28);
+    ctx.fillStyle='#16241f'; ctx.font=F('600',20); ctx.fillText(fitText(ctx,p.name,330), P+100, cy+1);
+    ctx.textAlign='right';
+    if(p.bankrupt){ ctx.fillStyle='#c23b3b'; ctx.font=F('500',17); ctx.fillText(`faillite au tour ${x.s.bankruptTurn}`, W-P-18, cy+1); }
+    else {
+      ctx.fillStyle='#0f6e63'; ctx.font=F('600',21);
+      const t=fmtN(x.worth); ctx.fillText(t, W-P-18, cy+1);
+      const tw=ctx.measureText(t).width; if(ouf) ctx.drawImage(ouf, W-P-18-tw-26, cy-11, 22, 22);
+      // Détail, de gauche à droite à partir du milieu : biens, alertes, alerteprisons.
+      ctx.textAlign='left'; ctx.fillStyle='#5c7268'; ctx.font=F('400',17);
+      let xl=P+520;
+      const put=(txt,img)=>{ if(img){ ctx.drawImage(img,xl,cy-11,22,22); xl+=27; } ctx.fillText(txt,xl,cy+1); xl+=ctx.measureText(txt).width+22; };
+      put(`${p.properties.length} bien${p.properties.length>1?'s':''}`,null);
+      put(`${x.alertes}`,ale); put(`${x.prisons}`,pri);
+    }
+    ctx.textAlign='left';
+  });
+  y+=rkH-6;
+  // Courbe
+  ctx.fillStyle='#fff'; roundRect(ctx,P,y,W-2*P,290,12); ctx.fill();
+  ctx.fillStyle='#16241f'; ctx.font=F('600',17); ctx.fillText('Patrimoine au fil des tours', P+18, y+24);
+  const rows=sm.st.worth, cx0=P+80, cx1=W-P-30, cy0=y+50, cy1=y+260;
+  if(rows.length>=2){
+    const t0=rows[0][0], t1=rows[rows.length-1][0];
+    const maxV=Math.max(1,...rows.flatMap(r=>r.slice(1))), step=niceStep(maxV/4), top=Math.ceil(maxV/step)*step;
+    const X=t=>cx0+(t1===t0?0:(t-t0)/(t1-t0))*(cx1-cx0), Y=v=>cy0+(1-v/top)*(cy1-cy0);
+    ctx.font=F('400',13); ctx.textAlign='right'; ctx.strokeStyle='#e3ece6'; ctx.lineWidth=1;
+    for(let v=0;v<=top;v+=step){ ctx.beginPath(); ctx.moveTo(cx0,Y(v)); ctx.lineTo(cx1,Y(v)); ctx.stroke(); ctx.fillStyle='#93a89c'; ctx.fillText(fmtN(v), cx0-8, Y(v)); }
+    ctx.textAlign='center'; niceTicks(t0,t1,8).forEach(t=>ctx.fillText(t, X(t), cy1+16));
+    ctx.textAlign='left';
+    S.players.forEach((p,i)=>{
+      ctx.strokeStyle=pColor(i); ctx.lineWidth=3; ctx.lineJoin='round'; ctx.beginPath();
+      let k=0; for(const r of rows){ const px=X(r[0]), py=Y(r[i+1]); k++?ctx.lineTo(px,py):ctx.moveTo(px,py); if(p.bankrupt && r[i+1]===0 && k>1) break; }
+      ctx.stroke();
+    });
+    // Légende
+    let lx=P+300; ctx.font=F('500',14);
+    S.players.forEach((p,i)=>{ ctx.fillStyle=pColor(i); ctx.fillRect(lx,y+22,18,3); ctx.fillStyle='#16241f'; const nm=fitText(ctx,p.name,110); ctx.fillText(nm,lx+24,y+24); lx+=34+ctx.measureText(nm).width; });
+  }
+  y+=310;
+  // Titres
+  if(nT){
+    ctx.fillStyle='#16241f'; ctx.font=F('400',30,BEBAS); ctx.fillText('TITRES', P, y+14); y+=40;
+    const cw=(W-2*P-24)/3;
+    sm.titles.forEach((t,i)=>{
+      const tx=P+(i%3)*(cw+12), ty=y+Math.floor(i/3)*76;
+      ctx.fillStyle='#fff'; roundRect(ctx,tx,ty,cw,66,10); ctx.fill();
+      ctx.font=F('400',26); ctx.fillStyle='#16241f'; ctx.fillText(t.icon, tx+12, ty+33);
+      ctx.font=F('600',15); ctx.fillText(fitText(ctx,t.name,cw-70), tx+56, ty+16);
+      ctx.font=F('600',14); ctx.fillStyle='#0f6e63'; ctx.fillText(fitText(ctx,t.winners.map(p=>p.name).join(', '),cw-70), tx+56, ty+34);
+      ctx.font=F('400',13); ctx.fillStyle='#5c7268'; ctx.fillText(fitText(ctx,t.fmt(t.value),cw-70), tx+56, ty+52);
+    });
+    y+=ttRows*76;
+  }
+  if(facts.length){
+    y+=14; ctx.font=F('500',16); ctx.fillStyle='#16241f'; ctx.textAlign='left';
+    facts.forEach(f=>{ ctx.fillText(fitText(ctx,f,W-2*P), P, y+10); y+=28; });
+  }
+  ctx.fillStyle='#93a89c'; ctx.font=F('400',13); ctx.textAlign='right';
+  ctx.fillText(`Monopoly KJ · ${new Date().toLocaleDateString('fr-FR')}`, W-P, H-22);
+  return cv;
+}
+
+async function showStatsImage(){
+  const cv=await renderStatsCanvas(); if(!cv) return;
+  UI.statsPng=cv.toDataURL('image/png');
+  openModal({kind:'user', title:'🖼️ Image à partager', xwide:true,
+    body:`<img src="${UI.statsPng}" class="share-preview" alt="Bilan de la partie">
+      <div class="hint">« Copier l'image » puis Ctrl+V dans Discord. Si la copie ne marche pas sur ce navigateur, téléchargez-la et glissez le fichier dans Discord.</div>`,
+    footer:`<button class="btn-sm" onclick="copyStatsImage()">📋 Copier l'image</button>
+      <button class="btn-sm" onclick="downloadStatsImage()">⬇️ Télécharger</button>
+      <button class="btn-sm" onclick="showStatsModal()">← Retour</button>`});
+}
+async function copyStatsImage(){
+  try{
+    const blob=await (await fetch(UI.statsPng)).blob();
+    await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+    toast('Image copiée : collez-la dans Discord (Ctrl+V).');
+  }catch(e){ downloadStatsImage(); toast('Copie impossible ici : image téléchargée à la place.'); }
+}
+function downloadStatsImage(){
+  const a=document.createElement('a'); a.href=UI.statsPng;
+  a.download=`monopoly-kj-${new Date().toISOString().slice(0,10)}.png`; a.click();
+}
+
 // ── Victoire ───────────────────────────────────────────────────────────────
 function showWin(){
   const winner=S.players[S.winner]||S.players[0];
@@ -2268,8 +2766,8 @@ function showWin(){
   document.getElementById('winSub').textContent = S.endReason==='net_worth'
     ? `${winner.name} a le plus gros patrimoine : ${E.netWorth(S,winner.id).toLocaleString('fr-FR')} oufingoufs !`
     : `${winner.name} remporte la partie avec ${winner.money.toLocaleString('fr-FR')} oufingoufs et ${winner.properties.length} propriétés !`;
-  const ranking=S.players.slice().sort((a,b)=>(a.bankrupt-b.bankrupt)||(E.netWorth(S,b.id)-E.netWorth(S,a.id)));
-  document.getElementById('winRank').innerHTML=ranking.map((p,i)=>`<div class="info-row"><span class="lbl">${i+1}. ${pname(p)}</span><span class="val">${p.bankrupt?'faillite':money(E.netWorth(S,p.id))}</span></div>`).join('');
+  document.getElementById('winReport').innerHTML=statsReportHtml();
+  document.getElementById('winShare').innerHTML=S.stats?shareButtonsHtml():'';
   showScreen('winScreen');
   if(!MODE.online) store('mkj.solo');
 }
@@ -2572,6 +3070,7 @@ function renderLobby(){
   const iAmHost=L.hostSeat===NET.seat;
   document.getElementById('lobbyCode').textContent=L.code;
   document.getElementById('lobbyCount').textContent=L.seats.length;
+  document.getElementById('lobbyMax').textContent=E.MAX_PLAYERS;
   document.getElementById('lobbyPlayers').innerHTML=L.seats.map(s=>`
     <div class="lobby-player${s.seat===NET.seat?' me':''}">
       <span class="dot${s.connected?'':' off'}" title="${s.connected?'connecté':'déconnecté'}"></span>

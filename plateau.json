@@ -18,7 +18,8 @@
         0
       ],
       "buildCost": 0,
-      "desc": "Recevez 200M$ en passant par ici"
+      "desc": "Recevez 200M$ en passant par ici",
+      "cardImage": "images/cases/entree-sanctuaire.jpg"
     },
     {
       "pos": 1,
@@ -55,7 +56,8 @@
         0
       ],
       "buildCost": 0,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/caisse-de-communaute.jpg"
     },
     {
       "pos": 3,
@@ -340,7 +342,8 @@
         0
       ],
       "buildCost": 0,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/caisse-de-communaute.jpg"
     },
     {
       "pos": 18,
@@ -646,7 +649,8 @@
         0
       ],
       "buildCost": 0,
-      "desc": ""
+      "desc": "",
+      "cardImage": "images/cases/caisse-de-communaute.jpg"
     },
     {
       "pos": 34,
@@ -741,7 +745,8 @@
         0
       ],
       "buildCost": 0,
-      "desc": "Payez 100M$"
+      "desc": "Payez 100M$",
+      "cardImage": "images/cases/discord-nitro-basic.jpg"
     },
     {
       "pos": 39,

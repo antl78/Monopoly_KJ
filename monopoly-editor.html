@@ -790,6 +790,20 @@ function renderEditor() {
       </div>` : ''}
 
       <div class="field field-full">
+        <hr class="section-sep">
+        <label>Jingle de la case (facultatif)</label>
+        <input type="text" id="soundInput" placeholder="sons/cases/mon-jingle.mp3 ou https://…" value="${esc(c.sound && !c.sound.startsWith('data:') ? c.sound : '')}" oninput="updSound(this.value)" style="width:100%">
+        <div style="font-size:11px;color:var(--text3)">Joué quand un pion s'arrête sur la case (6 s maximum). Conseillé : déposer le fichier (mp3, ogg, wav, m4a) dans <code>sons/cases/</code> et écrire son chemin ici. Sinon, « Uploader » l'intègre directement dans le JSON (${Math.round(SOUND_UPLOAD_MAX/1024)} Ko maximum).</div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px">
+          <button class="btn" onclick="previewSound()" ${c.sound ? '' : 'disabled'}>▶ Écouter</button>
+          <button class="btn" onclick="document.getElementById('soundFile').click()">📁 Uploader…</button>
+          ${c.sound ? '<button class="img-clear-btn" onclick="clearSound()">✕ Supprimer</button>' : ''}
+          <span id="soundStatus" style="font-size:11px;color:var(--text3)">${c.sound ? (c.sound.startsWith('data:') ? 'Son intégré au JSON (' + Math.round(c.sound.length*3/4/1024) + ' Ko)' : '') : 'Aucun son'}</span>
+          <input type="file" id="soundFile" accept="audio/*" style="display:none" onchange="loadSoundFile(this)">
+        </div>
+      </div>
+
+      <div class="field field-full">
         <label>Description / Note (facultatif)</label>
         <textarea placeholder="Ex: La case la plus chère du plateau..." oninput="upd('desc',this.value)">${esc(c.desc||'')}</textarea>
       </div>
@@ -922,6 +936,53 @@ function loadCardImageFile(input) {
       renderEditor(); renderPreview();
     };
     img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ─── JINGLE DE LA CASE (champ sound) ─────────────────────────────────────────
+var SOUND_UPLOAD_MAX = 150 * 1024;   // le plateau d'un hôte passe par le réseau (3 Mo maximum en tout)
+let soundPreviewAudio = null;
+function updSound(val) {
+  val = (val || '').trim().replace(/\\/g, '/');
+  if(val) board[currentIdx].sound = val; else delete board[currentIdx].sound;
+  const st = document.getElementById('soundStatus');
+  if(st) st.textContent = val ? '' : 'Aucun son';
+  const btn = document.querySelector('button[onclick="previewSound()"]');
+  if(btn) btn.disabled = !val;
+  renderList();
+}
+function clearSound() {
+  stopSoundPreview();
+  delete board[currentIdx].sound;
+  renderEditor(); renderPreview();
+}
+function stopSoundPreview() {
+  if(soundPreviewAudio) { try { soundPreviewAudio.pause(); } catch(e) {} soundPreviewAudio = null; }
+}
+function previewSound() {
+  const src = board[currentIdx].sound;
+  if(!src) return;
+  stopSoundPreview();
+  const a = new Audio(src);
+  soundPreviewAudio = a;
+  const st = document.getElementById('soundStatus');
+  a.play().catch(() => { if(st) st.textContent = 'Son introuvable ou illisible (vérifie le chemin)'; });
+  setTimeout(() => { if(soundPreviewAudio === a) stopSoundPreview(); }, 6000);
+}
+// Upload : le fichier est intégré tel quel (base64). Le couper avant (mp3cut.net…) pour rester léger.
+function loadSoundFile(input) {
+  const file = input.files[0];
+  input.value = '';
+  if(!file) return;
+  if(file.size > SOUND_UPLOAD_MAX) {
+    alert(`Fichier trop lourd (${Math.round(file.size/1024)} Ko, ${Math.round(SOUND_UPLOAD_MAX/1024)} Ko maximum).\nCoupe-le plus court, ou dépose-le dans sons/cases/ et écris son chemin.`);
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    board[currentIdx].sound = e.target.result;
+    renderEditor(); renderPreview();
   };
   reader.readAsDataURL(file);
 }

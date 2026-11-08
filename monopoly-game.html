@@ -1224,6 +1224,7 @@ function placeOwnerBadge(badge, pos){
 function buildBoard() {
   const board = document.getElementById('board');
   board.innerHTML = '';
+  if(S) preloadCellSounds(S.board);
 
   // Which edge a (non-corner) cell sits on, so its content can be rotated to
   // face the right way: left/right columns rotated ±90°, top and bottom rows
@@ -1751,6 +1752,8 @@ async function playEvent(ev, fast){
       UI.pos[ev.player]=end;
       positionAllPawnTokens();
       if(ev.kind==='teleport' && !fast){ sfx('whoosh'); await delay(250); }
+      // Jingle de la case d'arrivée (pas pour un envoi au gymnase : le jingle du Ban suffit).
+      if(!fast && !ev.jail) playCellSound(end);
       break;
     }
     case 'card': sfx('card'); await showCardEvent(ev, fast); break;
@@ -3186,10 +3189,10 @@ function sendChat(e){
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// SONS (synthétisés : aucun fichier à télécharger)
+// SONS (synthétisés, plus les jingles facultatifs des cases, dans sons/)
 // ══════════════════════════════════════════════════════════════════════════════
 let AC=null;
-function toggleSound(){ UI.sound=!UI.sound; store('mkj.sound', UI.sound); if(UI.sound) sfx('notify'); if(S) renderConsoleBar(); }
+function toggleSound(){ UI.sound=!UI.sound; store('mkj.sound', UI.sound); if(UI.sound) sfx('notify'); else stopJingle(); if(S) renderConsoleBar(); }
 function sfx(name){
   if(!UI.sound) return;
   try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended') AC.resume(); }catch(e){ return; }
@@ -3223,6 +3226,44 @@ function sfx(name){
     case 'error': tone(220,0,0.12,'square',0.03); break;
     case 'tick': tone(1250,0,0.05,'square',0.025); break;
   }
+}
+
+// ── Jingles des cases (champ facultatif « sound » de plateau.json) ──────────
+// Joué quand un pion s'arrête sur la case. Un nouveau jingle coupe le précédent,
+// et aucun ne dure plus de JINGLE_MAX_MS (au cas où un fichier serait trop long).
+const JINGLE_MAX_MS = 6000, JINGLE_VOLUME = 0.6;
+const JINGLE = { cache:{}, cur:null, timer:null };
+// Chemin relatif sous sons/, URL http(s) ou data:audio. Toute autre valeur est ignorée.
+function soundSrc(v){
+  if(typeof v!=='string' || !v.trim()) return '';
+  v=v.trim();
+  if(/^(https?:\/\/|data:audio\/)/i.test(v)) return v;
+  if(/^sons\/[\w\/.-]+\.(mp3|ogg|oga|opus|wav|m4a|webm)$/i.test(v) && !v.includes('..')) return v;
+  return '';
+}
+function jingleAudio(src){
+  let a=JINGLE.cache[src];
+  if(!a){ a=new Audio(src); a.preload='auto'; JINGLE.cache[src]=a; }
+  return a;
+}
+// Précharge les jingles du plateau (appelé à la construction du plateau).
+function preloadCellSounds(board){
+  (board||[]).forEach(c=>{ const src=c&&soundSrc(c.sound); if(src) jingleAudio(src); });
+}
+function stopJingle(){
+  clearTimeout(JINGLE.timer); JINGLE.timer=null;
+  if(JINGLE.cur){ try{ JINGLE.cur.pause(); JINGLE.cur.currentTime=0; }catch(e){} JINGLE.cur=null; }
+}
+function playCellSound(pos){
+  if(!UI.sound || !S || !S.board || !S.board[pos]) return;
+  const src=soundSrc(S.board[pos].sound); if(!src) return;
+  stopJingle();
+  const a=jingleAudio(src);
+  a.volume=JINGLE_VOLUME;
+  try{ a.currentTime=0; }catch(e){}
+  const pr=a.play(); if(pr && pr.catch) pr.catch(()=>{});   // fichier introuvable, ou lecture bloquée : on se tait
+  JINGLE.cur=a;
+  JINGLE.timer=setTimeout(stopJingle, JINGLE_MAX_MS);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

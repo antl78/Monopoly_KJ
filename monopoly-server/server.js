@@ -1,7 +1,7 @@
 // ════════════════════════════════════════════════════════════════════════════
 // server.js — Serveur multijoueur de Monopoly KJ
 // ────────────────────────────────────────────────────────────────────────────
-// • Sert le jeu lui-même (monopoly-game.html, engine.js, images, plateau.json,
+// • Sert le jeu lui-même (monopoly-game.html, engine.js, images, sons, plateau.json,
 //   cartes.json) depuis la racine du repo : les joueurs n'ont qu'à ouvrir l'URL.
 // • Gère les salons en WebSocket. Le protocole est décrit dans protocol.md.
 // • Aucune règle de jeu ici : tout passe par le moteur partagé ../engine.js.
@@ -35,6 +35,7 @@ const STATIC = {
   '/plateau.json': ['plateau.json', 'application/json; charset=utf-8'],
   '/cartes.json': ['cartes.json', 'application/json; charset=utf-8'],
 };
+const SND_TYPES = { mp3: 'audio/mpeg', ogg: 'audio/ogg', oga: 'audio/ogg', opus: 'audio/ogg', wav: 'audio/wav', m4a: 'audio/mp4', webm: 'audio/webm' };
 const IMG_TYPES = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', svg: 'image/svg+xml', ico: 'image/x-icon' };
 
 const rooms = new Map();
@@ -60,6 +61,9 @@ const server = http.createServer((req, res) => {
     // images/xxx.png ou images/cases/xxx.jpg (fonds des titres de propriété)
     const m = /^\/images\/((?:cases\/)?[\w-][\w.-]*)\.(\w+)$/.exec(url.pathname);
     if (m && IMG_TYPES[m[2].toLowerCase()]) { file = path.join('images', m[1] + '.' + m[2]); type = IMG_TYPES[m[2].toLowerCase()]; cache = 'public, max-age=86400'; }
+    // sons/xxx.mp3 ou sons/cases/xxx.mp3 (jingles des cases, champ « sound » du plateau)
+    const s = /^\/sons\/((?:cases\/)?[\w-][\w.-]*)\.(\w+)$/.exec(url.pathname);
+    if (s && SND_TYPES[s[2].toLowerCase()]) { file = path.join('sons', s[1] + '.' + s[2]); type = SND_TYPES[s[2].toLowerCase()]; cache = 'public, max-age=86400'; }
   }
   if (!file) { res.writeHead(404, Object.assign(headers, { 'Content-Type': 'text/plain; charset=utf-8' })); res.end('Introuvable'); return; }
   fs.readFile(path.join(ROOT, file), (err, data) => {

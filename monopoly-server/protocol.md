@@ -79,7 +79,7 @@ Le serveur ne contient aucune règle : il transmet les actions au moteur partag�
 | t | champs | animation |
 |---|---|---|
 | `dice` | `player`, `d` | grands dés au centre |
-| `move` | `player`, `from`, `path`, `kind` | `walk` : marche case par case ; `teleport` : saut direct |
+| `move` | `player`, `from`, `path`, `kind`, `jail`? | `walk` : marche case par case ; `teleport` : saut direct. `jail: true` = envoi au gymnase (pas de jingle de case) |
 | `card` | `player`, `deck`, `card` | la carte s'affiche chez tout le monde |
 | `log` | `msg`, `kind` | ligne d'historique |
 | `turn` | `player` | nouveau tour (son « à vous » pour le joueur concerné) |

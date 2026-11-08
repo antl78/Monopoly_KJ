@@ -375,13 +375,16 @@
   }
 
   // Téléportation (prison, cartes « directement ») : jamais de bonus Départ.
-  function teleport(ctx, p, pos) {
-    emit(ctx, { t: 'move', player: p.id, from: p.pos, path: [pos], kind: 'teleport' });
+  // jail:true marque l'envoi en prison (le jeu ne joue alors pas le jingle du gymnase).
+  function teleport(ctx, p, pos, jail) {
+    const ev = { t: 'move', player: p.id, from: p.pos, path: [pos], kind: 'teleport' };
+    if (jail) ev.jail = true;
+    emit(ctx, ev);
     p.pos = pos;
   }
 
   function goToJail(ctx, p) {
-    teleport(ctx, p, jailPos(ctx.s));
+    teleport(ctx, p, jailPos(ctx.s), true);
     p.inJail = true; p.jailTurns = 0;
     ps(ctx, p.id).jailSent++;
     ctx.s.doublesCount = 0;

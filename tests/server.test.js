@@ -61,6 +61,9 @@ test('sert le jeu, pas les éditeurs ni le code du serveur', async () => {
   assert.equal((await get('/monopoly-editor.html')).status, 404);
   assert.equal((await get('/monopoly-server/server.js')).status, 404);
   assert.equal((await get('/images/..%2fserver.js')).status, 404);
+  assert.equal((await get('/sons/cases/inexistant.mp3')).status, 404);
+  assert.equal((await get('/sons/..%2fengine.js')).status, 404);
+  assert.equal((await get('/sons/cases/x.exe')).status, 404);
   assert.equal((await get('/health')).status, 200);
 });
 

@@ -131,7 +131,7 @@ function handle(ws, msg) {
       const code = newCode();
       const r = new Room(code, hooks);
       rooms.set(code, r);
-      const { seat: s, token } = r.addSeat(msg.name, msg.pawn);
+      const { seat: s, token } = r.addSeat(msg.name, msg.pawn, msg.gender);
       r.hostSeat = s;
       r.attach(s, ws);
       send(ws, joinedMsg(r, s, token));
@@ -146,7 +146,7 @@ function handle(ws, msg) {
       if (!r) return err(ws, 'Salon introuvable. Vérifiez le code.', { code: 'unknown_room' });
       if (r.phase === 'lobby') {
         if (r.seats.length >= E.MAX_PLAYERS) return err(ws, `Salon complet (${E.MAX_PLAYERS} joueurs maximum).`);
-        const { seat: s, token } = r.addSeat(msg.name, msg.pawn);
+        const { seat: s, token } = r.addSeat(msg.name, msg.pawn, msg.gender);
         r.attach(s, ws);
         send(ws, joinedMsg(r, s, token));
         r.broadcastLobby();
@@ -224,6 +224,7 @@ function handle(ws, msg) {
     case 'lobby_me':
       if (room.phase !== 'lobby') return;
       if ('name' in msg) room.seats[seat].name = clampName(msg.name, room.seats[seat].name);
+      if ('gender' in msg) room.seats[seat].gender = E.cleanGender(msg.gender);
       if ('pawn' in msg) {
         const p = cleanPawn(msg.pawn);
         if (room.pawnTaken(p, seat)) { err(ws, 'Ce pion est déjà pris par un autre joueur.'); room.broadcastLobby(); return; }

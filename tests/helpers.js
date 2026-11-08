@@ -111,6 +111,12 @@ function checkInvariants(s) {
     if (sum('doubles') > st.rolls) errs.push('plus de doubles que de lancers');
     if (!st.worth.length || st.worth.length > E.WORTH_ROWS_MAX + 1) errs.push(`courbe : ${st.worth.length} points`);
     if (st.worth.some(r => r.length !== n + 1)) errs.push('courbe : ligne mal dimensionnée');
+    if (st.money) {
+      if (st.money.length > E.WORTH_ROWS_MAX + 1) errs.push(`courbe de l'argent : ${st.money.length} points`);
+      if (st.money.some(r => r.length !== n + 1)) errs.push("courbe de l'argent : ligne mal dimensionnée");
+      const lm = st.money[st.money.length - 1], lw = st.worth[st.worth.length - 1];
+      if (lm && lm[0] === s.turn && lw[0] === s.turn && lm.slice(1).some((v, i) => v > lw[i + 1])) errs.push('argent en poche > patrimoine');
+    }
     if (st.land.length !== 40) errs.push('compteur de cases mal dimensionné');
   }
   return errs;

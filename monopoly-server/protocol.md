@@ -23,12 +23,12 @@ Le serveur ne contient aucune règle : il transmet les actions au moteur partag�
 | type | champs | rôle |
 |---|---|---|
 | `ping` | `t` | Toutes les 25 s. Garde Render éveillé et vérifie la connexion. Réponse : `pong`. |
-| `create_room` | `name`, `pawn` | Crée un salon (code à 5 caractères). Le créateur devient l'hôte. |
-| `join_room` | `code`, `name`, `pawn`, `claim?` | Rejoint un salon d'attente. Pendant une partie, reprend une place **libérée par l'hôte** (`claim` = n° de place). |
+| `create_room` | `name`, `pawn`, `gender?` | Crée un salon (code à 5 caractères). Le créateur devient l'hôte. |
+| `join_room` | `code`, `name`, `pawn`, `gender?`, `claim?` | Rejoint un salon d'attente. Pendant une partie, reprend une place **libérée par l'hôte** (`claim` = n° de place). |
 | `resume` | `code`, `token` | Reprend sa place (salon d'attente ou partie). |
 | `restore` | `snapshot`, `board`, `cards`, `pawns` | Recrée un salon perdu (redémarrage du serveur) à partir d'une sauvegarde. |
 | `leave` | — | Quitte le salon (libère la place seulement dans le salon d'attente). |
-| `lobby_me` | `name?`, `pawn?` | Change son nom ou son pion dans le salon d'attente. |
+| `lobby_me` | `name?`, `pawn?`, `gender?` | Change son nom, son pion ou son genre dans le salon d'attente. `gender` : `'m'` (il, par défaut) ou `'f'` (elle), sert à accorder l'historique. |
 | `lobby_config` | `config` : `startMoney`, `auctions`, `evenBuild`, `buildingLimit`, `timerSec` | Hôte uniquement. |
 | `lobby_data` | `board?`, `cards?` (`null` = fichiers officiels) | Hôte uniquement : plateau / cartes personnalisés. |
 | `kick_lobby` | `seat` | Hôte uniquement, dans le salon d'attente. |

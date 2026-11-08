@@ -279,3 +279,13 @@ test('salon : 8 joueurs maximum', async () => {
   const g = await a.wait('game');
   assert.equal(g.state.players.length, 8);
 });
+
+test('salon : le genre choisi passe dans la partie (historique accordé)', async () => {
+  const { a, b } = await lobbyWithTwo();
+  b.send({ type: 'lobby_me', gender: 'f' });
+  const L = await a.wait(m => m.type === 'lobby' && m.seats[1] && m.seats[1].gender === 'f');
+  assert.equal(L.seats[0].gender, 'm');
+  a.send({ type: 'start' });
+  const g = await a.wait('game');
+  assert.deepEqual(g.state.players.map(p => p.gender), ['m', 'f']);
+});

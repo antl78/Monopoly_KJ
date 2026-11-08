@@ -34,7 +34,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .player-row{display:flex;align-items:center;gap:8px}
 .player-row input{flex:1;font-family:'DM Sans',sans-serif;font-size:14px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);padding:8px 12px;outline:none}
 .player-row input:focus{border-color:var(--accent)}
+.player-row.with-id{flex-wrap:wrap;padding-bottom:6px;border-bottom:1px dashed var(--border2)}
+.player-id{flex:1 1 100%;display:flex;align-items:center;gap:8px;min-width:0}
 .pawn-pick{display:flex;gap:4px;flex-wrap:wrap}
+.gender-pick{display:inline-flex;border:1px solid var(--border2);border-radius:6px;overflow:hidden;flex-shrink:0}
+.gender-pick button{border:0;background:var(--surface2);color:var(--text2);font:inherit;font-size:13px;padding:6px 10px;cursor:pointer}
+.gender-pick button+button{border-left:1px solid var(--border2)}
+.gender-pick button.sel{background:var(--accent);color:#fff;font-weight:600}
+.gender-line{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px;color:var(--text2)}
 .pawn-btn{width:32px;height:32px;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .12s;flex-shrink:0}
 .pawn-btn:hover,.pawn-btn.sel{border-color:var(--accent);background:rgba(15,110,99,.1)}
 /* Upload-your-own-image pawn control: deliberately NOT a plain 32×32 square
@@ -471,6 +478,12 @@ input[type=file]{display:none}
 .sc-key{display:inline-block;width:10px;height:10px;border-radius:3px;flex-shrink:0;vertical-align:middle;margin-right:4px}
 .sc-legend{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12px;color:var(--text2);margin-bottom:4px}
 .sc-line{display:inline-block;width:16px;height:2px;border-radius:1px;vertical-align:middle;margin-right:6px}
+.sc-line.dash{height:0;background:none!important;border-top:2px dashed var(--text2)}
+.sc-line.solid{background:var(--text2)}
+.sc-tabs{display:inline-flex;gap:4px;margin-left:12px;vertical-align:middle;font-family:'DM Sans',sans-serif;letter-spacing:0}
+.sc-tabs button{font:inherit;font-size:12px;padding:3px 10px;border-radius:12px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);cursor:pointer}
+.sc-tabs button.sel{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.sc-tip-row .sc-sub{color:var(--text2);font-weight:400}
 .sc-wrap{position:relative}
 .sc-svg{width:100%;height:auto;display:block;font-family:'DM Sans',sans-serif}
 .sc-grid{stroke:var(--border);stroke-width:1}
@@ -579,6 +592,7 @@ input[type=file]{display:none}
       <div class="setup-section">
         <div class="setup-label">Votre nom et votre pion</div>
         <input class="text-input" id="onlineName" maxlength="24" placeholder="Votre pseudo" style="margin-bottom:8px">
+        <div class="gender-line">Dans l'historique : <span id="onlineGenderPick"></span></div>
         <div class="pawn-pick" id="onlinePawnPick"></div>
         <input type="file" id="onlinePawnFile" accept="image/*" style="display:none">
       </div>
@@ -630,6 +644,7 @@ input[type=file]{display:none}
     <div class="setup-section">
       <div class="setup-label">Mon pion</div>
       <input class="text-input" id="lobbyName" maxlength="24" style="margin-bottom:8px">
+      <div class="gender-line">Dans l'historique : <span id="lobbyGenderPick"></span></div>
       <div class="pawn-pick" id="lobbyPawnPick"></div>
       <input type="file" id="lobbyPawnFile" accept="image/*" style="display:none">
     </div>
@@ -983,7 +998,7 @@ function addPlayerRow(name='', pawn='') {
   if(playerDefs.length >= E.MAX_PLAYERS) return;
   const idx = playerDefs.length;
   const defaultPawn = PAWN_EMOJIS.find(p=>!PAWNS_USED.has(p)) || PAWN_EMOJIS[idx%12];
-  const def = {name: name||`Joueur ${idx+1}`, pawn: pawn||defaultPawn};
+  const def = {name: name||`Joueur ${idx+1}`, pawn: pawn||defaultPawn, gender:'m'};
   PAWNS_USED.add(def.pawn);
   playerDefs.push(def);
   renderSetup();
@@ -994,6 +1009,16 @@ function removePlayerRow(idx) {
   playerDefs.splice(idx,1);
   renderSetup();
 }
+
+// Genre d'un joueur, pour accorder l'historique (« chez lui » / « chez elle »).
+// `onPick` est une expression JS appelée avec 'm' ou 'f' (ex. "setLocalGender(2,").
+function genderPickHtml(current, onPick){
+  const b=(g,txt,tip)=>`<button type="button" class="${current===g?'sel':''}" title="${tip}" onclick="${onPick}'${g}')">${txt}</button>`;
+  return `<span class="gender-pick">${b('m','Il','« chez lui », « envoyé »…')}${b('f','Elle','« chez elle », « envoyée »…')}</span>`;
+}
+function setLocalGender(i,g){ playerDefs[i].gender=g; renderSetup(); }
+// Accord selon le genre du joueur (comme gx() du moteur).
+function gx(p,m,f){ return p&&p.gender==='f'?f:m; }
 
 // `pawn` is either one of PAWN_EMOJIS or an uploaded image's data URL.
 function selectPawn(playerIdx, pawn) {
@@ -1049,14 +1074,17 @@ function pawnPickerHtml(current, onPick, fileInputId, taken){
 function renderSetup() {
   const rows = document.getElementById('playerRows');
   rows.innerHTML = playerDefs.map((p,i) => `
-    <div class="player-row">
-      <input type="text" value="${esc(p.name)}" placeholder="Nom du joueur" maxlength="24" oninput="playerDefs[${i}].name=this.value">
+    <div class="player-row with-id">
+      <div class="player-id">
+        <input type="text" value="${esc(p.name)}" placeholder="Nom du joueur" maxlength="24" oninput="playerDefs[${i}].name=this.value">
+        ${genderPickHtml(p.gender, `setLocalGender(${i},`)}
+        ${playerDefs.length>2?`<button class="btn-sm red" onclick="removePlayerRow(${i})" style="padding:4px 8px;flex-shrink:0">✕</button>`:''}
+      </div>
       <div class="pawn-pick">
         ${PAWN_EMOJIS.map(em=>`<div class="pawn-btn${p.pawn===em?' sel':''}" onclick="selectPawn(${i},'${em}')">${em}</div>`).join('')}
         <div class="pawn-btn pawn-btn-upload${isImagePawn(p.pawn)?' sel':''}" onclick="document.getElementById('pawnFile${i}').click()" title="${isImagePawn(p.pawn)?'Changer l\'image du pion':'Utiliser une image comme pion'}">${isImagePawn(p.pawn)?`<img src="${esc(p.pawn)}" class="pawn-btn-thumb" alt=""> Modifier`:'📷 Image'}</div>
         <input type="file" id="pawnFile${i}" accept="image/*" style="display:none" onchange="handlePawnFile(${i},this)">
       </div>
-      ${playerDefs.length>2?`<button class="btn-sm red" onclick="removePlayerRow(${i})" style="padding:4px 8px;flex-shrink:0">✕</button>`:''}
     </div>
   `).join('');
   document.getElementById('addPlayerBtn').style.display = playerDefs.length>=E.MAX_PLAYERS?'none':'';
@@ -1121,7 +1149,7 @@ function startSoloGame() {
   try{
     state = E.createGame({
       board: boardData, cards: cardData,
-      players: playerDefs.map(p=>({name:p.name, pawn:p.pawn})),
+      players: playerDefs.map(p=>({name:p.name, pawn:p.pawn, gender:p.gender})),
       config: {
         startMoney: parseInt(document.getElementById('startMoney').value)||1500,
         auctions: document.getElementById('ruleAuctions').checked,
@@ -1506,7 +1534,7 @@ function renderSidebarPanels(){
     <div class="panel panel-active">
       <div class="pa-top">
         <span class="pa-pawn">${pawnIconHtml(p.pawn)}</span>
-        <span class="pa-name">${esc(p.name)}${MODE.online?' <span class="me-tag">vous</span>':''}${p.inJail?' <span class="jail-badge">⛓️ enfermé</span>':''}${p.bankrupt?' <span class="jail-badge">faillite</span>':''}</span>
+        <span class="pa-name">${esc(p.name)}${MODE.online?' <span class="me-tag">vous</span>':''}${p.inJail?` <span class="jail-badge">⛓️ ${gx(p,'enfermé','enfermée')}</span>`:''}${p.bankrupt?' <span class="jail-badge">faillite</span>':''}</span>
         <span class="pa-money">${money(p.money)}</span>
       </div>
       ${groupPipsHtml(p)}
@@ -1996,7 +2024,7 @@ function renderJailModal(){
   openModal({ kind:'decision', key, closable:false, wide:true,
     title:`⛓️ ${esc(jail)}${!MODE.online?' — '+pname(p):''}`,
     body:`<div class="jail-choice">
-        <p>Vous êtes enfermé (essai ${p.jailTurns+1}/3). Pour sortir :</p>
+        <p>Vous êtes ${gx(p,'enfermé','enfermée')} (essai ${p.jailTurns+1}/3). Pour sortir :</p>
         <ul>
           <li><b>Payer la caution</b> de ${money(E.JAIL_FINE)}, puis lancer les dés normalement ;</li>
           ${p.getOut.length?`<li><b>Utiliser votre carte</b> « sortie du gymnase » (vous en avez ${p.getOut.length}) ;</li>`:''}
@@ -2411,13 +2439,46 @@ function endReasonText(){
   return S.endReason==='net_worth' ? 'Victoire au patrimoine' : 'Dernier survivant';
 }
 
-// ── Courbe du patrimoine (SVG + survol) ─────────────────────────────────────
+// ── Courbes : patrimoine et argent en poche (SVG + survol) ──────────────────
+// UI.chartKind : 'worth' (patrimoine), 'money' (argent en poche) ou 'both'
+// (les deux : patrimoine en trait plein, argent en pointillés).
 const CHART={W:640,H:250,L:58,R:96,T:14,B:30};
+const CHART_KINDS={worth:'Patrimoine', money:'Argent en poche', both:'Les deux'};
+function chartKind(){ return CHART_KINDS[UI.chartKind]?UI.chartKind:'both'; }
+// Les séries à tracer pour un type de courbe. Anciennes sauvegardes : la
+// courbe de l'argent peut manquer (ou commencer plus tard).
+function chartSeries(st, kind){
+  const money=st.money||[];
+  if(kind==='worth') return [{rows:st.worth, dash:false, label:'patrimoine'}];
+  if(kind==='money') return [{rows:money, dash:false, label:'argent'}];
+  return [{rows:st.worth, dash:false, label:'patrimoine'}, {rows:money, dash:true, label:'argent'}].filter(x=>x.rows.length>=2);
+}
+// Points d'une ligne de joueur ; un failli s'arrête au tour de sa faillite.
+function seriesPoints(st, rows, i){
+  const bt=S.players[i].bankrupt ? st.players[i].bankruptTurn : null;
+  const out=[]; for(const r of rows){ out.push([r[0], r[i+1]]); if(bt!=null && r[0]>=bt) break; }
+  return out;
+}
+function setChartKind(k){
+  UI.chartKind=k;
+  const sm=statsSummary(); if(!sm) return;
+  document.querySelectorAll('.sc-holder').forEach(el=>{ el.innerHTML=chartBlockHtml(sm); });
+}
+function chartBlockHtml(sm){
+  const kind=chartKind();
+  const tabs=Object.entries(CHART_KINDS).map(([k,l])=>`<button type="button" class="${k===kind?'sel':''}" onclick="setChartKind('${k}')">${l}</button>`).join('');
+  const key=kind==='both'?`<span><span class="sc-line solid"></span>patrimoine</span><span><span class="sc-line dash"></span>argent en poche</span>`:'';
+  return `<div class="sc-tabs" style="margin:0 0 6px">${tabs}</div>
+    <div class="sc-legend">${S.players.map(p=>`<span><span class="sc-line" style="background:${pColor(p.id)}"></span>${esc(p.name)}</span>`).join('')}${key}</div>
+    ${worthChartHtml(sm)}`;
+}
 function worthChartHtml(sm){
-  const rows=sm.st.worth; if(rows.length<2) return '<div class="hint">La courbe apparaîtra après le premier tour de table.</div>';
+  const kind=chartKind(), series=chartSeries(sm.st, kind);
+  if(!series.length || series[0].rows.length<2) return `<div class="hint">${kind==='money'&&!(sm.st.money||[]).length?"La courbe de l'argent n'existe pas pour cette sauvegarde : elle démarrera au prochain tour de table.":'La courbe apparaîtra après le premier tour de table.'}</div>`;
   const {W,H,L,R,T,B}=CHART, n=S.players.length;
-  const t0=rows[0][0], t1=rows[rows.length-1][0];
-  const maxV=Math.max(1,...rows.flatMap(r=>r.slice(1)));
+  const all=series.flatMap(x=>x.rows);
+  const t0=Math.min(...all.map(r=>r[0])), t1=Math.max(...all.map(r=>r[0]));
+  const maxV=Math.max(1,...all.flatMap(r=>r.slice(1)));
   const step=niceStep(maxV/4), top=Math.ceil(maxV/step)*step;
   const x=t=> L+(t1===t0?0:(t-t0)/(t1-t0))*(W-L-R);
   const y=v=> T+(1-v/top)*(H-T-B);
@@ -2427,14 +2488,18 @@ function worthChartHtml(sm){
   xt.forEach(t=>{ g+=`<text x="${x(t)}" y="${H-B+18}" class="sc-tick" text-anchor="middle">${t}</text>`; });
   g+=`<text x="${W-R}" y="${H-4}" class="sc-tick" text-anchor="end">tours</text>`;
   let lines='', labels=[];
-  for(let i=0;i<n;i++){
-    // Un failli : la ligne s'arrête au tour de sa faillite.
-    const pts=[]; for(const r of rows){ pts.push(`${x(r[0]).toFixed(1)},${y(r[i+1]).toFixed(1)}`); if(S.players[i].bankrupt && r[i+1]===0 && pts.length>1) break; }
-    lines+=`<polyline points="${pts.join(' ')}" fill="none" stroke="${pColor(i)}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
-    const last=pts[pts.length-1].split(',').map(Number);
-    if(S.players[i].bankrupt) lines+=`<text x="${last[0]}" y="${last[1]-6}" text-anchor="middle" font-size="12">💀</text>`;
-    else labels.push({i, y:last[1]});
-  }
+  series.forEach((se,si)=>{
+    for(let i=0;i<n;i++){
+      const pts=seriesPoints(sm.st, se.rows, i).map(([t,v])=>[x(t),y(v)]);
+      if(!pts.length) continue;
+      lines+=`<polyline points="${pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}" fill="none" stroke="${pColor(i)}" stroke-width="${se.dash?1.6:2}"${se.dash?' stroke-dasharray="5 4"':''} stroke-linejoin="round" stroke-linecap="round"/>`;
+      const last=pts[pts.length-1];
+      if(si===0){
+        if(S.players[i].bankrupt) lines+=`<text x="${last[0]}" y="${last[1]-6}" text-anchor="middle" font-size="12">💀</text>`;
+        else labels.push({i, y:last[1]});
+      }
+    }
+  });
   // Étiquettes directes en bout de ligne (≤ 4 joueurs encore en jeu), écartées pour ne pas se chevaucher.
   let lab='';
   if(labels.length<=4){
@@ -2442,9 +2507,9 @@ function worthChartHtml(sm){
     for(let k=1;k<labels.length;k++) if(labels[k].y-labels[k-1].y<14) labels[k].y=labels[k-1].y+14;
     labels.forEach(l=>{ lab+=`<line x1="${W-R+4}" x2="${W-R+14}" y1="${l.y}" y2="${l.y}" stroke="${pColor(l.i)}" stroke-width="2"/><text x="${W-R+18}" y="${l.y+4}" class="sc-lab">${esc(S.players[l.i].name.slice(0,12))}</text>`; });
   }
-  UI.chart={rows,x,y,t0,t1};
+  UI.chart={series,x,y,t0,t1};
   return `<div class="sc-wrap" onpointerleave="chartHover(null)">
-    <svg viewBox="0 0 ${W} ${H}" class="sc-svg" role="img" aria-label="Patrimoine de chaque joueur au fil des tours">
+    <svg viewBox="0 0 ${W} ${H}" class="sc-svg" role="img" aria-label="${CHART_KINDS[kind]} de chaque joueur au fil des tours">
       ${g}${lines}${lab}
       <line id="scCross" x1="0" x2="0" y1="${T}" y2="${H-B}" class="sc-cross" style="display:none"/>
       <rect x="${L}" y="${T}" width="${W-L-R}" height="${H-T-B}" fill="transparent" onpointermove="chartHover(event)"/>
@@ -2460,17 +2525,23 @@ function chartHover(ev){
   if(!ev){ tip.classList.add('hidden'); cross.style.display='none'; return; }
   const svg=ev.currentTarget.ownerSVGElement, box=svg.getBoundingClientRect();
   const vx=(ev.clientX-box.left)/box.width*CHART.W;
-  let best=C.rows[0]; for(const r of C.rows) if(Math.abs(C.x(r[0])-vx)<Math.abs(C.x(best[0])-vx)) best=r;
-  const cx=C.x(best[0]);
+  const main=C.series[0].rows;
+  let best=main[0]; for(const r of main) if(Math.abs(C.x(r[0])-vx)<Math.abs(C.x(best[0])-vx)) best=r;
+  const turn=best[0], cx=C.x(turn);
+  // Pour chaque série, la ligne du même tour (ou la plus proche).
+  const rowAt=rows=>{ let b=null; for(const r of rows) if(!b || Math.abs(r[0]-turn)<Math.abs(b[0]-turn)) b=r; return b; };
+  const at=C.series.map(se=>rowAt(se.rows));
   cross.setAttribute('x1',cx); cross.setAttribute('x2',cx); cross.style.display='';
   tip.textContent='';
-  const h=document.createElement('div'); h.className='sc-tip-h'; h.textContent=`Tour ${best[0]}`; tip.appendChild(h);
-  S.players.map((p,i)=>({p,i,v:best[i+1]})).sort((a,b)=>b.v-a.v).forEach(o=>{
+  const h=document.createElement('div'); h.className='sc-tip-h'; h.textContent=`Tour ${turn}`; tip.appendChild(h);
+  S.players.map((p,i)=>({p,i,v:at.map(r=>r?r[i+1]:0)})).sort((a,b)=>b.v[0]-a.v[0]).forEach(o=>{
     const row=document.createElement('div'); row.className='sc-tip-row';
     const k=document.createElement('span'); k.className='sc-key'; k.style.background=pColor(o.i);
-    const v=document.createElement('b'); v.textContent=fmtN(o.v);
+    const v=document.createElement('b'); v.textContent=fmtN(o.v[0]);
+    row.append(k,v);
+    if(C.series.length>1){ const m=document.createElement('span'); m.className='sc-sub'; m.textContent=` (${fmtN(o.v[1])} en poche)`; row.appendChild(m); }
     const nm=document.createElement('span'); nm.textContent=' '+o.p.name;
-    row.append(k,v,nm); tip.appendChild(row);
+    row.appendChild(nm); tip.appendChild(row);
   });
   tip.classList.remove('hidden');
   const px=cx/CHART.W*box.width;
@@ -2580,9 +2651,7 @@ function statsReportHtml(){
     ${sm.since>1?`<span class="hint">Statistiques suivies depuis le tour ${sm.since} (reprise d'une ancienne sauvegarde)</span>`:''}</div>`;
   return `${head}
     <div class="sr-sec"><div class="sr-t">Classement</div>${rankingHtml(sm)}</div>
-    <div class="sr-sec"><div class="sr-t">Patrimoine au fil des tours</div>
-      <div class="sc-legend">${S.players.map(p=>`<span><span class="sc-line" style="background:${pColor(p.id)}"></span>${esc(p.name)}</span>`).join('')}</div>
-      ${worthChartHtml(sm)}</div>
+    <div class="sr-sec"><div class="sr-t">Au fil des tours</div><div class="sc-holder">${chartBlockHtml(sm)}</div></div>
     <div class="sr-sec"><div class="sr-t">Titres</div>${titlesHtml(sm)}</div>
     <div class="sr-sec"><div class="sr-t">Stats par joueur</div>${statsTableHtml(sm)}</div>
     <div class="sr-sec sr-board"><div><div class="sr-t">Le plateau</div>${boardFactsHtml(sm)}</div>${heatmapHtml(sm)}</div>`;
@@ -2640,20 +2709,29 @@ function loadImg(src){ return new Promise(res=>{ if(!src){ res(null); return; } 
 function roundRect(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 function fitText(ctx,txt,max){ if(ctx.measureText(txt).width<=max) return txt; while(txt.length>1 && ctx.measureText(txt+'…').width>max) txt=txt.slice(0,-1); return txt+'…'; }
 
+// L'image reprend tout le bilan de la fenêtre 📊 : classement, les deux
+// courbes, titres, tableau complet par joueur, plateau (faits + chaleur).
 async function renderStatsCanvas(){
   const sm=statsSummary(); if(!sm) return null;
   try{ await document.fonts.ready; }catch(e){}
   const [ouf,ale,pri]=await Promise.all([loadImg('images/oufingouf.png'),loadImg(ALERTE_SRC),loadImg(ALERTEPRISON_SRC)]);
   const pawnImgs=await Promise.all(S.players.map(p=>E.isImagePawn(p.pawn)?loadImg(pawnSrc(p.pawn)):null));
-  const W=1200, P=40, nT=sm.titles.length;
+  const W=1200, P=40, nT=sm.titles.length, cols=sm.ranking;
   const facts=[];
-  if(sm.visited>=0) facts.push(`👣 Case la plus visitée : ${S.board[sm.visited].name} (${sm.st.land[sm.visited]} fois)`);
-  if(sm.rich>=0) facts.push(`💰 Case la plus rentable : ${S.board[sm.rich].name} (${fmtN(cellRentTotal(sm.st,sm.rich))}, surtout pour ${S.players[sm.richOwner].name})`);
-  const rkH=sm.ranking.length*46, ttRows=Math.ceil(nT/3), H=110+rkH+304+(nT?40+ttRows*76:0)+(facts.length?20+facts.length*28:0)+50;
+  if(sm.visited>=0) facts.push(['👣 Case la plus visitée', `${S.board[sm.visited].name} (${sm.st.land[sm.visited]} fois)`]);
+  if(sm.rich>=0) facts.push(['💰 Case la plus rentable', `${S.board[sm.rich].name} (${fmtN(cellRentTotal(sm.st,sm.rich))}, surtout pour ${S.players[sm.richOwner].name})`]);
+  // Hauteurs des blocs (calculées d'avance pour dimensionner le canvas).
+  const rkH=sm.ranking.length*46, ttRows=Math.ceil(nT/3);
+  const CH=300;                                         // bloc des courbes
+  const rowH=r=>r.g?30:(r.d?44:28);
+  const tbH=40+52+STAT_ROWS.reduce((a,r)=>a+rowH(r),0)+16;
+  const HM=42, hmH=40+11*HM+20;
+  const H=130+rkH+14+CH+44+(nT?40+ttRows*76:0)+tbH+20+hmH+50;
   const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
   const ctx=cv.getContext('2d');
   const F=(w,s,f)=>`${w} ${s}px ${f||"'DM Sans', sans-serif"}`;
   const BEBAS="'Bebas Neue', 'DM Sans', sans-serif";
+  const TXT='#16241f', SUB='#5c7268', MUTED='#93a89c', GREEN='#0f6e63';
   ctx.fillStyle='#eef4ef'; ctx.fillRect(0,0,W,H);
   ctx.fillStyle='#0b564d'; ctx.fillRect(0,0,W,96);
   ctx.fillStyle='#fff'; ctx.font=F('400',52,BEBAS); ctx.textBaseline='middle';
@@ -2663,6 +2741,7 @@ async function renderStatsCanvas(){
   ctx.textAlign='right'; ctx.fillText(fitText(ctx,sub,560), W-P, 38);
   ctx.font=F('400',16); ctx.fillStyle='#cfe9df';
   ctx.fillText(`${fmtDuration(sm.duration)} · ${sm.turns} tours · ${fmtN(sm.rolls)} lancers · ${endReasonText()}`, W-P, 66);
+  if(sm.since>1){ ctx.font=F('400',13); ctx.fillText(`statistiques suivies depuis le tour ${sm.since}`, W-P, 86); }
   ctx.textAlign='left';
   let y=130;
   const drawPawn=(p,x,cy,size)=>{
@@ -2670,72 +2749,157 @@ async function renderStatsCanvas(){
     if(im){ ctx.save(); ctx.beginPath(); ctx.arc(x+size/2,cy,size/2,0,Math.PI*2); ctx.clip(); ctx.drawImage(im,x,cy-size/2,size,size); ctx.restore(); }
     else { ctx.font=F('400',size*0.85); ctx.fillText(E.isImagePawn(p.pawn)?'🔹':p.pawn, x, cy+1); }
   };
+  const section=(t)=>{ ctx.fillStyle=TXT; ctx.font=F('400',30,BEBAS); ctx.textAlign='left'; ctx.fillText(t, P, y+14); y+=40; };
   // Classement
   sm.ranking.forEach((x,i)=>{
     const p=x.p, cy=y+i*46;
     ctx.fillStyle='#fff'; roundRect(ctx,P,cy-20,W-2*P,40,10); ctx.fill();
     ctx.fillStyle=pColor(p.id); roundRect(ctx,P,cy-20,8,40,4); ctx.fill();
-    ctx.fillStyle='#16241f'; ctx.font=F('400',22);
+    ctx.fillStyle=TXT; ctx.font=F('400',22);
     ctx.fillText(p.bankrupt?'💀':MEDALS[i]||`${i+1}.`, P+20, cy+1);
     drawPawn(p,P+60,cy,28);
-    ctx.fillStyle='#16241f'; ctx.font=F('600',20); ctx.fillText(fitText(ctx,p.name,330), P+100, cy+1);
+    ctx.fillStyle=TXT; ctx.font=F('600',20); ctx.fillText(fitText(ctx,p.name,330), P+100, cy+1);
     ctx.textAlign='right';
-    if(p.bankrupt){ ctx.fillStyle='#c23b3b'; ctx.font=F('500',17); ctx.fillText(`faillite au tour ${x.s.bankruptTurn}`, W-P-18, cy+1); }
-    else {
-      ctx.fillStyle='#0f6e63'; ctx.font=F('600',21);
+    if(p.bankrupt){
+      ctx.fillStyle='#c23b3b'; ctx.font=F('500',17);
+      const to=typeof x.s.bankruptTo==='number'?` face à ${S.players[x.s.bankruptTo].name}`:x.s.bankruptTo==='bank'?' face à la banque':'';
+      ctx.fillText(fitText(ctx,`faillite au tour ${x.s.bankruptTurn}${to}`,560), W-P-18, cy+1);
+    } else {
+      ctx.fillStyle=GREEN; ctx.font=F('600',21);
       const t=fmtN(x.worth); ctx.fillText(t, W-P-18, cy+1);
       const tw=ctx.measureText(t).width; if(ouf) ctx.drawImage(ouf, W-P-18-tw-26, cy-11, 22, 22);
-      // Détail, de gauche à droite à partir du milieu : biens, alertes, alerteprisons.
-      ctx.textAlign='left'; ctx.fillStyle='#5c7268'; ctx.font=F('400',17);
-      let xl=P+520;
+      ctx.textAlign='left'; ctx.fillStyle=SUB; ctx.font=F('400',17);
+      let xl=P+440;
       const put=(txt,img)=>{ if(img){ ctx.drawImage(img,xl,cy-11,22,22); xl+=27; } ctx.fillText(txt,xl,cy+1); xl+=ctx.measureText(txt).width+22; };
+      put(`${fmtN(p.money)} en poche`,null);
       put(`${p.properties.length} bien${p.properties.length>1?'s':''}`,null);
       put(`${x.alertes}`,ale); put(`${x.prisons}`,pri);
     }
     ctx.textAlign='left';
   });
-  y+=rkH-6;
-  // Courbe
-  ctx.fillStyle='#fff'; roundRect(ctx,P,y,W-2*P,290,12); ctx.fill();
-  ctx.fillStyle='#16241f'; ctx.font=F('600',17); ctx.fillText('Patrimoine au fil des tours', P+18, y+24);
-  const rows=sm.st.worth, cx0=P+80, cx1=W-P-30, cy0=y+50, cy1=y+260;
-  if(rows.length>=2){
+  y+=rkH+14;
+  // Deux courbes côte à côte : patrimoine, argent en poche.
+  const drawCurve=(rows,bx,bw,title)=>{
+    ctx.fillStyle='#fff'; roundRect(ctx,bx,y,bw,CH,12); ctx.fill();
+    ctx.fillStyle=TXT; ctx.font=F('600',17); ctx.textAlign='left'; ctx.fillText(title, bx+18, y+24);
+    const cx0=bx+70, cx1=bx+bw-20, cy0=y+50, cy1=y+CH-34;
+    if(!rows || rows.length<2){ ctx.fillStyle=MUTED; ctx.font=F('400',14); ctx.fillText('Pas assez de données pour cette courbe.', bx+18, y+CH/2); return; }
     const t0=rows[0][0], t1=rows[rows.length-1][0];
     const maxV=Math.max(1,...rows.flatMap(r=>r.slice(1))), step=niceStep(maxV/4), top=Math.ceil(maxV/step)*step;
     const X=t=>cx0+(t1===t0?0:(t-t0)/(t1-t0))*(cx1-cx0), Y=v=>cy0+(1-v/top)*(cy1-cy0);
-    ctx.font=F('400',13); ctx.textAlign='right'; ctx.strokeStyle='#e3ece6'; ctx.lineWidth=1;
-    for(let v=0;v<=top;v+=step){ ctx.beginPath(); ctx.moveTo(cx0,Y(v)); ctx.lineTo(cx1,Y(v)); ctx.stroke(); ctx.fillStyle='#93a89c'; ctx.fillText(fmtN(v), cx0-8, Y(v)); }
-    ctx.textAlign='center'; niceTicks(t0,t1,8).forEach(t=>ctx.fillText(t, X(t), cy1+16));
-    ctx.textAlign='left';
+    ctx.font=F('400',12); ctx.textAlign='right'; ctx.strokeStyle='#e3ece6'; ctx.lineWidth=1;
+    for(let v=0;v<=top;v+=step){ ctx.beginPath(); ctx.moveTo(cx0,Y(v)); ctx.lineTo(cx1,Y(v)); ctx.stroke(); ctx.fillStyle=MUTED; ctx.fillText(fmtN(v), cx0-8, Y(v)); }
+    ctx.textAlign='center'; niceTicks(t0,t1,6).forEach(t=>ctx.fillText(t, X(t), cy1+16));
+    ctx.textAlign='right'; ctx.fillText('tours', cx1, cy1+30);
     S.players.forEach((p,i)=>{
-      ctx.strokeStyle=pColor(i); ctx.lineWidth=3; ctx.lineJoin='round'; ctx.beginPath();
-      let k=0; for(const r of rows){ const px=X(r[0]), py=Y(r[i+1]); k++?ctx.lineTo(px,py):ctx.moveTo(px,py); if(p.bankrupt && r[i+1]===0 && k>1) break; }
+      const pts=seriesPoints(sm.st, rows, i); if(!pts.length) return;
+      ctx.strokeStyle=pColor(i); ctx.lineWidth=2.5; ctx.lineJoin='round'; ctx.beginPath();
+      pts.forEach(([t,v],k)=>k?ctx.lineTo(X(t),Y(v)):ctx.moveTo(X(t),Y(v)));
       ctx.stroke();
+      if(p.bankrupt){ const [t,v]=pts[pts.length-1]; ctx.font=F('400',13); ctx.textAlign='center'; ctx.fillText('💀', X(t), Y(v)-9); }
     });
-    // Légende
-    let lx=P+300; ctx.font=F('500',14);
-    S.players.forEach((p,i)=>{ ctx.fillStyle=pColor(i); ctx.fillRect(lx,y+22,18,3); ctx.fillStyle='#16241f'; const nm=fitText(ctx,p.name,110); ctx.fillText(nm,lx+24,y+24); lx+=34+ctx.measureText(nm).width; });
-  }
-  y+=310;
+    ctx.textAlign='left';
+  };
+  const half=(W-2*P-16)/2;
+  drawCurve(sm.st.worth, P, half, 'Patrimoine au fil des tours');
+  drawCurve(sm.st.money, P+half+16, half, 'Argent en poche au fil des tours');
+  y+=CH+8;
+  // Légende commune
+  { let lx=P+4; ctx.font=F('500',14);
+    S.players.forEach((p,i)=>{ ctx.fillStyle=pColor(i); ctx.fillRect(lx,y+6,18,3); ctx.fillStyle=TXT; const nm=fitText(ctx,p.name,110); ctx.fillText(nm,lx+24,y+8); lx+=34+ctx.measureText(nm).width; }); }
+  y+=36;
   // Titres
   if(nT){
-    ctx.fillStyle='#16241f'; ctx.font=F('400',30,BEBAS); ctx.fillText('TITRES', P, y+14); y+=40;
+    section('TITRES');
     const cw=(W-2*P-24)/3;
     sm.titles.forEach((t,i)=>{
       const tx=P+(i%3)*(cw+12), ty=y+Math.floor(i/3)*76;
       ctx.fillStyle='#fff'; roundRect(ctx,tx,ty,cw,66,10); ctx.fill();
-      ctx.font=F('400',26); ctx.fillStyle='#16241f'; ctx.fillText(t.icon, tx+12, ty+33);
+      ctx.font=F('400',26); ctx.fillStyle=TXT; ctx.fillText(t.icon, tx+12, ty+33);
       ctx.font=F('600',15); ctx.fillText(fitText(ctx,t.name,cw-70), tx+56, ty+16);
-      ctx.font=F('600',14); ctx.fillStyle='#0f6e63'; ctx.fillText(fitText(ctx,t.winners.map(p=>p.name).join(', '),cw-70), tx+56, ty+34);
-      ctx.font=F('400',13); ctx.fillStyle='#5c7268'; ctx.fillText(fitText(ctx,t.fmt(t.value),cw-70), tx+56, ty+52);
+      ctx.font=F('600',14); ctx.fillStyle=GREEN; ctx.fillText(fitText(ctx,t.winners.map(p=>p.name).join(', '),cw-70), tx+56, ty+34);
+      ctx.font=F('400',13); ctx.fillStyle=SUB; ctx.fillText(fitText(ctx,t.fmt(t.value),cw-70), tx+56, ty+52);
     });
     y+=ttRows*76;
   }
-  if(facts.length){
-    y+=14; ctx.font=F('500',16); ctx.fillStyle='#16241f'; ctx.textAlign='left';
-    facts.forEach(f=>{ ctx.fillText(fitText(ctx,f,W-2*P), P, y+10); y+=28; });
+  // Tableau complet par joueur
+  y+=8; section('STATS PAR JOUEUR');
+  { const tx=P, tw=W-2*P, lw=270, colW=(tw-lw-16)/cols.length;
+    ctx.fillStyle='#fff'; roundRect(ctx,tx,y,tw,tbH-40-8,12); ctx.fill();
+    let ry=y+8;
+    // En-tête : pion + nom de chaque joueur, avec sa couleur.
+    cols.forEach((x,c)=>{
+      const cx=tx+lw+c*colW+colW/2;
+      ctx.fillStyle=pColor(x.p.id); ctx.fillRect(cx-colW/2+6, ry, colW-12, 3);
+      drawPawn(x.p, cx-11, ry+18, 22);
+      ctx.fillStyle=TXT; ctx.font=F('600',13); ctx.textAlign='center';
+      ctx.fillText(fitText(ctx,x.p.name,colW-8), cx, ry+40);
+      ctx.textAlign='left';
+    });
+    ry+=52;
+    STAT_ROWS.forEach(r=>{
+      const h=rowH(r);
+      if(r.g){
+        ctx.fillStyle='#e8f1ec'; ctx.fillRect(tx+8, ry+3, tw-16, h-6);
+        ctx.fillStyle=GREEN; ctx.font=F('400',19,BEBAS); ctx.fillText(r.g.toUpperCase(), tx+18, ry+h/2+1);
+        ry+=h; return;
+      }
+      const vals=cols.map(r.v), best=Math.max(...vals);
+      let lx=tx+(r.sub?34:18);
+      const icon=r.icon==='alerte'?ale:r.icon==='prison'?pri:null;
+      if(icon){ ctx.drawImage(icon, lx, ry+h/2-9, 18, 18); lx+=24; }
+      ctx.fillStyle=r.sub?SUB:TXT; ctx.font=F(r.sub?'400':'500',14);
+      ctx.fillText(fitText(ctx,r.l,lw-(lx-tx)-8), lx, ry+(r.d?14:h/2)+1);
+      cols.forEach((x,c)=>{
+        const v=vals[c], cx=tx+lw+c*colW+colW/2;
+        const txt=(r.signed&&v>0?'+':r.signed&&v<0?'−':'')+fmtN(r.signed?Math.abs(v):v);
+        const isBest=v===best&&best>0&&cols.length>1;
+        ctx.textAlign='center';
+        ctx.fillStyle=v===0?'#b6c5bc':isBest?GREEN:TXT; ctx.font=F(isBest?'700':'400',14);
+        ctx.fillText(txt, cx, ry+(r.d?14:h/2)+1);
+        const d=r.d&&v?r.d(x):'';
+        if(d){ ctx.fillStyle=MUTED; ctx.font=F('400',11); ctx.fillText(fitText(ctx,d,colW-8), cx, ry+31); }
+        ctx.textAlign='left';
+      });
+      ctx.strokeStyle='#eef3ef'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(tx+12,ry+h); ctx.lineTo(tx+tw-12,ry+h); ctx.stroke();
+      ry+=h;
+    });
+    y+=tbH-40;
+    ctx.fillStyle=MUTED; ctx.font=F('400',12); ctx.fillText('Montants en oufingoufs · en vert : le meilleur de la ligne', P+4, y-2);
   }
-  ctx.fillStyle='#93a89c'; ctx.font=F('400',13); ctx.textAlign='right';
+  y+=20;
+  // Le plateau : carte de chaleur + faits marquants
+  section('LE PLATEAU');
+  { const land=sm.st.land, max=Math.max(1,...land), min=Math.min(...land), bx=P, by=y;
+    ctx.fillStyle='#fff'; roundRect(ctx,bx-6,by-6,11*HM+12,11*HM+12,10); ctx.fill();
+    for(let pos=0;pos<40;pos++){
+      const {col,row}=cellGridPos(pos), c=S.board[pos], n=land[pos];
+      const t=max>min?(n-min)/(max-min):(n?1:0);
+      const x0=bx+(col-1)*HM, y0=by+(row-1)*HM;
+      ctx.fillStyle=heatColor(t); ctx.fillRect(x0+1,y0+1,HM-2,HM-2);
+      if(c.type==='property'){ ctx.fillStyle=GROUP_COLORS[c.group]||'#888'; ctx.fillRect(x0+1,y0+1,HM-2,6); }
+      if(pos===sm.visited){ ctx.strokeStyle='#e34948'; ctx.lineWidth=3; ctx.strokeRect(x0+2.5,y0+2.5,HM-5,HM-5); }
+      if(n){ ctx.fillStyle=t>0.55?'#fff':TXT; ctx.font=F('600',13); ctx.textAlign='center'; ctx.fillText(String(n), x0+HM/2, y0+HM/2+3); ctx.textAlign='left'; }
+    }
+    // Légende au centre du plateau
+    const mx=bx+HM*1.5, my=by+HM*5, mw=HM*8;
+    const grad=ctx.createLinearGradient(mx+40,0,mx+mw-40,0); grad.addColorStop(0,heatColor(0)); grad.addColorStop(1,heatColor(1));
+    ctx.fillStyle=grad; ctx.fillRect(mx+40,my,mw-80,12);
+    ctx.fillStyle=SUB; ctx.font=F('500',13); ctx.textAlign='right'; ctx.fillText(String(min), mx+34, my+6);
+    ctx.textAlign='left'; ctx.fillText(String(max), mx+mw-34, my+6);
+    ctx.textAlign='center'; ctx.fillText('passages par case', mx+mw/2, my+30); ctx.textAlign='left';
+    // Faits marquants à droite
+    let fx=bx+11*HM+40, fy=by+10;
+    ctx.fillStyle=TXT;
+    if(!facts.length){ ctx.fillStyle=MUTED; ctx.font=F('400',15); ctx.fillText("Rien à signaler pour l'instant.", fx, fy+10); }
+    facts.forEach(([l,v])=>{
+      ctx.fillStyle=SUB; ctx.font=F('500',15); ctx.fillText(l, fx, fy+10);
+      ctx.fillStyle=TXT; ctx.font=F('600',17); ctx.fillText(fitText(ctx,v,W-P-fx), fx, fy+34);
+      fy+=68;
+    });
+    y+=11*HM+20;
+  }
+  ctx.fillStyle=MUTED; ctx.font=F('400',13); ctx.textAlign='right';
   ctx.fillText(`Monopoly KJ · ${new Date().toLocaleDateString('fr-FR')}`, W-P, H-22);
   return cv;
 }
@@ -2968,19 +3132,22 @@ function handleNet(m){
 function claimSeat(code, seat){
   closeModal(true);
   const prof=load('mkj.profile')||{};
-  NET.send({type:'join_room', code, name:prof.name, pawn:prof.pawn, claim:seat});
+  NET.send({type:'join_room', code, name:prof.name, pawn:prof.pawn, gender:prof.gender, claim:seat});
 }
 
 // ── Accueil en ligne ───────────────────────────────────────────────────────
-function profile(){ const p=load('mkj.profile')||{}; return {name:p.name||'', pawn:p.pawn||PAWN_EMOJIS[0]}; }
+function profile(){ const p=load('mkj.profile')||{}; return {name:p.name||'', pawn:p.pawn||PAWN_EMOJIS[0], gender:p.gender==='f'?'f':'m'}; }
 function saveProfile(p){ store('mkj.profile', p); }
 function pickOnlinePawn(pawn){ const p=profile(); p.pawn=pawn; saveProfile(p); renderOnlineHome(); }
+function pickOnlineGender(g){ const p=profile(); p.gender=g; saveProfile(p); renderOnlineHome(); }
+function pickLobbyGender(g){ NET.send({type:'lobby_me', gender:g}); const p=profile(); p.gender=g; saveProfile(p); }
 
 function renderOnlineHome(){
   const p=profile();
   const nameEl=document.getElementById('onlineName');
   if(document.activeElement!==nameEl) nameEl.value=p.name;
   document.getElementById('onlinePawnPick').innerHTML=pawnPickerHtml(p.pawn, 'pickOnlinePawn', 'onlinePawnFile');
+  document.getElementById('onlineGenderPick').innerHTML=genderPickHtml(p.gender, 'pickOnlineGender(');
   const fileMode=!(location.protocol==='http:'||location.protocol==='https:');
   document.getElementById('serverUrlBox').classList.toggle('hidden', !fileMode);
   if(fileMode && !document.getElementById('serverUrl').value) document.getElementById('serverUrl').value=load('mkj.serverUrl')||'';
@@ -2997,7 +3164,7 @@ function onlineCreate(){
   const p=onlineIdentity(); if(!p) return;
   const url=serverUrl(); if(!url){ toast("Indiquez l'adresse du serveur."); return; }
   NET.code=null; NET.token=null;
-  connect(url, ()=>NET.send({type:'create_room', name:p.name, pawn:p.pawn}));
+  connect(url, ()=>NET.send({type:'create_room', name:p.name, pawn:p.pawn, gender:p.gender}));
 }
 function onlineJoin(){
   const p=onlineIdentity(); if(!p) return;
@@ -3005,7 +3172,7 @@ function onlineJoin(){
   if(code.length!==5){ toast('Le code du salon fait 5 caractères.'); return; }
   const url=serverUrl(); if(!url){ toast("Indiquez l'adresse du serveur."); return; }
   NET.code=null; NET.token=null;
-  connect(url, ()=>NET.send({type:'join_room', code, name:p.name, pawn:p.pawn}));
+  connect(url, ()=>NET.send({type:'join_room', code, name:p.name, pawn:p.pawn, gender:p.gender}));
 }
 
 // ── Sauvegardes (instantanés chiffrés envoyés par le serveur) ─────────────
@@ -3084,6 +3251,7 @@ function renderLobby(){
   const me=L.seats.find(s=>s.seat===NET.seat);
   const nameEl=document.getElementById('lobbyName');
   if(me && document.activeElement!==nameEl) nameEl.value=me.name;
+  document.getElementById('lobbyGenderPick').innerHTML=genderPickHtml(me&&me.gender==='f'?'f':'m', 'pickLobbyGender(');
   document.getElementById('lobbyPawnPick').innerHTML=pawnPickerHtml(me?me.pawn:'', 'pickLobbyPawn', 'lobbyPawnFile', L.seats.filter(s=>s.seat!==NET.seat).map(s=>s.pawn));
   const set=(id,prop,val)=>{ const el=document.getElementById(id); if(document.activeElement!==el) el[prop]=val; el.disabled=!iAmHost; };
   set('cfgMoney','value',L.config.startMoney);

@@ -53,6 +53,10 @@
   function isImagePawn(v) { return typeof v === 'string' && /^(https?:\/\/|data:image|img:)/i.test(v); }
   function pawnChar(p) { return p && isImagePawn(p.pawn) ? '🔹' : (p ? p.pawn : ''); }
   function who(p) { return `${pawnChar(p)} ${p.name}`; }
+  // Genre du joueur, pour accorder l'historique : 'f' (elle) ou 'm' (il, par défaut).
+  function cleanGender(g) { return g === 'f' ? 'f' : 'm'; }
+  // gx(p, 'chez lui', 'chez elle') : la forme qui va au joueur.
+  function gx(p, m, f) { return p && p.gender === 'f' ? f : m; }
   function isInt(n) { return Number.isInteger(n); }
 
   // Générateur pseudo-aléatoire mulberry32 : la graine avance dans state.secret.
@@ -89,7 +93,7 @@
     return Object.assign({}, st, {
       players: st.players.map(p => Object.assign({}, p,
         { maxRentPaid: p.maxRentPaid && Object.assign({}, p.maxRentPaid), maxRentRecv: p.maxRentRecv && Object.assign({}, p.maxRentRecv) })),
-      land: st.land.slice(), cellRent, worth: st.worth.slice(),
+      land: st.land.slice(), cellRent, worth: st.worth.slice(), money: (st.money || []).slice(),
     });
   }
 
@@ -139,6 +143,7 @@
       land: Array(40).fill(0),
       cellRent: {},          // pos → {idJoueur: total encaissé sur cette case}
       worth: [],             // [[tour, patrimoine j0, j1, ...], ...]
+      money: [],             // [[tour, argent en poche j0, j1, ...], ...] (même rythme que worth)
     };
     return st;
   }
@@ -153,13 +158,21 @@
       const ps = st.players[i];
       if (w > ps.peak) { ps.peak = w; ps.peakTurn = s.turn; }
     });
-    const last = st.worth[st.worth.length - 1];
-    if (last && last[0] === row[0]) st.worth[st.worth.length - 1] = row; else st.worth.push(row);
-    if (st.worth.length > WORTH_ROWS_MAX) {
-      const keepLast = st.worth[st.worth.length - 1];
-      st.worth = st.worth.filter((r, i) => i % 2 === 0);
-      if (st.worth[st.worth.length - 1] !== keepLast) st.worth.push(keepLast);
+    st.worth = pushCurveRow(st.worth, row);
+    // Argent en poche (anciennes sauvegardes : la courbe commence à la reprise).
+    st.money = pushCurveRow(st.money || [], [s.turn, ...s.players.map(p => p.bankrupt ? 0 : p.money)]);
+  }
+  // Ajoute un point à une courbe (remplace le point du même tour), et
+  // l'éclaircit d'un point sur deux au-delà de WORTH_ROWS_MAX.
+  function pushCurveRow(rows, row) {
+    const last = rows[rows.length - 1];
+    if (last && last[0] === row[0]) rows[rows.length - 1] = row; else rows.push(row);
+    if (rows.length > WORTH_ROWS_MAX) {
+      const keepLast = rows[rows.length - 1];
+      rows = rows.filter((r, i) => i % 2 === 0);
+      if (rows[rows.length - 1] !== keepLast) rows.push(keepLast);
     }
+    return rows;
   }
   // En simulation (can() / legalActions(), qui testent des coups sans les
   // jouer), il n'y a pas de stats : ps() renvoie alors un brouillon jetable.
@@ -273,7 +286,7 @@
       board,
       cards,
       players: defs.map((d, i) => ({
-        id: i, name: String(d.name || `Joueur ${i + 1}`).slice(0, 24), pawn: d.pawn || '🎩',
+        id: i, name: String(d.name || `Joueur ${i + 1}`).slice(0, 24), pawn: d.pawn || '🎩', gender: cleanGender(d.gender),
         money: config.startMoney, pos: 0, inJail: false, jailTurns: 0,
         getOut: [], properties: [], bankrupt: false,
       })),
@@ -328,7 +341,7 @@
       return true;
     }
     s.debts.push(Object.assign({ from: from.id, to: to ? to.id : null, amount, why: why || '' }, tag ? { tag } : {}));
-    log(ctx, `${who(from)} doit ${amount} ${CURRENCY}${to ? ' à ' + who(to) : ' à la banque'}${why ? ' (' + why + ')' : ''} mais n'a que ${from.money} : il doit vendre, hypothéquer ou faire faillite.`, 'loss');
+    log(ctx, `${who(from)} doit ${amount} ${CURRENCY}${to ? ' à ' + who(to) : ' à la banque'}${why ? ' (' + why + ')' : ''} mais n'a que ${from.money} : ${gx(from, 'il', 'elle')} doit vendre, hypothéquer ou faire faillite.`, 'loss');
     return false;
   }
 
@@ -389,7 +402,7 @@
     ps(ctx, p.id).jailSent++;
     ctx.s.doublesCount = 0;
     if (p.id === ctx.s.current) ctx.s.noReroll = true;
-    log(ctx, `⛓️ ${who(p)} est envoyé au ${cell(ctx.s, jailPos(ctx.s)).name} !`, 'loss');
+    log(ctx, `⛓️ ${who(p)} est ${gx(p, 'envoyé', 'envoyée')} au ${cell(ctx.s, jailPos(ctx.s)).name} !`, 'loss');
   }
 
   function landOn(ctx, p) {
@@ -406,7 +419,7 @@
       case 'property': case 'station': case 'utility': {
         const owner = ownerOf(s, c.pos);
         if (!owner) { s.pending = { type: 'buy', player: p.id, pos: c.pos }; break; }
-        if (owner.id === p.id) { log(ctx, `${who(p)} est chez lui.`); break; }
+        if (owner.id === p.id) { log(ctx, `${who(p)} est ${gx(p, 'chez lui', 'chez elle')}.`); break; }
         if (isMortgaged(s, c.pos)) { log(ctx, `${c.name} est hypothéquée : pas de loyer.`); break; }
         pay(ctx, p, owner, rentFor(s, c.pos), 'loyer ' + c.name, { kind: 'rent', pos: c.pos });
         break;
@@ -441,7 +454,7 @@
       case 'goto_direct': {
         const t = clampPos(card.targetPos);
         teleport(ctx, p, t);
-        log(ctx, `${who(p)} est envoyé directement sur ${cell(s, t).name}`, 'move');
+        log(ctx, `${who(p)} est ${gx(p, 'envoyé', 'envoyée')} directement sur ${cell(s, t).name}`, 'move');
         landOn(ctx, p);
         break;
       }
@@ -643,7 +656,7 @@
             log(ctx, `${who(p)} sort après 3 tours et doit payer la caution.`);
             pay(ctx, p, null, JAIL_FINE, 'caution', { kind: 'bail' });
           } else {
-            log(ctx, `${who(p)} reste enfermé (tour ${p.jailTurns}/3).`);
+            log(ctx, `${who(p)} reste ${gx(p, 'enfermé', 'enfermée')} (tour ${p.jailTurns}/3).`);
             return;
           }
         }
@@ -814,7 +827,7 @@
       if (s.pending) return 'Une décision est en attente.';
       if (s.dice && s.dice[0] === s.dice[1] && !s.noReroll && !p.inJail) {
         s.phase = 'roll'; s.dice = null;
-        log(ctx, `${who(p)} a fait un double : il rejoue !`, 'chance');
+        log(ctx, `${who(p)} a fait un double : ${gx(p, 'il', 'elle')} rejoue !`, 'chance');
         return;
       }
       nextPlayer(ctx);
@@ -833,7 +846,7 @@
       const target = pid === 'system' ? Number(a.player) : pid;
       const p = s.players[target];
       if (!p || p.bankrupt) return 'Joueur introuvable.';
-      log(ctx, `${who(p)} ${pid === 'system' ? 'est retiré de la partie' : 'abandonne la partie'}.`, 'system');
+      log(ctx, `${who(p)} ${pid === 'system' ? gx(p, 'est retiré', 'est retirée') + ' de la partie' : 'abandonne la partie'}.`, 'system');
       goBankrupt(ctx, p);
     },
 
@@ -1050,6 +1063,6 @@
     SCHEMA, MAX_PLAYERS, GO_SALARY, JAIL_FINE, CURRENCY, BUYABLE, DEFAULT_CONFIG,
     createGame, apply, can, autoAction, legalActions, awaiting, manager, publicView, validateBoard, normalizeCards,
     rentFor, netWorth, WORTH_ROWS_MAX, ownerOf, ownsGroup, level, bld, isMortgaged, unmortgageCost, groupCells, housesLeft, hotelsLeft,
-    canBuild, canUpgrade, canSellHouse, canSellHotel, canMortgage, canUnmortgage, isImagePawn, pawnChar, pathFor,
+    canBuild, canUpgrade, canSellHouse, canSellHotel, canMortgage, canUnmortgage, isImagePawn, pawnChar, pathFor, cleanGender,
   };
 });

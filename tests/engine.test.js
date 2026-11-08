@@ -470,6 +470,9 @@ test('stats : faillite datée, partie finie horodatée, patrimoine record', () =
   assert.ok(s.stats.players[1].peak >= 1500);
   const last = s.stats.worth[s.stats.worth.length - 1];
   assert.equal(last[1], 0);
+  const lastM = s.stats.money[s.stats.money.length - 1];
+  assert.equal(lastM[1], 0);
+  assert.equal(lastM[2], s.players[1].money);
   ok(s);
 });
 
@@ -495,6 +498,7 @@ test('stats : la courbe reste légère sur une très longue partie', () => {
     s = act(s, s.current, { type: 'end_turn' });
   }
   assert.ok(s.stats.worth.length <= E.WORTH_ROWS_MAX + 1);
+  assert.ok(s.stats.money.length <= E.WORTH_ROWS_MAX + 1);
   assert.ok(JSON.stringify(s.stats).length < 20000, JSON.stringify(s.stats).length + ' octets');
   ok(s);
 });
@@ -505,4 +509,21 @@ test('jusqu\'à 8 joueurs, pas 9', () => {
   assert.equal(s.stats.players.length, 8);
   assert.throws(() => E.createGame({ board: BOARD, cards: { chance: [], community: [] }, players: [...Array(9).keys()].map(i => ({ name: 'J' + i })) }));
   assert.throws(() => game(1));
+});
+
+test('genre : l\'historique s\'accorde (chez lui / chez elle)', () => {
+  const mk = () => E.createGame({ board: BOARD, cards: { chance: [], community: [] }, seed: 1,
+    players: [{ name: 'Fil', gender: 'f' }, { name: 'Kage' }, { name: 'X', gender: 'autre' }] });
+  assert.deepEqual(mk().players.map(p => p.gender), ['f', 'm', 'm']);
+  const landHome = pid => {
+    let s = mk();
+    s = setup(s, c => { c.current = pid; });
+    s = own(s, pid, 3);
+    s = at(s, pid, 1);
+    s = act(s, pid, { type: 'roll' }, { dice: [1, 1] });
+    ok(s);
+    return s.log.map(l => l.msg).join('\n');
+  };
+  assert.match(landHome(0), /Fil est chez elle\./);
+  assert.match(landHome(1), /Kage est chez lui\./);
 });

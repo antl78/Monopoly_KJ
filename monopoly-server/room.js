@@ -66,12 +66,12 @@ class Room {
   // ── Places ───────────────────────────────────────────────────────────────
   // Un pion emoji ne peut être pris que par un seul joueur (sinon on ne s'y retrouve plus sur le plateau).
   pawnTaken(pawn, exceptSeat) { return !pawn.startsWith('data:') && this.seats.some((x, i) => i !== exceptSeat && x.pawn === pawn); }
-  addSeat(name, pawn) {
+  addSeat(name, pawn, gender) {
     const token = snap.newToken();
     const seat = this.seats.length;
     let p = cleanPawn(pawn);
     if (this.pawnTaken(p, -1)) p = PAWN_EMOJIS.find(e => !this.pawnTaken(e, -1)) || p;
-    this.seats.push({ name: clampName(name, 'Joueur ' + (seat + 1)), pawn: p, tokenHash: snap.hashToken(token),
+    this.seats.push({ name: clampName(name, 'Joueur ' + (seat + 1)), pawn: p, gender: E.cleanGender(gender), tokenHash: snap.hashToken(token),
       ws: null, connected: false, disconnectedAt: Date.now(), away: false, auto: false, waitForever: false,
       removed: false, claimable: false, needsDecision: false, timeouts: 0 });
     return { seat, token };
@@ -110,7 +110,7 @@ class Room {
   lobbyView(you) {
     return { type: 'lobby', code: this.code, you, hostSeat: this.hostSeat, config: this.config, timerSec: this.timerSec,
       customBoard: !!this.customBoard, customCards: !!this.customCards,
-      seats: this.seats.map((s, i) => ({ seat: i, name: s.name, pawn: s.pawn, connected: s.connected })) };
+      seats: this.seats.map((s, i) => ({ seat: i, name: s.name, pawn: s.pawn, gender: s.gender, connected: s.connected })) };
   }
   broadcastLobby() { this.seats.forEach((s, i) => { if (s.ws) this.hooks.send(s.ws, this.lobbyView(i)); }); }
 
@@ -163,7 +163,7 @@ class Room {
     if (err) return 'Plateau invalide : ' + err;
     this.pawns = this.seats.map(s => s.pawn.startsWith('data:') ? s.pawn : null);
     this.state = E.createGame({ board: this.board, cards: this.cards, config: this.config,
-      players: this.seats.map((s, i) => ({ name: s.name, pawn: this.pawns[i] ? 'img:' + i : s.pawn })) });
+      players: this.seats.map((s, i) => ({ name: s.name, pawn: this.pawns[i] ? 'img:' + i : s.pawn, gender: s.gender })) });
     this.boardHash = snap.hashJson(this.board);
     this.cardsHash = snap.hashJson(this.cards);
     this.pawnsHash = snap.hashJson(this.pawns);
